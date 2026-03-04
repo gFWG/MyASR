@@ -1,0 +1,100 @@
+[
+  {
+    "rule_id": "N5_past_ta",
+    "pattern_regex": "た$",
+    "jlpt_level": 5,
+    "confidence_type": "high",
+    "description": "N5 past tense marker た"
+  },
+  {
+    "rule_id": "N5_masu_form",
+    "pattern_regex": "ます | ません | ました | ませんでした",
+    "jlpt_level": 5,
+    "confidence_type": "high",
+    "description": "N5 polite form ます/ません/ました"
+  },
+  {
+    "rule_id": "N4_te_form",
+    "pattern_regex": "て [いるある]",
+    "jlpt_level": 4,
+    "confidence_type": "high",
+    "description": "N4 て-form progressive/existential"
+  },
+  {
+    "rule_id": "N4_tai_form",
+    "pattern_regex": "たい | たくない | たかった",
+    "jlpt_level": 4,
+    "confidence_type": "high",
+    "description": "N4 desire form 〜たい"
+  },
+  {
+    "rule_id": "N3_nagara",
+    "pattern_regex": "ながら",
+    "jlpt_level": 3,
+    "confidence_type": "high",
+    "description": "N3 simultaneous action 〜ながら"
+  },
+  {
+    "rule_id": "N3_tame_ni",
+    "pattern_regex": "ために",
+    "jlpt_level": 3,
+    "confidence_type": "high",
+    "description": "N3 purpose/reason 〜ために"
+  },
+  {
+    "rule_id": "N2_passive",
+    "pattern_regex": "[^さ] れ [たるており]|られ [たるており]",
+    "jlpt_level": 2,
+    "confidence_type": "ambiguous",
+    "description": "N2 passive form 〜られる"
+  },
+  {
+    "rule_id": "N2_causative",
+    "pattern_regex": "させ [たるられ]",
+    "jlpt_level": 2,
+    "confidence_type": "high",
+    "description": "N2 causative form 〜させる"
+  },
+  {
+    "rule_id": "N1_ni_suginai",
+    "pattern_regex": "に過ぎない | にすぎない",
+    "jlpt_level": 1,
+    "confidence_type": "high",
+    "description": "N1 nothing but 〜に過ぎない"
+  },
+  {
+    "rule_id": "N1_ni_itaru",
+    "pattern_regex": "に至 [るっ]|にいた [るっ]",
+    "jlpt_level": 1,
+    "confidence_type": "high",
+    "description": "N1 reaching/resulting 〜に至る"
+  },
+  {
+    "rule_id": "N2_ni_totte",
+    "pattern_regex": "にとって",
+    "jlpt_level": 2,
+    "confidence_type": "high",
+    "description": "N2 for/to 〜にとって"
+  },
+  {
+    "rule_id": "N2_wake_dewanai",
+    "pattern_regex": "わけではない | わけではない",
+    "jlpt_level": 2,
+    "confidence_type": "ambiguous",
+    "description": "N2 not necessarily 〜わけではない"
+  },
+  {
+    "rule_id": "N1_zaru_wo_enai",
+    "pattern_regex": "ざるを得ない | ざるをえない",
+    "jlpt_level": 1,
+    "confidence_type": "high",
+    "description": "N1 have no choice but 〜ざるを得ない"
+  },
+  {
+    "rule_id": "N3_koto_ga_dekiru",
+    "pattern_regex": "ことができる | 事ができる | ことが出来る",
+    "jlpt_level": 3,
+    "confidence_type": "high",
+    "description": "N3 potential/capability 〜ことができる"
+  }
+]
