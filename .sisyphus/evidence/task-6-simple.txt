@@ -1,0 +1,2 @@
+Score: 0.76, is_complex: False
+PASS — simple sentence correctly classified

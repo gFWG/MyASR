@@ -1,0 +1,1 @@
+PASS — tagger property works

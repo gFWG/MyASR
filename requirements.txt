@@ -8,3 +8,4 @@ jreadability
 PySide6
 requests
 numpy
+qwen-asr

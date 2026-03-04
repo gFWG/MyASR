@@ -1,0 +1,2 @@
+食べる: N5
+PASS — lookup works

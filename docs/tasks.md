@@ -210,7 +210,7 @@ pytest tests/test_audio_capture.py -x && mypy src/audio/capture.py
   - `process_chunk(self, audio: np.ndarray) -> list[AudioSegment] | None` — Feed audio chunk, return complete segment(s) when sentence boundary detected, else None
   - `reset(self) -> None` — Clear internal state
 
-**Done when**: VAD correctly detects speech boundaries in synthetic test audio (speech + silence patterns). No false triggers on silence-only input. Tests with mocked model.
+**Done when**: VAD correctly detects speech boundaries in test audio. No false triggers on silence-only input. Tests with mocked model.
 
 **Verify**:
 ```bash

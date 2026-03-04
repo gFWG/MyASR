@@ -139,7 +139,7 @@ A sentence is classified as **complex** if ANY of these conditions is met:
 |-----------|------------------|------------|
 | Beyond-level vocab count | ≥ 2 | `complexity.vocab_threshold` |
 | N1 grammar pattern hit | ≥ 1 | `complexity.n1_grammar_threshold` |
-| jreadability score | > 3.0 (scale TBD) | `complexity.readability_threshold` |
+| jreadability score | < 3.0 (scale TBD) | `complexity.readability_threshold` |
 | Ambiguous grammar rules | ≥ 1 (confidence_type = "ambiguous") | `complexity.ambiguous_grammar_threshold` |
 
 These thresholds are configurable in the settings panel and stored in app config.

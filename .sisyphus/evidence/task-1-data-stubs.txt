@@ -1,0 +1,2 @@
+Vocab: 35 entries, levels {1, 2, 3, 4, 5} — PASS
+Grammar: 14 rules — PASS

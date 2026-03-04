@@ -23,10 +23,10 @@ pip install -r requirements.txt
 ```
 
 ## API compatibility rule
-- If you call any 3rd-party API you are not 100% sure about:
+- If you call any API you are not 100% sure about:
   1) Verify installed version with importlib.metadata.version(pkg)
   2) Verify the callable via help() / inspect.signature() in THIS env
-  3) If still uncertain, search the OFFICIAL docs/release notes for that exact version;
+  3) If still uncertain, search the OFFICIAL docs/release notes for that exact information;
      if you cannot find version-matching docs, stop and ask me.
 
 ## Build / Lint / Test Commands

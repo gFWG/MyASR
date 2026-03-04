@@ -1,0 +1,2 @@
+Score: 3.45, is_complex: True
+PASS — vocab threshold triggers complexity

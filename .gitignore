@@ -12,9 +12,9 @@ build/
 venv/
 
 # IDE
-.idea/
+.vscode/
 
-# Model weights and audio (large binary files)
+# Large binary files
 *.onnx
 *.pt
 *.bin

@@ -1,0 +1,2 @@
+Simple sentence readability: 6.20
+Readability direction confirmed: higher=6.20 for easy text — PASS

@@ -1,0 +1,3 @@
+Tables: ['app_settings', 'highlight_grammar', 'highlight_vocab', 'sentence_records', 'sqlite_sequence']
+WAL: wal, FK: 1
+PASS
