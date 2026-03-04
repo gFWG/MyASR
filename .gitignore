@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+.idea/
+
+# Model weights and audio (large binary files)
+*.onnx
+*.pt
+*.bin
+*.wav
+*.mp3
+*.flac
+
+# Runtime data
+data/myasr.db
+data/config.json
+
+# OS
+.DS_Store
+Thumbs.db
