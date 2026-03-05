@@ -28,7 +28,7 @@ Users watching Japanese content (games, movies, videos) on Windows 11 need a non
 1. **Audio capture + VAD**: Capture system playback audio via `sounddevice`/`pyaudiowpatch` + Silero VAD sentence segmentation.
 2. **ASR**: Qwen3-ASR (0.6B) offline batch inference → sentence-level Japanese text.
 3. **Preprocessing pipeline**: fugashi tokenization → JLPT vocab O(1) lookup → grammar regex matching → jreadability complexity scoring.
-4. **LLM translation**: Ollama qwen3-4b (localhost:11434) — simple sentences get translation only; complex sentences get translation + study-point analysis (single API call).
+4. **LLM translation**: Ollama qwen3.5:4b (localhost:11434) — simple sentences get translation only; complex sentences get translation + study-point analysis (single API call).
 5. **Overlay UI**: PySide6 transparent frameless window — Japanese + Chinese lines, JLPT-level color highlights, hover tooltip with explanations, auto-write to SQLite learning records.
 
 ### P1 — Settings & History

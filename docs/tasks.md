@@ -44,7 +44,7 @@ python -c "from src.exceptions import *" && mypy src/exceptions.py
 **Files**: `src/config.py`, `tests/test_config.py`
 
 **Work**:
-- Define `AppConfig` dataclass with fields: `user_jlpt_level: int` (default 3), `complexity_vocab_threshold: int` (default 2), `complexity_n1_grammar_threshold: int` (default 1), `complexity_readability_threshold: float` (default 3.0), `complexity_ambiguous_grammar_threshold: int` (default 1), `ollama_url: str` (default "http://localhost:11434"), `ollama_model: str` (default "qwen3-4b-2507"), `ollama_timeout_sec: float` (default 30.0), `sample_rate: int` (default 16000), `db_path: str` (default "data/myasr.db")
+- Define `AppConfig` dataclass with fields: `user_jlpt_level: int` (default 3), `complexity_vocab_threshold: int` (default 2), `complexity_n1_grammar_threshold: int` (default 1), `complexity_readability_threshold: float` (default 3.0), `complexity_ambiguous_grammar_threshold: int` (default 1), `ollama_url: str` (default "http://localhost:11434"), `ollama_model: str` (default "qwen3.5:4b"), `ollama_timeout_sec: float` (default 30.0), `sample_rate: int` (default 16000), `db_path: str` (default "data/myasr.db")
 - Function `load_config() -> AppConfig` that loads from JSON file if exists, else returns defaults
 - Function `save_config(config: AppConfig) -> None` that writes to JSON
 

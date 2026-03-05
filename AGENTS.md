@@ -4,7 +4,7 @@
 
 Desktop overlay app for Japanese language learning. Captures system audio → VAD → ASR → morphological analysis → JLPT vocab/grammar lookup → LLM translation → transparent PySide6 overlay UI with SQLite learning records.
 
-**Stack**: Python 3.12+, CUDA 12.x, PySide6, Silero VAD, Qwen3-ASR (0.6B), fugashi, Ollama (qwen3-4b), SQLite  
+**Stack**: Python 3.12+, CUDA 12.x, PySide6, Silero VAD, Qwen3-ASR (0.6B), fugashi, Ollama (qwen3.5:4b), SQLite  
 **Platform**: Windows 11 (target), developed in WSL2 + Ubuntu 22.04  
 **GPU**: 12GB VRAM minimum  
 
@@ -70,7 +70,7 @@ MyASR/
 │   ├── asr/                # Speech recognition (Qwen3-ASR 0.6B)
 │   ├── analysis/           # Morphological analysis (fugashi), JLPT lookup
 │   ├── grammar/            # Grammar pattern matching (regex, CSV→JSON rules)
-│   ├── llm/                # Ollama client (qwen3-4b, localhost:11434)
+│   ├── llm/                # Ollama client (qwen3.5:4b, localhost:11434)
 │   ├── ui/                 # PySide6 overlay, tooltip, settings
 │   ├── db/                 # SQLite learning records
 │   └── main.py             # Entry point
@@ -233,6 +233,6 @@ def test_jlpt_lookup_returns_correct_level(word, expected_level):
 - ASR: Qwen3-ASR 0.6B (offline, batch mode, not streaming)
 - VAD: Silero VAD (lightweight, CPU-friendly)
 - Morphological analysis: fugashi + unidic-lite
-- LLM: Ollama qwen3-4b-2507 via REST API (localhost:11434)
+- LLM: Ollama qwen3.5:4b via REST API (localhost:11434)
 - UI: PySide6 transparent frameless overlay with rounded tooltip
 - Audio: sounddevice (Linux/dev) + pyaudiowpatch (Windows loopback)

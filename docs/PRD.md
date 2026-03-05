@@ -48,7 +48,7 @@
 - 捕获系统音频（非麦克风）并用 Silero VAD 切段。
 - 用 Qwen3-ASR（0.6B）离线推理得到句子级日语文本。
 - 预处理：fugashi 分词 + JLPT 词汇 O(1) 查询 + 语法正则匹配 + 复杂度评分。
-- LLM：调用本地 Ollama 的 qwen3-4b，简单句只翻译，复杂句翻译 + 考点解析（单次调用）。
+- LLM：调用本地 Ollama 的 qwen3.5:4b，简单句只翻译，复杂句翻译 + 考点解析（单次调用）。
 - UI：透明悬浮窗显示字幕/翻译，超纲词汇/语法按等级高亮，鼠标悬停 Tooltip 展示解释并写入 SQLite 学习记录。
 
 - P1:
@@ -108,7 +108,7 @@
 - Given 预处理模块开启，When 连续处理多条句子，Then 平均耗时应保持在 < 50ms（需要在实现中加入计时与统计）。
 
 ### 5.4 LLM：翻译与考点解析（单次调用）
-- 描述：使用本地 Ollama server（localhost:11434）调用 qwen3-4b-2507，翻译与考点解析合并单次调用，简单句仅翻译，复杂句翻译 + 考点解析。
+- 描述：使用本地 Ollama server（localhost:11434）调用 qwen3.5:4b，翻译与考点解析合并单次调用，简单句仅翻译，复杂句翻译 + 考点解析。
 - 规则/校验：复杂句的判定来自预处理层综合决策（词汇/语法/复杂度）。
 - 错误与空状态：LLM 超时/失败时 UI 要显示“仅字幕/无解析”或降级提示（降级策略细节待补）。
 - 验收标准：
@@ -173,7 +173,7 @@
 
 ## 7. 技术栈与资源
 - 运行环境：Windows 11；开发环境 WSL2 + Ubuntu 22.04；Python 3.12+；CUDA 12.x；GPU 12GB VRAM；venv 包管理。
-- 主要依赖：Qwen3-ASR、Ollama(qwen3-4b-2507)、fugashi、PySide6、silero-vad、sounddevice、jreadability、PySide6、SQLite 等。
+- 主要依赖：Qwen3-ASR、Ollama(qwen3.5:4b)、fugashi、PySide6、silero-vad、sounddevice、jreadability、PySide6、SQLite 等。
 - 启动环境：source ~/.venvs/myasr/bin/activate
 
 ***
@@ -183,7 +183,7 @@
 - 依赖：
 - `pyaudiowpatch` 对“系统音频捕获”的兼容性与权限配置。
 - 本地资源文件：JLPT 词表 JSON、语法点 CSV→JSON 正则表、ASR 模型文件等需要资源管理模块支撑。
-- 本地 Ollama server（localhost:11434）可用性与模型管理（qwen3-4b-2507）。
+- 本地 Ollama server（localhost:11434）可用性与模型管理（qwen3.5:4b）。
 
 - 风险：
 - 音频场景差异导致 VAD 参数难以“一套通吃”，需要提供可调参数或场景预设。

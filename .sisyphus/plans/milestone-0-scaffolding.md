@@ -553,7 +553,7 @@ Max Concurrent: 4 (Wave 1)
       - `complexity_readability_threshold: float = 3.0`
       - `complexity_ambiguous_grammar_threshold: int = 1`
       - `ollama_url: str = "http://localhost:11434"`
-      - `ollama_model: str = "qwen3-4b-2507"`
+      - `ollama_model: str = "qwen3.5:4b"`
       - `ollama_timeout_sec: float = 30.0`
       - `sample_rate: int = 16000`
       - `db_path: str = "data/myasr.db"`
@@ -604,7 +604,7 @@ Max Concurrent: 4 (Wave 1)
   - `AGENTS.md` "Typing" section — All public functions MUST have type annotations, use modern syntax
 
   **API/Type References**:
-  - `docs/api-data.md` Ollama section — Confirms URL `http://localhost:11434`, model `qwen3-4b-2507`, timeout 30s
+  - `docs/api-data.md` Ollama section — Confirms URL `http://localhost:11434`, model `qwen3.5:4b`, timeout 30s
 
   **Test References**:
   - `AGENTS.md` "Testing" section — Use pytest, function naming `test_<what>_<condition>_<expected>`, parametrize for variants, `tmp_path` for file ops
@@ -639,7 +639,7 @@ Max Concurrent: 4 (Wave 1)
          assert c.complexity_readability_threshold == 3.0
          assert c.complexity_ambiguous_grammar_threshold == 1
          assert c.ollama_url == 'http://localhost:11434'
-         assert c.ollama_model == 'qwen3-4b-2507'
+         assert c.ollama_model == 'qwen3.5:4b'
          assert c.ollama_timeout_sec == 30.0
          assert c.sample_rate == 16000
          assert c.db_path == 'data/myasr.db'
@@ -660,7 +660,7 @@ Max Concurrent: 4 (Wave 1)
          from src.config import load_config
          c = load_config('/tmp/definitely_nonexistent_path_12345.json')
          assert c.user_jlpt_level == 3
-         assert c.ollama_model == 'qwen3-4b-2507'
+         assert c.ollama_model == 'qwen3.5:4b'
          print('Missing file returns defaults OK')
          "
          ```

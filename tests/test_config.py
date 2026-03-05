@@ -15,7 +15,7 @@ def test_appconfig_defaults() -> None:
     assert c.complexity_readability_threshold == 3.0
     assert c.complexity_ambiguous_grammar_threshold == 1
     assert c.ollama_url == "http://localhost:11434"
-    assert c.ollama_model == "qwen3-4b-2507"
+    assert c.ollama_model == "qwen3.5:4b"
     assert c.ollama_timeout_sec == 30.0
     assert c.sample_rate == 16000
     assert c.db_path == "data/myasr.db"
@@ -26,7 +26,7 @@ def test_load_config_missing_file(tmp_path: Path) -> None:
     nonexistent = str(tmp_path / "no_such_config.json")
     c = load_config(nonexistent)
     assert c.user_jlpt_level == 3
-    assert c.ollama_model == "qwen3-4b-2507"
+    assert c.ollama_model == "qwen3.5:4b"
 
 
 def test_load_config_malformed_json(tmp_path: Path) -> None:
@@ -54,7 +54,7 @@ def test_load_config_partial_json(tmp_path: Path) -> None:
     partial_file.write_text(json.dumps({"user_jlpt_level": 2}), encoding="utf-8")
     c = load_config(str(partial_file))
     assert c.user_jlpt_level == 2
-    assert c.ollama_model == "qwen3-4b-2507"  # default preserved
+    assert c.ollama_model == "qwen3.5:4b"  # default preserved
     assert c.sample_rate == 16000  # default preserved
 
 

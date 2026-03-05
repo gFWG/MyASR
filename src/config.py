@@ -18,7 +18,7 @@ class AppConfig:
     complexity_readability_threshold: float = 3.0
     complexity_ambiguous_grammar_threshold: int = 1
     ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "qwen3-4b-2507"
+    ollama_model: str = "qwen3.5:4b"
     ollama_timeout_sec: float = 30.0
     sample_rate: int = 16000
     db_path: str = "data/myasr.db"

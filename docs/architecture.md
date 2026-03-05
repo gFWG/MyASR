@@ -37,7 +37,7 @@
 │  │   └── Complexity scoring (jreadability + JLPT weights)    │  │
 │  │       │                                                    │  │
 │  │       ▼                                                    │  │
-│  │ LLM Client (Ollama qwen3-4b, localhost:11434)             │  │
+│  │ LLM Client (Ollama qwen3.5:4b, localhost:11434)             │  │
 │  │   simple → translate only                                  │  │
 │  │   complex → translate + study-point analysis               │  │
 │  │   unavailable → subtitle-only fallback (no crash)         │  │

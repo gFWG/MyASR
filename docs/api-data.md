@@ -200,7 +200,7 @@ POST http://localhost:11434/api/generate
 
 ```json
 {
-    "model": "qwen3-4b-2507",
+    "model": "qwen3.5:4b",
     "prompt": "<constructed from template above>",
     "stream": false,
     "options": {
