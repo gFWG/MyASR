@@ -66,10 +66,10 @@ Build the real-time audio processing pipeline: capture system audio, detect spee
 - `tests/test_pipeline.py` — PipelineWorker tests (all components mocked)
 
 ### Definition of Done
-- [ ] `ruff check . && ruff format --check . && mypy . && pytest -x --tb=short` passes cleanly
-- [ ] All 4 new test files pass
-- [ ] No top-level `import sounddevice` in capture.py (lazy import only)
-- [ ] PipelineWorker emits `SentenceResult` via signal (verified in test)
+- [x] `ruff check . && ruff format --check . && mypy . && pytest -x --tb=short` passes cleanly
+- [x] All 4 new test files pass
+- [x] No top-level `import sounddevice` in capture.py (lazy import only)
+- [x] PipelineWorker emits `SentenceResult` via signal (verified in test)
 
 ### Must Have
 - AudioCapture with callback-based audio streaming via sounddevice
@@ -168,7 +168,7 @@ Max Concurrent: 3 (Wave 2)
 > Implementation + Tests = ONE Task. Never separate.
 > EVERY task MUST have: Recommended Agent Profile + Parallelization info + QA Scenarios.
 
-- [ ] 1. Add AudioSegment dataclass to models.py
+- [x] 1. Add AudioSegment dataclass to models.py
 
   **What to do**:
   - Add `import numpy as np` to `src/db/models.py` imports (if not already present)
@@ -243,7 +243,7 @@ Max Concurrent: 3 (Wave 2)
   - Files: `src/db/models.py`
   - Pre-commit: `mypy src/db/models.py && pytest tests/test_db_schema.py -x`
 
-- [ ] 2. Implement AudioCapture with sounddevice
+- [x] 2. Implement AudioCapture with sounddevice
 
   **What to do**:
   - Create `src/audio/capture.py` with class `AudioCapture`:
@@ -372,7 +372,7 @@ Max Concurrent: 3 (Wave 2)
   - Files: `src/audio/capture.py`, `tests/test_audio_capture.py`
   - Pre-commit: `ruff check src/audio/capture.py tests/test_audio_capture.py && mypy src/audio/capture.py && pytest tests/test_audio_capture.py -x`
 
-- [ ] 3. Implement SileroVAD wrapper
+- [x] 3. Implement SileroVAD wrapper
 
   **What to do**:
   - Create `src/vad/silero.py` with class `SileroVAD`:
@@ -498,7 +498,7 @@ Max Concurrent: 3 (Wave 2)
   - Files: `src/vad/silero.py`, `tests/test_silero_vad.py`
   - Pre-commit: `ruff check src/vad/silero.py tests/test_silero_vad.py && mypy src/vad/silero.py && pytest tests/test_silero_vad.py -x`
 
-- [ ] 4. Implement QwenASR wrapper
+- [x] 4. Implement QwenASR wrapper
 
   **What to do**:
   - Create `src/asr/qwen_asr.py` with class `QwenASR`:
@@ -626,7 +626,7 @@ Max Concurrent: 3 (Wave 2)
   - Files: `src/asr/qwen_asr.py`, `tests/test_qwen_asr.py`
   - Pre-commit: `ruff check src/asr/qwen_asr.py tests/test_qwen_asr.py && mypy src/asr/qwen_asr.py && pytest tests/test_qwen_asr.py -x`
 
-- [ ] 5. Create PipelineWorker (Audio → VAD → ASR → Preprocessing)
+- [x] 5. Create PipelineWorker (Audio → VAD → ASR → Preprocessing)
 
   **What to do**:
   - Create `src/pipeline.py` with class `PipelineWorker(QThread)`:
@@ -793,19 +793,19 @@ Max Concurrent: 3 (Wave 2)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in `.sisyphus/evidence/`. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check . && ruff format --check . && mypy . && pytest -x --tb=short`. Review all changed files for: `as any`/`# type: ignore` (justify each), empty catches, console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names.
   Output: `Build [PASS/FAIL] | Lint [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Integration QA** — `unspecified-high`
+- [x] F3. **Integration QA** — `unspecified-high`
   Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration: mock full pipeline flow (audio chunks → VAD segments → ASR text → preprocessing → SentenceResult signal). Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
@@ -840,10 +840,10 @@ ruff check . && ruff format --check . && mypy . && pytest -x --tb=short
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" items present and working
-- [ ] All "Must NOT Have" items absent (verified by grep/search)
-- [ ] All 4 test files pass (pytest exit code 0)
-- [ ] mypy clean on all new files
-- [ ] ruff clean on all new files
-- [ ] No top-level `import sounddevice` anywhere
-- [ ] PipelineWorker emits correct SentenceResult via signal
+- [x] All "Must Have" items present and working
+- [x] All "Must NOT Have" items absent (verified by grep/search)
+- [x] All 4 test files pass (pytest exit code 0)
+- [x] mypy clean on all new files
+- [x] ruff clean on all new files
+- [x] No top-level `import sounddevice` anywhere
+- [x] PipelineWorker emits correct SentenceResult via signal
