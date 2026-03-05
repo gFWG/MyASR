@@ -1,6 +1,7 @@
 [tool.ruff]
 line-length = 99
 target-version = "py312"
+exclude = ["dev/"]
 
 [tool.ruff.format]
 quote-style = "double"
