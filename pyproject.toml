@@ -23,3 +23,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "slow: marks tests that take a long time to run (e.g. real audio files)",
+    "gpu: marks tests that require a CUDA GPU",
+]

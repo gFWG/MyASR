@@ -33,7 +33,7 @@ class SileroVAD:
         sample_rate: int = 16000,
     ) -> None:
         try:
-            model, _ = load_silero_vad(onnx=False)
+            model = load_silero_vad(onnx=False)
             self._vad_iterator = VADIterator(
                 model,
                 threshold=threshold,
@@ -79,7 +79,6 @@ class SileroVAD:
             VADError: If the VADIterator raises an unexpected exception.
         """
         results: list[AudioSegment] = []
-        self._audio_buffer.append(audio.copy())
         self._total_samples += len(audio)
 
         chunk_tensor = torch.from_numpy(audio).float()
@@ -96,6 +95,7 @@ class SileroVAD:
                 logger.debug("Speech start detected at sample %d", self._speech_start_sample)
 
             if "end" in speech_dict and self._is_speech:
+                self._audio_buffer.append(audio.copy())
                 speech_samples = np.concatenate(self._audio_buffer)
                 duration = len(speech_samples) / self._sample_rate
                 if len(speech_samples) >= self._min_speech_samples:
@@ -113,9 +113,10 @@ class SileroVAD:
                     )
                 self._audio_buffer = []
                 self._is_speech = False
+                return results if results else None
 
-        # Force-cut if accumulated speech exceeds 30 s
         if self._is_speech:
+            self._audio_buffer.append(audio.copy())
             buffered_samples = sum(len(x) for x in self._audio_buffer)
             if buffered_samples >= self._max_speech_samples:
                 speech_samples = np.concatenate(self._audio_buffer)

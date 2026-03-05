@@ -35,14 +35,23 @@ class PipelineWorker(QThread):
         self._vad = SileroVAD(sample_rate=config.sample_rate)
         self._asr = QwenASR()
         self._preprocessing = PreprocessingPipeline(config)
-        self._audio_queue: queue.Queue[np.ndarray] = queue.Queue()
+        # Limit queue to ~16s of audio (500 chunks × 512 samples @ 16kHz)
+        # to prevent unbounded memory growth when ASR is slower than capture.
+        self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=500)
         self._running = False
+
+    def _enqueue_audio(self, chunk: np.ndarray) -> None:
+        """Enqueue an audio chunk, dropping it if the queue is full."""
+        try:
+            self._audio_queue.put_nowait(chunk)
+        except queue.Full:
+            logger.warning("Audio queue full — dropping chunk (ASR may be falling behind)")
 
     def run(self) -> None:
         """Main thread loop: capture → VAD → ASR → preprocessing → emit."""
         self._running = True
         try:
-            self._audio_capture.start(callback=lambda chunk: self._audio_queue.put(chunk))
+            self._audio_capture.start(callback=self._enqueue_audio)
         except AudioCaptureError as exc:
             logger.error("Failed to start audio capture: %s", exc)
             self.error_occurred.emit(str(exc))
@@ -106,6 +115,11 @@ class PipelineWorker(QThread):
             self._audio_capture.stop()
         except Exception as exc:
             logger.warning("Error stopping audio capture: %s", exc)
+        while not self._audio_queue.empty():
+            try:
+                self._audio_queue.get_nowait()
+            except queue.Empty:
+                break
         try:
             self._vad.reset()
         except Exception as exc:

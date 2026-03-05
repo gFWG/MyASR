@@ -21,7 +21,7 @@ def mock_silero(monkeypatch):
     mock_iterator = MagicMock()
     mock_iterator.return_value = None
     with (
-        patch("src.vad.silero.load_silero_vad", return_value=(mock_model, None)) as mock_load,
+        patch("src.vad.silero.load_silero_vad", return_value=mock_model) as mock_load,
         patch("src.vad.silero.VADIterator", return_value=mock_iterator) as mock_vad_iter,
     ):
         yield mock_load, mock_vad_iter, mock_iterator
