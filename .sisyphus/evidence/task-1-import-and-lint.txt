@@ -1,0 +1,3 @@
+OK
+All checks passed!
+1 file already formatted
