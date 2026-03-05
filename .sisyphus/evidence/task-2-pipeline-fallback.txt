@@ -1,0 +1,3 @@
+chinese_translation: None
+explanation: None
+FALLBACK OK: (None, None) on LLM failure

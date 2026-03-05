@@ -1,0 +1,161 @@
+================================================================================
+F2 AUTOMATED QUALITY CHECK — M3 LLM Translation Milestone
+Date: 2026-03-05
+Executor: Sisyphus-Junior
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. RUFF CHECK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Command: source ~/.venvs/myasr/bin/activate && ruff check .
+Result:  All checks passed!
+Issues:  0
+
+STATUS: ✅ PASS
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. MYPY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Command: source ~/.venvs/myasr/bin/activate && mypy .
+Result:  Found 25 errors in 3 files (checked 40 source files)
+
+Error breakdown — ALL pre-existing test files only:
+  tests/test_audio_capture.py  — 8 errors: [no-untyped-def] (missing annotations)
+  tests/test_silero_vad.py     — 8 errors: [no-untyped-def] (missing annotations)
+  tests/test_qwen_asr.py       — 9 errors: [no-untyped-def] (missing annotations)
+
+None of these files are part of the M3 LLM Translation milestone.
+The changed files (src/llm/ollama_client.py, src/pipeline.py,
+tests/test_ollama_client.py, tests/test_pipeline.py) are CLEAN — 0 mypy errors.
+
+STATUS: ✅ PASS (pre-existing unrelated errors, as expected)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. PYTEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Command: source ~/.venvs/myasr/bin/activate && pytest -v
+Result:  127 collected, 121 passed, 6 skipped, 0 failed in 1.88s
+
+Skipped tests (all pre-existing integration tests requiring real audio files):
+  tests/test_integration.py::TestVADWithRealAudio::test_vad_detects_speech_in_short_wav
+  tests/test_integration.py::TestVADWithRealAudio::test_vad_detects_speech_in_long_wav
+  tests/test_integration.py::TestVADWithRealAudio::test_vad_segments_are_within_max_duration
+  tests/test_integration.py::TestASRWithRealAudio::test_asr_transcribes_short_wav
+  tests/test_integration.py::TestASRWithRealAudio::test_asr_transcribes_long_wav
+  tests/test_integration.py::TestVADASRPipeline::test_vad_then_asr_produces_japanese_text
+
+M3 LLM Translation tests:
+  tests/test_ollama_client.py — 12 passed ✅
+  tests/test_pipeline.py      — 10 passed ✅
+
+STATUS: ✅ PASS (121 passed ≥ 121 expected, 6 skipped ≤ 6 allowed, 0 failures)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. GREP CHECKS (src/ only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+grep -r "type: ignore" src/  → 0 matches ✅
+grep -r "print(" src/        → 0 matches ✅
+grep -r "except:" src/       → 0 matches ✅
+
+STATUS: ✅ PASS — No unjustified silences, no print(), no bare except:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. MANUAL FILE REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── src/llm/ollama_client.py (151 lines) ─────────────────────────────────────
+  ✅ No type: ignore
+  ✅ No print()
+  ✅ No bare except: — two broad catches use "except Exception as exc:" or
+     "except Exception:" with # noqa: BLE001 and explanatory log messages.
+     Both are intentional network-resilience patterns (timeout + connection error
+     already handled specifically above them).
+  ✅ No TODOs/FIXMEs/stubs/placeholders
+  ✅ All public methods have full type annotations
+  ✅ Google-style docstrings on public class and public methods
+  ✅ Module-level logger (logging.getLogger(__name__))
+  ✅ Lazy log formatting ("%s" style, not f-strings)
+  ✅ _build_prompt/_parse_response/_format_vocab_hits/_format_grammar_hits
+     are correctly private (underscore prefix)
+  ✅ Prompt templates are module-level constants (UPPER_SNAKE_CASE)
+  ✅ translate() returns (None, None) on any network failure — never raises
+  ✅ health_check() returns bool, never raises
+  ✅ Double quotes throughout
+  ✅ Import order correct: stdlib → third-party → local
+
+── src/pipeline.py (191 lines) ──────────────────────────────────────────────
+  ✅ No type: ignore
+  ✅ No print()
+  ✅ No bare except:
+  ✅ No TODOs/FIXMEs/stubs/placeholders
+  ✅ All public methods have type annotations
+  ✅ Google-style docstrings on class and public methods
+
+  SPECIFIC LOGIC CHECKS (run() method):
+  ✅ Order is correct: transcribe() → if not text → process() → translate()
+     Line 88-96:   text = self._asr.transcribe(...)
+     Line 95-96:   if not text: continue
+     Line 98-103:  analysis = self._preprocessing.process(text)
+     Line 105:     translation, explanation = self._llm.translate(text, analysis)
+     → translate() is AFTER process(), never called with undefined analysis
+
+  ✅ DB write guard is correct:
+     Line 115:  if self._repo is not None:
+     Line 116:      try:
+     Line 117-118:      self._repo.insert_sentence(...)
+     Line 119:      except Exception:
+     Line 120:          logger.exception("Failed to write sentence to database")
+     → Uses logger.exception() (preserves traceback), never re-raises,
+       so DB failure CANNOT interrupt the emit flow.
+
+  ✅ sentence_ready.emit(result) is at line 113, BEFORE the DB write block
+     → UI gets the result regardless of DB success/failure
+
+  ✅ _enqueue_audio uses queue.Full (specific), not bare except
+  ✅ _cleanup() handles all resource teardown with per-exception logging
+  ✅ Constructor comment explains maxsize=500 rationale
+
+── tests/test_ollama_client.py (185 lines) ──────────────────────────────────
+  ✅ 12 tests, all type-annotated (-> None on test functions)
+  ✅ Uses patch("src.llm.ollama_client.requests.post") — correct patch target
+  ✅ Tests cover: translate simple, translate complex, timeout, connection error,
+     _build_prompt simple/complex, _parse_response all 4 variants, health_check
+  ✅ No magic numbers, meaningful assertions
+  ✅ No TODO/FIXME
+  NOTE: test_pipeline.py line 426 has `# type: ignore[union-attr]` — this is
+  in the TEST file, justified (mypy cannot narrow _repo type after mock
+  initialization), uses specific error code not blanket suppress. Acceptable.
+
+── tests/test_pipeline.py (565 lines) ───────────────────────────────────────
+  ✅ 10 tests covering LLM success, LLM failure, DB write success, DB write
+     failure, _to_db_records conversion
+  ✅ All mocks use spec= where applicable
+  ✅ QApplication fixture is session-scoped
+  ✅ DB tests use in-memory SQLite (init_db(":memory:"))
+  ✅ One justified # type: ignore[union-attr] at line 426 (see note above)
+  ✅ No print(), no bare except, no TODOs
+
+STATUS: ✅ PASS — No anti-patterns found
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. SUMMARY TABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Check                                        Result
+  ─────────────────────────────────────────    ──────
+  ruff check . → zero issues                  ✅ PASS  (0 issues)
+  mypy . → zero errors in changed files       ✅ PASS  (25 pre-existing in unrelated tests)
+  pytest -v → 121 passed, ≤6 skipped, 0 fail ✅ PASS  (121 passed, 6 skipped, 0 failed)
+  No type: ignore without justification       ✅ PASS  (1 justified in test file)
+  No empty except:                            ✅ PASS
+  No print() in src/                          ✅ PASS
+  No AI-generated slop / stubs / TODOs        ✅ PASS
+  pipeline.py run() order correct             ✅ PASS  (translate after process)
+  pipeline.py DB write guard correct          ✅ PASS  (if repo + try/except Exception + logger.exception)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL VERDICT: ✅ PASS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+All quality gates passed. M3 LLM Translation milestone is clean and ready.
+================================================================================

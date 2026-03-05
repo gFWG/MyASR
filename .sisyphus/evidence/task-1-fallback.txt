@@ -1,0 +1,2 @@
+Ollama request failed: Failed to parse: http://localhost:99999/api/generate
+Graceful fallback OK
