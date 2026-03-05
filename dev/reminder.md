@@ -16,3 +16,6 @@
 
 ## M4
 1. Note UI compatibility between WSL and Windows
+
+## Post-MVP
+1. Ensure that processing speed must exceed acquisition speed

@@ -1,6 +1,8 @@
 """Silero VAD wrapper with chunk buffering for speech segment extraction."""
 
 import logging
+import math
+from collections import deque
 
 import numpy as np
 import torch
@@ -31,6 +33,7 @@ class SileroVAD:
         min_silence_ms: int = 500,
         min_speech_ms: int = 250,
         sample_rate: int = 16000,
+        pre_buffer_ms: int = 300,
     ) -> None:
         try:
             model = load_silero_vad(onnx=False)
@@ -39,7 +42,7 @@ class SileroVAD:
                 threshold=threshold,
                 sampling_rate=sample_rate,
                 min_silence_duration_ms=min_silence_ms,
-                speech_pad_ms=30,
+                speech_pad_ms=300,
             )
         except Exception as exc:
             raise VADError(f"Failed to load Silero VAD model: {exc}") from exc
@@ -52,13 +55,20 @@ class SileroVAD:
         self._speech_start_sample: int = 0
         self._total_samples: int = 0
 
+        pre_buffer_samples = int(pre_buffer_ms * sample_rate / 1000)
+        chunk_size = 512
+        self._pre_buffer: deque[np.ndarray] = deque(
+            maxlen=math.ceil(pre_buffer_samples / chunk_size),
+        )
+
         logger.info(
             "SileroVAD initialised — threshold=%.2f, min_silence_ms=%d, "
-            "min_speech_ms=%d, sample_rate=%d",
+            "min_speech_ms=%d, sample_rate=%d, pre_buffer_ms=%d",
             threshold,
             min_silence_ms,
             min_speech_ms,
             sample_rate,
+            pre_buffer_ms,
         )
 
     def process_chunk(self, audio: np.ndarray) -> list[AudioSegment] | None:
@@ -92,6 +102,8 @@ class SileroVAD:
             if "start" in speech_dict:
                 self._is_speech = True
                 self._speech_start_sample = speech_dict["start"]
+                self._audio_buffer = list(self._pre_buffer)
+                self._pre_buffer.clear()
                 logger.debug("Speech start detected at sample %d", self._speech_start_sample)
 
             if "end" in speech_dict and self._is_speech:
@@ -126,6 +138,8 @@ class SileroVAD:
                 self._audio_buffer = []
                 self._is_speech = False
                 self._vad_iterator.reset_states()
+        else:
+            self._pre_buffer.append(audio.copy())
 
         return results if results else None
 
@@ -136,6 +150,7 @@ class SileroVAD:
         """
         self._vad_iterator.reset_states()
         self._audio_buffer = []
+        self._pre_buffer.clear()
         self._is_speech = False
         self._total_samples = 0
         self._speech_start_sample = 0

@@ -33,7 +33,7 @@ def test_init_loads_model(mock_qwen_asr):
         "Qwen/Qwen3-ASR-0.6B",
         dtype=torch.bfloat16,
         device_map="cuda:0",
-        max_inference_batch_size=32,
+        max_inference_batch_size=4,
         max_new_tokens=256,
     )
     assert asr._model is not None

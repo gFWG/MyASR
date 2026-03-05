@@ -134,6 +134,49 @@ def test_reset_clears_state(mock_silero):
 
     assert vad._is_speech is False
     assert vad._audio_buffer == []
+    assert len(vad._pre_buffer) == 0
     assert vad._total_samples == 0
     assert vad._speech_start_sample == 0
     mock_iterator.reset_states.assert_called_once()
+
+
+def test_pre_buffer_prepends_audio_to_speech(mock_silero) -> None:
+    """Pre-buffer captures silence chunks and prepends them on speech start."""
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    vad = SileroVAD()
+
+    # Send 3 silence chunks → they go into the ring pre-buffer
+    silence = make_audio()
+    mock_iterator.return_value = None
+    for _ in range(3):
+        vad.process_chunk(silence)
+
+    assert len(vad._pre_buffer) == 3
+    assert vad._is_speech is False
+
+    # Speech start → pre-buffer copied into audio_buffer, then current chunk appended
+    speech = make_audio()
+    mock_iterator.return_value = {"start": 0}
+    vad.process_chunk(speech)
+
+    assert vad._is_speech is True
+    assert len(vad._pre_buffer) == 0
+    # audio_buffer = 3 pre-buffer chunks + 1 speech chunk = 4
+    assert len(vad._audio_buffer) == 4
+
+    # Send 5 more speech chunks to exceed min_speech_ms=250
+    # Need total >= 8 chunks (8 * 512 / 16000 = 0.256s > 0.250s)
+    mock_iterator.return_value = None
+    for _ in range(5):
+        vad.process_chunk(make_audio())
+
+    # Speech end → segment contains all chunks
+    mock_iterator.return_value = {"end": CHUNK_SAMPLES}
+    result = vad.process_chunk(make_audio())
+
+    assert result is not None
+    assert len(result) == 1
+    # 3 pre-buffer + 1 start + 5 continued + 1 end = 10 chunks total
+    assert result[0].samples.shape[0] == CHUNK_SAMPLES * 10

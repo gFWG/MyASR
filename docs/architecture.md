@@ -165,5 +165,26 @@ Three tables with normalized highlights (see `docs/api-data.md` for full schema)
 |----------|--------|--------------|
 | JLPT vocab dictionary | JSON | Load into `dict[str, int]` at startup. O(1) lookup. |
 | Grammar rules | CSV → JSON (build step) | Load into list at startup. Regex compiled once. |
-| ASR model (Qwen3-ASR 0.6B) | Model weights | Load into GPU VRAM at startup. Resident. |
+| ASR model (Qwen3-ASR 0.6B) | Model weights | Load into GPU VRAM at startup. Resident. `unload()` moves to CPU, then `gc.collect()` + `torch.cuda.synchronize()` + `empty_cache()`. |
 | Silero VAD | ONNX/JIT | Load at startup. CPU inference. |
+
+## Implementation Notes
+
+### VAD Pre-Buffering
+
+Silero VAD uses a 300ms ring buffer (`collections.deque`) to retain audio chunks received *before* speech is detected. When a speech-start event fires, the ring buffer contents are prepended to the speech audio buffer. This prevents clipping the onset of utterances.
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| `pre_buffer_ms` | 300 | Captures ~300ms of audio before VAD trigger to avoid clipping sentence beginnings |
+| `speech_pad_ms` | 300 | Pads reported speech timestamps by 300ms (Silero default is too low for Japanese sentence boundaries) |
+| `min_speech_ms` | 250 | Minimum speech duration to avoid spurious short detections |
+| `max_speech_sec` | 30 | Force-cut long utterances to bound memory and latency |
+
+### ASR VRAM Management
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| `max_inference_batch_size` | 4 | Balances throughput vs VRAM. batch=1 for single segments; batch=4 sweet spot when model internally chunks long audio (~2.87× throughput, <7GB VRAM) |
+| `dtype` | `bfloat16` | Half-precision to reduce VRAM footprint |
+| Unload sequence | `.cpu()` → `del` → `gc.collect()` → `synchronize()` → `empty_cache()` | Ensures VRAM is fully reclaimed; prevents memory leaks from lingering GPU tensors |

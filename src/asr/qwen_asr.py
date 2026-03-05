@@ -1,5 +1,6 @@
 """Qwen3-ASR-0.6B speech recognition wrapper."""
 
+import gc
 import logging
 from typing import Any
 
@@ -41,7 +42,7 @@ class QwenASR:
                 self._model_path,
                 dtype=torch.bfloat16,
                 device_map="cuda:0",
-                max_inference_batch_size=32,
+                max_inference_batch_size=4,
                 max_new_tokens=256,
             )
             logger.info("Loaded QwenASR model from %s", self._model_path)
@@ -78,7 +79,13 @@ class QwenASR:
         Safe to call even if the model was never loaded.
         """
         if self._model is not None:
+            # Qwen3ASRModel wraps the torch model in .model attribute
+            if hasattr(self._model, "model"):
+                self._model.model.cpu()
             del self._model
             self._model = None
-            torch.cuda.empty_cache()
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
             logger.info("QwenASR model unloaded")
