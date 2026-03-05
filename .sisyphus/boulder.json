@@ -1,7 +1,7 @@
 {
-  "active_plan": "/home/yuheng/MyASR/.sisyphus/plans/m2-asr-integration.md",
-  "started_at": "2026-03-05T08:10:53.861Z",
-  "session_ids": ["ses_342f345e4ffebB7MyKH28Xenxo"],
-  "plan_name": "m2-asr-integration",
-  "worktree_path": "/home/yuheng/MyASR"
+  "active_plan": "/home/yuheng/MyASR/.sisyphus/plans/m3-llm-translation.md",
+  "started_at": "2026-03-05T15:08:22.831Z",
+  "session_ids": ["ses_3418ee759ffegMXzTf9P734NzR"],
+  "plan_name": "m3-llm-translation",
+  "worktree_path": "/home/yuheng/MyASR-m3-llm-translation"
 }

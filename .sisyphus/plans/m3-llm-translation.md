@@ -132,7 +132,7 @@ Critical Path: Task 1 → Task 2 → F1-F4
 
 ## TODOs
 
-- [ ] 1. Implement OllamaClient with prompt templates, response parsing, and error handling
+- [x] 1. Implement OllamaClient with prompt templates, response parsing, and error handling
 
   **What to do**:
   - Create `src/llm/ollama_client.py` with class `OllamaClient`
