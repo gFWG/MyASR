@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+import numpy as np
+
 
 @dataclass
 class SentenceRecord:
@@ -82,3 +84,16 @@ class SentenceResult:
     explanation: str | None
     analysis: AnalysisResult
     created_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class AudioSegment:
+    """Audio segment extracted by VAD for ASR processing.
+
+    Attributes:
+        samples: Raw float32 audio samples at 16kHz.
+        duration_sec: Duration of the segment in seconds.
+    """
+
+    samples: np.ndarray
+    duration_sec: float
