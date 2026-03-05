@@ -1,0 +1,38 @@
+Task 5: PipelineWorker — Evidence
+Date: 2026-03-05
+
+## Files Created
+- src/pipeline.py
+- tests/test_pipeline.py
+
+## Verification Results
+
+### ruff check src/pipeline.py tests/test_pipeline.py
+All checks passed!
+
+### mypy src/pipeline.py
+Success: no issues found in 1 source file
+
+### QT_QPA_PLATFORM=offscreen pytest tests/test_pipeline.py -x --tb=short
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+collected 5 items
+
+tests/test_pipeline.py .....                                             [100%]
+
+============================== 5 passed in 1.62s ==============================
+
+## Tests Implemented
+1. test_pipeline_emits_sentence_ready_on_valid_segment — valid flow emits SentenceResult
+2. test_pipeline_skips_empty_asr_result — empty ASR text → no emit, no error
+3. test_pipeline_handles_asr_error_gracefully — ASRError → continues, no error signal
+4. test_pipeline_emits_error_on_audio_capture_failure — AudioCaptureError → error_occurred emitted
+5. test_stop_calls_cleanup — _cleanup() calls stop/reset/unload on all components
+
+## Implementation Notes
+- PipelineWorker subclasses QThread, emits sentence_ready(object) and error_occurred(str)
+- run() uses queue.Queue to decouple audio callback from VAD/ASR processing loop
+- _running flag controls loop; stop() sets it False then calls quit()/wait(5000)
+- _cleanup() called at end of run() to release AudioCapture, VAD, ASR resources
+- Tests run run() directly (not via .start()) to stay synchronous
+- All 4 components mocked at src.pipeline.* import paths
