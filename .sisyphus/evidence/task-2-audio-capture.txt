@@ -1,0 +1,30 @@
+=== Task 2: AudioCapture Evidence ===
+Date: Thu Mar  5 16:19:00 HKT 2026
+
+=== ruff check src/audio/capture.py tests/test_audio_capture.py ===
+All checks passed!
+
+=== mypy src/audio/capture.py ===
+Success: no issues found in 1 source file
+
+=== pytest tests/test_audio_capture.py -x --tb=short -v ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/.venvs/myasr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1
+collecting ... collected 7 items
+
+tests/test_audio_capture.py::test_start_begins_stream PASSED             [ 14%]
+tests/test_audio_capture.py::test_stop_closes_stream PASSED              [ 28%]
+tests/test_audio_capture.py::test_callback_passes_mono_audio PASSED      [ 42%]
+tests/test_audio_capture.py::test_double_start_raises PASSED             [ 57%]
+tests/test_audio_capture.py::test_stop_when_not_started_does_not_raise PASSED [ 71%]
+tests/test_audio_capture.py::test_list_devices_returns_list PASSED       [ 85%]
+tests/test_audio_capture.py::test_invalid_device_raises_audio_capture_error PASSED [100%]
+
+============================== 7 passed in 0.09s ===============================
+
+=== Import verification ===
+Import OK
