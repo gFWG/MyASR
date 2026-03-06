@@ -53,13 +53,13 @@ def main() -> None:
     )
 
     try:
-        app: QApplication = QApplication.instance() or QApplication(sys.argv)  # type: ignore[assignment]
+        app: QApplication = QApplication.instance() or QApplication(sys.argv)  # type: ignore[assignment]  # instance() returns QCoreApplication|None but we always get QApplication here
 
         config: AppConfig = load_config()
         conn: sqlite3.Connection = init_db(config.db_path)
         repo = LearningRepository(conn)
 
-        overlay = OverlayWindow()
+        overlay = OverlayWindow(user_level=config.user_jlpt_level)
         tooltip = TooltipPopup()
         pipeline = PipelineWorker(config, db_conn=conn)
 

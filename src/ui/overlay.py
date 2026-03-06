@@ -75,8 +75,9 @@ class OverlayWindow(QWidget):
 
     highlight_hovered = Signal(object, object)  # (VocabHit|GrammarHit, QPoint)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, user_level: int = 5, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._user_level = user_level
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -129,7 +130,7 @@ class OverlayWindow(QWidget):
             rich_text = self._renderer.build_rich_text(
                 result.japanese_text,
                 result.analysis,
-                user_level=5,
+                user_level=self._user_level,
             )
         else:
             rich_text = _html.escape(result.japanese_text)
