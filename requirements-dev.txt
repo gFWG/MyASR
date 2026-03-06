@@ -1,4 +1,0 @@
-ruff
-mypy
-pytest
-pytest-mock

@@ -174,7 +174,7 @@
 ## 7. 技术栈与资源
 - 运行环境：Windows 11；开发环境 WSL2 + Ubuntu 22.04；Python 3.12+；CUDA 12.x；GPU 12GB VRAM；venv 包管理。
 - 主要依赖：Qwen3-ASR、Ollama(qwen3.5:4b)、fugashi、PySide6、silero-vad、sounddevice、jreadability、PySide6、SQLite 等。
-- 启动环境：source ~/.venvs/myasr/bin/activate
+- 启动环境：source .venv/bin/activate
 
 ***
 

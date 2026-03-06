@@ -12,8 +12,8 @@ Desktop overlay app for Japanese language learning. Captures system audio → VA
 
 ```bash
 # Virtual environment (project convention)
-python3.12 -m venv ~/.venvs/myasr
-source ~/.venvs/myasr/bin/activate
+python3.12 -m venv .venv
+source .venv/bin/activate
 
 # Install dependencies (when requirements.txt exists)
 pip install -r requirements.txt

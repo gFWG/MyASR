@@ -9,3 +9,7 @@ PySide6
 requests
 numpy
 qwen-asr
+ruff
+mypy
+pytest
+pytest-mock

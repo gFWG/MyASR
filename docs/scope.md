@@ -49,4 +49,4 @@ Users watching Japanese content (games, movies, videos) on Windows 11 need a non
 | Dev environment | WSL2 + Ubuntu 22.04 |
 | Python | 3.12+ |
 | GPU | CUDA 12.x, 12GB VRAM minimum |
-| Package management | venv (`~/.venvs/myasr`) |
+| Package management | venv (`source .venv/bin/activate`) |
