@@ -15,7 +15,8 @@
 ## M3
 
 ## M4
-1. Note UI compatibility between WSL and Windows
+1. Note UI compatibility between WSL and Windows. Find a suitable way to test code in WSL and write down a clear instruction for possible modification and testing in Windows.
+2. Ensure that the UI is responsive and user-friendly, following design principles from Microsoft (https://learn.microsoft.com/en-us/windows/apps/design/).
 
 ## Post-MVP
 1. Ensure that processing speed must exceed acquisition speed
