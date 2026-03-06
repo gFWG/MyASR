@@ -506,6 +506,8 @@ def test_to_db_records_converts_correctly(
         pos="名詞",
         jlpt_level=1,
         user_level=3,
+        start_pos=0,
+        end_pos=2,
     )
     grammar_hit = GrammarHit(
         rule_id="n1-001",
@@ -513,6 +515,8 @@ def test_to_db_records_converts_correctly(
         jlpt_level=1,
         confidence_type="exact",
         description="despite",
+        start_pos=2,
+        end_pos=9,
     )
     analysis = AnalysisResult(
         tokens=[],

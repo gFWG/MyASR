@@ -101,3 +101,17 @@ def test_match_confidence_type_propagated() -> None:
 def test_grammar_matcher_file_not_found() -> None:
     with pytest.raises(FileNotFoundError):
         GrammarMatcher("/nonexistent/path/rules.json")
+
+
+def test_grammar_hit_positions_are_correct() -> None:
+    """Verify start_pos and end_pos correctly identify matched text substring."""
+    gm = GrammarMatcher(RULES_PATH)
+    text = "音楽を聴きながら勉強した"
+    hits = gm.match(text, user_level=5)
+    nagara_hits = [h for h in hits if h.rule_id == "N3_nagara"]
+    assert len(nagara_hits) >= 1
+    hit = nagara_hits[0]
+    # Assert positions correctly identify the matched substring
+    assert text[hit.start_pos : hit.end_pos] == hit.matched_text
+    # Verify positions are non-negative and ordered
+    assert 0 <= hit.start_pos < hit.end_pos <= len(text)

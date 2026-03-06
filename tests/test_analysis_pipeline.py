@@ -44,3 +44,16 @@ def test_pipeline_vocab_hits_populated(pipeline: PreprocessingPipeline) -> None:
     result = pipeline.process("概念を理解する")
     lemmas = [h.lemma for h in result.vocab_hits]
     assert "概念" in lemmas
+
+    # Assert position fields are populated
+    for vocab_hit in result.vocab_hits:
+        assert vocab_hit.start_pos >= 0
+        assert vocab_hit.end_pos > vocab_hit.start_pos
+
+
+def test_pipeline_grammar_hits_have_positions(pipeline: PreprocessingPipeline) -> None:
+    result = pipeline.process("食べている")
+
+    for grammar_hit in result.grammar_hits:
+        assert grammar_hit.start_pos >= 0
+        assert grammar_hit.end_pos > grammar_hit.start_pos
