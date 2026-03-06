@@ -26,8 +26,8 @@ class LearningRepository:
         record: SentenceRecord,
         vocab: list[HighlightVocab],
         grammar: list[HighlightGrammar],
-    ) -> int:
-        """Insert record + all highlights in a single transaction. Return inserted ID.
+    ) -> tuple[int, list[int], list[int]]:
+        """Insert record + all highlights in a single transaction.
 
         Args:
             record: SentenceRecord to insert (id should be None).
@@ -35,7 +35,8 @@ class LearningRepository:
             grammar: List of HighlightGrammar items to insert.
 
         Returns:
-            The auto-generated integer ID of the inserted sentence record.
+            Tuple of (sentence_id, vocab_ids, grammar_ids) with the auto-generated
+            integer IDs of the inserted sentence and highlight records.
         """
         try:
             cursor = self._conn.execute(
@@ -57,8 +58,9 @@ class LearningRepository:
             if sentence_id is None:
                 raise RuntimeError("Failed to get lastrowid after INSERT")
 
+            vocab_ids: list[int] = []
             for v in vocab:
-                self._conn.execute(
+                vcursor = self._conn.execute(
                     """
                     INSERT INTO highlight_vocab
                         (sentence_id, surface, lemma, pos, jlpt_level,
@@ -75,9 +77,12 @@ class LearningRepository:
                         int(v.tooltip_shown),
                     ),
                 )
+                if vcursor.lastrowid is not None:
+                    vocab_ids.append(vcursor.lastrowid)
 
+            grammar_ids: list[int] = []
             for g in grammar:
-                self._conn.execute(
+                gcursor = self._conn.execute(
                     """
                     INSERT INTO highlight_grammar
                         (sentence_id, rule_id, pattern, jlpt_level, confidence_type,
@@ -95,10 +100,17 @@ class LearningRepository:
                         int(g.tooltip_shown),
                     ),
                 )
+                if gcursor.lastrowid is not None:
+                    grammar_ids.append(gcursor.lastrowid)
 
             self._conn.commit()
-            logger.info("Inserted sentence record id=%d", sentence_id)
-            return sentence_id
+            logger.info(
+                "Inserted sentence record id=%d, vocab_ids=%s, grammar_ids=%s",
+                sentence_id,
+                vocab_ids,
+                grammar_ids,
+            )
+            return (sentence_id, vocab_ids, grammar_ids)
         except Exception:
             self._conn.rollback()
             logger.exception("Failed to insert sentence record")

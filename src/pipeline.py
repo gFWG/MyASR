@@ -110,14 +110,23 @@ class PipelineWorker(QThread):
                     explanation=explanation,
                     analysis=analysis,
                 )
-                self.sentence_ready.emit(result)
 
                 if self._repo is not None:
                     try:
                         record, vocab_recs, grammar_recs = self._to_db_records(result)
-                        self._repo.insert_sentence(record, vocab_recs, grammar_recs)
+                        sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
+                            record, vocab_recs, grammar_recs
+                        )
+                        result.sentence_id = sentence_id
+                        result.highlight_vocab_ids = vocab_ids
+                        result.highlight_grammar_ids = grammar_ids
                     except Exception:
                         logger.exception("Failed to write sentence to database")
+                        result.sentence_id = None
+                        result.highlight_vocab_ids = []
+                        result.highlight_grammar_ids = []
+
+                self.sentence_ready.emit(result)
 
         self._cleanup()
 
