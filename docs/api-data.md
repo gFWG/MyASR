@@ -11,9 +11,7 @@ CREATE TABLE sentence_records (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     japanese_text   TEXT    NOT NULL,
     chinese_translation TEXT,           -- NULL when LLM unavailable
-    explanation     TEXT,               -- Study-point analysis, NULL for simple sentences
-    complexity_score REAL  NOT NULL DEFAULT 0.0,
-    is_complex      INTEGER NOT NULL DEFAULT 0,  -- 0=simple, 1=complex
+    explanation     TEXT,               -- NULL in translation mode; populated in explanation mode
     source_context  TEXT,               -- Optional: "game", "movie", etc.
     created_at      TEXT    NOT NULL    -- ISO 8601 timestamp
 );
@@ -110,15 +108,13 @@ class AnalysisResult:
     tokens: list[Token]
     vocab_hits: list[VocabHit]
     grammar_hits: list[GrammarHit]
-    complexity_score: float
-    is_complex: bool
 
 @dataclass
 class SentenceResult:
     """Complete result for one sentence, passed from pipeline to UI."""
     japanese_text: str
     chinese_translation: str | None     # None if LLM unavailable
-    explanation: str | None             # None for simple sentences
+    explanation: str | None             # None in translation mode
     analysis: AnalysisResult
     created_at: datetime = field(default_factory=datetime.now)
 ```
@@ -133,8 +129,6 @@ class SentenceRecord:
     japanese_text: str
     chinese_translation: str | None
     explanation: str | None
-    complexity_score: float
-    is_complex: bool
     source_context: str | None
     created_at: str     # ISO 8601
 
@@ -172,29 +166,25 @@ class HighlightGrammar:
 POST http://localhost:11434/api/generate
 ```
 
-### Simple Sentence Prompt Template
+### Translation Mode Prompt Template (Default)
 
 ```
-あなたは日本語の翻訳者です。次の日本語を中国語に翻訳してください。翻訳のみを出力し、他の内容は出力しないでください。
+你是一名日语翻译专家。请将以下<src></src>之间的文本翻译为中文。注意只需要输出翻译后的结果，不要额外解释。输出格式为：<tr>...</tr>
+
+<src>{japanese_text}</src>
+```
+
+### Explanation Mode Prompt Template (Default)
+
+```
+あなたは日本語教師です。次の日本語文について、中国語学習者向けに文法・語彙の解析を中国語で提供してください。翻訳は不要です。
 
 日本語：{japanese_text}
+
+解析のみ出力してください（翻訳は含めないこと）：
 ```
 
-### Complex Sentence Prompt Template
-
-```
-あなたは日本語教師です。次の日本語を中国語に翻訳し、学習者向けの考点解析を提供してください。
-
-日本語：{japanese_text}
-
-前処理結果：
-- 超纲词汇：{vocab_hits_formatted}
-- 命中语法：{grammar_hits_formatted}
-
-以下の形式で回答してください：
-翻訳：<中国語翻訳>
-解析：<考点解析（超纲词汇・語法の説明を含む）>
-```
+Both templates are user-customizable via `AppConfig.translation_template` and `AppConfig.explanation_template`. Templates must contain `{japanese_text}` placeholder.
 
 ### Request Format
 
@@ -214,11 +204,11 @@ POST http://localhost:11434/api/generate
 
 ```json
 {
-    "response": "翻訳：...\n解析：..."
+    "response": "解析内容..."
 }
 ```
 
-Parse `response` field. Split on `翻訳：` and `解析：` markers. If markers missing, treat entire response as translation.
+Parse `response` field. In translation mode, the entire response is the translation. In explanation mode, the entire response is the explanation (no translation is included).
 
 ## JLPT Vocabulary Dictionary Format
 

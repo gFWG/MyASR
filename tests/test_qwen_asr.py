@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -8,7 +9,7 @@ from src.exceptions import ASRError, ModelLoadError
 
 
 @pytest.fixture
-def mock_qwen_asr():
+def mock_qwen_asr() -> Generator[tuple[type, MagicMock, MagicMock, MagicMock], None, None]:
     mock_model_cls = MagicMock()
     mock_model_inst = MagicMock()
     mock_result = MagicMock()
@@ -24,7 +25,7 @@ def mock_qwen_asr():
         yield QwenASR, mock_model_cls, mock_model_inst, mock_result
 
 
-def test_init_loads_model(mock_qwen_asr):
+def test_init_loads_model(mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock]) -> None:
     QwenASR, mock_model_cls, _, _ = mock_qwen_asr
 
     asr = QwenASR()
@@ -39,7 +40,9 @@ def test_init_loads_model(mock_qwen_asr):
     assert asr._model is not None
 
 
-def test_transcribe_returns_stripped_text(mock_qwen_asr):
+def test_transcribe_returns_stripped_text(
+    mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock],
+) -> None:
     QwenASR, _, mock_model_inst, _ = mock_qwen_asr
 
     asr = QwenASR()
@@ -50,7 +53,9 @@ def test_transcribe_returns_stripped_text(mock_qwen_asr):
     mock_model_inst.transcribe.assert_called_once_with(audio=(audio, 16000), language="Japanese")
 
 
-def test_transcribe_empty_audio_returns_empty_string(mock_qwen_asr):
+def test_transcribe_empty_audio_returns_empty_string(
+    mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock],
+) -> None:
     QwenASR, _, _, _ = mock_qwen_asr
 
     asr = QwenASR()
@@ -60,7 +65,9 @@ def test_transcribe_empty_audio_returns_empty_string(mock_qwen_asr):
     assert result == ""
 
 
-def test_transcribe_short_audio_returns_empty_string(mock_qwen_asr):
+def test_transcribe_short_audio_returns_empty_string(
+    mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock],
+) -> None:
     QwenASR, _, _, _ = mock_qwen_asr
 
     asr = QwenASR()
@@ -70,7 +77,9 @@ def test_transcribe_short_audio_returns_empty_string(mock_qwen_asr):
     assert result == ""
 
 
-def test_transcribe_model_not_loaded_raises(mock_qwen_asr):
+def test_transcribe_model_not_loaded_raises(
+    mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock],
+) -> None:
     QwenASR, _, _, _ = mock_qwen_asr
 
     asr = QwenASR()
@@ -80,7 +89,7 @@ def test_transcribe_model_not_loaded_raises(mock_qwen_asr):
         asr.transcribe(np.zeros(16000, dtype=np.float32))
 
 
-def test_init_failure_raises_model_load_error():
+def test_init_failure_raises_model_load_error() -> None:
     mock_model_cls = MagicMock()
     mock_model_cls.from_pretrained.side_effect = RuntimeError("CUDA not available")
 
@@ -94,7 +103,9 @@ def test_init_failure_raises_model_load_error():
             QwenASR()
 
 
-def test_transcribe_failure_raises_asr_error(mock_qwen_asr):
+def test_transcribe_failure_raises_asr_error(
+    mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock],
+) -> None:
     QwenASR, _, mock_model_inst, _ = mock_qwen_asr
     mock_model_inst.transcribe.side_effect = RuntimeError("GPU OOM")
 
@@ -104,7 +115,7 @@ def test_transcribe_failure_raises_asr_error(mock_qwen_asr):
         asr.transcribe(np.zeros(16000, dtype=np.float32))
 
 
-def test_unload_clears_model(mock_qwen_asr):
+def test_unload_clears_model(mock_qwen_asr: tuple[type, MagicMock, MagicMock, MagicMock]) -> None:
     QwenASR, _, _, _ = mock_qwen_asr
 
     asr = QwenASR()

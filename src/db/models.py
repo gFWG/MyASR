@@ -12,8 +12,6 @@ class SentenceRecord:
     japanese_text: str
     chinese_translation: str | None
     explanation: str | None
-    complexity_score: float
-    is_complex: bool
     source_context: str | None
     created_at: str
 
@@ -73,8 +71,6 @@ class AnalysisResult:
     tokens: list[Token]
     vocab_hits: list[VocabHit]
     grammar_hits: list[GrammarHit]
-    complexity_score: float
-    is_complex: bool
 
 
 @dataclass

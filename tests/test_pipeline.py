@@ -47,8 +47,6 @@ def _make_analysis_result() -> AnalysisResult:
         tokens=[],
         vocab_hits=[],
         grammar_hits=[],
-        complexity_score=0.0,
-        is_complex=False,
     )
 
 
@@ -109,7 +107,7 @@ def test_pipeline_emits_sentence_ready_on_valid_segment(
         if not text:
             continue
         result_analysis = worker._preprocessing.process(text)
-        translation, explanation = worker._llm.translate(text, result_analysis)
+        translation, explanation = worker._llm.translate(text)
         result = SentenceResult(
             japanese_text=text,
             chinese_translation=translation,
@@ -165,7 +163,7 @@ def test_pipeline_skips_empty_asr_result(
         if not text:
             continue
         result_analysis = worker._preprocessing.process(text)
-        translation, explanation = worker._llm.translate(text, result_analysis)
+        translation, explanation = worker._llm.translate(text)
         result = SentenceResult(
             japanese_text=text,
             chinese_translation=translation,
@@ -220,7 +218,7 @@ def test_pipeline_handles_asr_error_gracefully(
         if not text:
             continue
         result_analysis = worker._preprocessing.process(text)
-        translation, explanation = worker._llm.translate(text, result_analysis)
+        translation, explanation = worker._llm.translate(text)
         result = SentenceResult(
             japanese_text=text,
             chinese_translation=translation,
@@ -326,7 +324,7 @@ def test_pipeline_populates_translation_on_llm_success(
 
     text = "テスト文章"
     result_analysis = worker._preprocessing.process(text)
-    translation, explanation = worker._llm.translate(text, result_analysis)
+    translation, explanation = worker._llm.translate(text)
     result = SentenceResult(
         japanese_text=text,
         chinese_translation=translation,
@@ -367,7 +365,7 @@ def test_pipeline_emits_with_none_on_llm_failure(
     text = "テスト文章"
     result_analysis = worker._preprocessing.process(text)
     try:
-        translation, explanation = worker._llm.translate(text, result_analysis)
+        translation, explanation = worker._llm.translate(text)
     except Exception:
         translation, explanation = None, None
     result = SentenceResult(
@@ -413,7 +411,7 @@ def test_pipeline_writes_to_db_on_success(
 
     text = "テスト"
     result_analysis = worker._preprocessing.process(text)
-    translation, explanation = worker._llm.translate(text, result_analysis)
+    translation, explanation = worker._llm.translate(text)
     result = SentenceResult(
         japanese_text=text,
         chinese_translation=translation,
@@ -463,7 +461,7 @@ def test_pipeline_still_emits_when_db_write_fails(
 
     text = "テスト文章"
     result_analysis = worker._preprocessing.process(text)
-    translation, explanation = worker._llm.translate(text, result_analysis)
+    translation, explanation = worker._llm.translate(text)
     result = SentenceResult(
         japanese_text=text,
         chinese_translation=translation,
@@ -520,8 +518,6 @@ def test_to_db_records_converts_correctly(
         tokens=[],
         vocab_hits=[vocab_hit],
         grammar_hits=[grammar_hit],
-        complexity_score=4.5,
-        is_complex=True,
     )
     result = SentenceResult(
         japanese_text="概念にもかかわらず",
@@ -537,8 +533,6 @@ def test_to_db_records_converts_correctly(
     assert record.japanese_text == "概念にもかかわらず"
     assert record.chinese_translation == "尽管概念如此"
     assert record.explanation == "N1文法解析"
-    assert record.complexity_score == 4.5
-    assert record.is_complex is True
     assert record.source_context is None
 
     assert len(vocab_recs) == 1

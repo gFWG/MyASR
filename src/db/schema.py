@@ -11,8 +11,6 @@ CREATE TABLE IF NOT EXISTS sentence_records (
     japanese_text TEXT NOT NULL,
     chinese_translation TEXT,
     explanation TEXT,
-    complexity_score REAL NOT NULL DEFAULT 0.0,
-    is_complex INTEGER NOT NULL DEFAULT 0,
     source_context TEXT,
     created_at TEXT NOT NULL
 );

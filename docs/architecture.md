@@ -33,13 +33,12 @@
 │  │ Preprocessing Pipeline (< 50ms)                           │  │
 │  │   ├── fugashi tokenizer (surface/lemma/POS)               │  │
 │  │   ├── JLPT vocab lookup (dict, O(1))                      │  │
-│  │   ├── Grammar regex matching (800+ rules)                 │  │
-│  │   └── Complexity scoring (jreadability + JLPT weights)    │  │
+│  │   └── Grammar regex matching (800+ rules)                 │  │
 │  │       │                                                    │  │
 │  │       ▼                                                    │  │
 │  │ LLM Client (Ollama qwen3.5:4b, localhost:11434)             │  │
-│  │   simple → translate only                                  │  │
-│  │   complex → translate + study-point analysis               │  │
+│  │   translation mode → translate only                        │  │
+│  │   explanation mode → grammar/vocab analysis only           │  │
 │  │   unavailable → subtitle-only fallback (no crash)         │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │       │                                                          │
@@ -66,11 +65,10 @@ src/
 │   ├── tokenizer.py        # FugashiTokenizer: text → Token list (surface/lemma/POS)
 │   ├── jlpt_vocab.py       # JLPTVocabLookup: lemma → JLPTLevel | None
 │   ├── grammar.py          # GrammarMatcher: text → list[GrammarHit]
-│   ├── complexity.py       # ComplexityScorer: tokens + hits → score + is_complex
 │   └── pipeline.py         # PreprocessingPipeline: orchestrates above → AnalysisResult
 ├── llm/
 │   ├── __init__.py
-│   └── ollama_client.py    # OllamaClient: sentence + analysis → translation [+ study points]
+│   └── ollama_client.py    # OllamaClient: sentence + mode → translation or explanation
 ├── ui/
 │   ├── __init__.py
 │   ├── overlay.py          # OverlayWindow: transparent frameless subtitle display
@@ -119,30 +117,26 @@ class AnalysisResult:
     tokens: list[Token]
     vocab_hits: list[VocabHit]      # beyond-level vocab
     grammar_hits: list[GrammarHit]  # matched grammar patterns
-    complexity_score: float
-    is_complex: bool
 
 @dataclass
 class SentenceResult:
     japanese_text: str
     chinese_translation: str | None
-    explanation: str | None          # study-point analysis (complex only)
+    explanation: str | None          # study-point analysis (explanation mode only)
     analysis: AnalysisResult
     created_at: datetime
 ```
 
-## Complexity Threshold (Tunable Defaults)
+## LLM Mode Selection
 
-A sentence is classified as **complex** if ANY of these conditions is met:
+The user selects **translation** or **explanation** mode in settings. Each mode uses a separate prompt template, both customizable.
 
-| Condition | Default Threshold | Config Key |
-|-----------|------------------|------------|
-| Beyond-level vocab count | ≥ 2 | `complexity.vocab_threshold` |
-| N1 grammar pattern hit | ≥ 1 | `complexity.n1_grammar_threshold` |
-| jreadability score | < 3.0 (scale TBD) | `complexity.readability_threshold` |
-| Ambiguous grammar rules | ≥ 1 (confidence_type = "ambiguous") | `complexity.ambiguous_grammar_threshold` |
+| Mode | Behavior | Config Key |
+|------|----------|------------|
+| `translation` (default) | Chinese translation only | `llm_mode`, `translation_template` |
+| `explanation` | Grammar/vocab analysis only (no translation) | `llm_mode`, `explanation_template` |
 
-These thresholds are configurable in the settings panel and stored in app config.
+Mode is set at config level and does not require runtime sentence-by-sentence evaluation.
 
 ## LLM Degradation Strategy
 
@@ -155,7 +149,7 @@ When Ollama is unavailable or times out:
 
 Three tables with normalized highlights (see `docs/api-data.md` for full schema):
 
-- **sentence_records**: Core learning records (id INTEGER PRIMARY KEY AUTOINCREMENT, japanese_text, chinese_translation, explanation, complexity_score, created_at)
+- **sentence_records**: Core learning records (id INTEGER PRIMARY KEY AUTOINCREMENT, japanese_text, chinese_translation, explanation, source_context, created_at)
 - **highlight_vocab**: Foreign key → sentence_records (word, lemma, jlpt_level, pos)
 - **highlight_grammar**: Foreign key → sentence_records (rule_id, pattern, description, confidence_type)
 

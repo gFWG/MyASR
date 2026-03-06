@@ -21,8 +21,6 @@ def make_record(
     japanese_text: str = "猫が好きです",
     chinese_translation: str | None = "我喜欢猫",
     explanation: str | None = None,
-    complexity_score: float = 1.0,
-    is_complex: bool = False,
     source_context: str | None = None,
     created_at: str = "2024-01-15T10:00:00",
 ) -> SentenceRecord:
@@ -31,8 +29,6 @@ def make_record(
         japanese_text=japanese_text,
         chinese_translation=chinese_translation,
         explanation=explanation,
-        complexity_score=complexity_score,
-        is_complex=is_complex,
         source_context=source_context,
         created_at=created_at,
     )
@@ -94,8 +90,6 @@ def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
     rec = make_record(
         japanese_text="昨日映画を見た",
         chinese_translation="昨天看了电影",
-        complexity_score=2.5,
-        is_complex=True,
         source_context="movie",
     )
     rid = repo.insert_sentence(rec, [], [])
@@ -105,8 +99,6 @@ def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
     assert r.id == rid
     assert r.japanese_text == "昨日映画を見た"
     assert r.chinese_translation == "昨天看了电影"
-    assert r.complexity_score == 2.5
-    assert r.is_complex is True
     assert r.source_context == "movie"
     assert r.created_at == "2024-01-15T10:00:00"
 

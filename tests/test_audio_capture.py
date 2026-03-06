@@ -1,6 +1,6 @@
 """Tests for AudioCapture."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -10,7 +10,7 @@ from src.exceptions import AudioCaptureError
 
 
 @pytest.fixture
-def mock_sd():
+def mock_sd() -> Generator[tuple[MagicMock, MagicMock], None, None]:
     mock = MagicMock()
     mock_stream = MagicMock()
     mock.InputStream.return_value = mock_stream
@@ -18,7 +18,7 @@ def mock_sd():
         yield mock, mock_stream
 
 
-def test_start_begins_stream(mock_sd):
+def test_start_begins_stream(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     mock, mock_stream = mock_sd
     from src.audio.capture import AudioCapture
 
@@ -37,7 +37,7 @@ def test_start_begins_stream(mock_sd):
     mock_stream.start.assert_called_once()
 
 
-def test_stop_closes_stream(mock_sd):
+def test_stop_closes_stream(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     mock, mock_stream = mock_sd
     from src.audio.capture import AudioCapture
 
@@ -50,7 +50,7 @@ def test_stop_closes_stream(mock_sd):
     assert cap._stream is None
 
 
-def test_callback_passes_mono_audio(mock_sd):
+def test_callback_passes_mono_audio(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     _mock, _mock_stream = mock_sd
     from src.audio.capture import AudioCapture
 
@@ -67,7 +67,7 @@ def test_callback_passes_mono_audio(mock_sd):
     np.testing.assert_array_equal(received[0], indata[:, 0])
 
 
-def test_double_start_raises(mock_sd):
+def test_double_start_raises(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     _mock, _mock_stream = mock_sd
     from src.audio.capture import AudioCapture
 
@@ -78,7 +78,7 @@ def test_double_start_raises(mock_sd):
         cap.start(MagicMock())
 
 
-def test_stop_when_not_started_does_not_raise(mock_sd):
+def test_stop_when_not_started_does_not_raise(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     _mock, _mock_stream = mock_sd
     from src.audio.capture import AudioCapture
 
@@ -86,7 +86,7 @@ def test_stop_when_not_started_does_not_raise(mock_sd):
     cap.stop()
 
 
-def test_list_devices_returns_list(mock_sd):
+def test_list_devices_returns_list(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     mock, _mock_stream = mock_sd
     mock.query_devices.return_value = [
         {"name": "Mic", "max_input_channels": 2},
@@ -100,7 +100,7 @@ def test_list_devices_returns_list(mock_sd):
     assert devices[0]["name"] == "Mic"
 
 
-def test_invalid_device_raises_audio_capture_error(mock_sd):
+def test_invalid_device_raises_audio_capture_error(mock_sd: tuple[MagicMock, MagicMock]) -> None:
     mock, _mock_stream = mock_sd
     mock.InputStream.side_effect = Exception("Invalid device")
     from src.audio.capture import AudioCapture

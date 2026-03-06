@@ -42,15 +42,13 @@ class LearningRepository:
                 """
                 INSERT INTO sentence_records
                     (japanese_text, chinese_translation, explanation,
-                     complexity_score, is_complex, source_context, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                     source_context, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     record.japanese_text,
                     record.chinese_translation,
                     record.explanation,
-                    record.complexity_score,
-                    int(record.is_complex),
                     record.source_context,
                     record.created_at,
                 ),
@@ -119,7 +117,7 @@ class LearningRepository:
         cursor = self._conn.execute(
             """
             SELECT id, japanese_text, chinese_translation, explanation,
-                   complexity_score, is_complex, source_context, created_at
+                   source_context, created_at
             FROM sentence_records
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
@@ -133,10 +131,8 @@ class LearningRepository:
                 japanese_text=row[1],
                 chinese_translation=row[2],
                 explanation=row[3],
-                complexity_score=row[4],
-                is_complex=bool(row[5]),
-                source_context=row[6],
-                created_at=row[7],
+                source_context=row[4],
+                created_at=row[5],
             )
             for row in rows
         ]
@@ -154,7 +150,7 @@ class LearningRepository:
         cursor = self._conn.execute(
             """
             SELECT id, japanese_text, chinese_translation, explanation,
-                   complexity_score, is_complex, source_context, created_at
+                   source_context, created_at
             FROM sentence_records
             WHERE japanese_text LIKE ? OR chinese_translation LIKE ?
             ORDER BY created_at DESC
@@ -168,10 +164,8 @@ class LearningRepository:
                 japanese_text=row[1],
                 chinese_translation=row[2],
                 explanation=row[3],
-                complexity_score=row[4],
-                is_complex=bool(row[5]),
-                source_context=row[6],
-                created_at=row[7],
+                source_context=row[4],
+                created_at=row[5],
             )
             for row in rows
         ]
@@ -217,7 +211,7 @@ class LearningRepository:
         cursor = self._conn.execute(
             """
             SELECT id, japanese_text, chinese_translation, explanation,
-                   complexity_score, is_complex, source_context, created_at
+                   source_context, created_at
             FROM sentence_records
             ORDER BY created_at DESC
             """
@@ -229,8 +223,6 @@ class LearningRepository:
             "japanese_text",
             "chinese_translation",
             "explanation",
-            "complexity_score",
-            "is_complex",
             "source_context",
             "created_at",
         ]

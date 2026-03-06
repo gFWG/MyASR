@@ -5,66 +5,46 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from src.config import AppConfig
-from src.db.models import AnalysisResult, GrammarHit, VocabHit
 from src.llm.ollama_client import OllamaClient
 
 
-def _make_config() -> AppConfig:
-    return AppConfig()
+def _make_config(
+    llm_mode: str = "translation",
+) -> AppConfig:
+    return AppConfig(llm_mode=llm_mode)  # type: ignore[arg-type]
 
 
-def _simple_analysis() -> AnalysisResult:
-    return AnalysisResult(
-        tokens=[],
-        vocab_hits=[],
-        grammar_hits=[],
-        complexity_score=0.0,
-        is_complex=False,
-    )
-
-
-def _complex_analysis(
-    vocab_hits: list[VocabHit] | None = None,
-    grammar_hits: list[GrammarHit] | None = None,
-) -> AnalysisResult:
-    return AnalysisResult(
-        tokens=[],
-        vocab_hits=vocab_hits or [],
-        grammar_hits=grammar_hits or [],
-        complexity_score=5.0,
-        is_complex=True,
-    )
+def _make_explanation_config() -> AppConfig:
+    return AppConfig(llm_mode="explanation")
 
 
 # ---------------------------------------------------------------------------
-# translate()
+# translate() — translation mode
 # ---------------------------------------------------------------------------
 
 
-def test_translate_simple_returns_translation_only() -> None:
-    client = OllamaClient(_make_config())
+def test_translate_translation_mode_returns_translation_only() -> None:
+    client = OllamaClient(_make_config("translation"))
     mock_response = MagicMock()
     mock_response.json.return_value = {"response": "这是测试翻译"}
     mock_response.raise_for_status.return_value = None
 
     with patch("src.llm.ollama_client.requests.post", return_value=mock_response):
-        result = client.translate("テストです", _simple_analysis())
+        result = client.translate("テストです")
 
     assert result == ("这是测试翻译", None)
 
 
-def test_translate_complex_returns_translation_and_explanation() -> None:
-    client = OllamaClient(_make_config())
+def test_translate_explanation_mode_returns_explanation_only() -> None:
+    client = OllamaClient(_make_explanation_config())
     mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "response": "翻訳：复杂句子的翻译\n解析：这里使用了N1语法..."
-    }
+    mock_response.json.return_value = {"response": "这里使用了N1语法的被动态..."}
     mock_response.raise_for_status.return_value = None
 
     with patch("src.llm.ollama_client.requests.post", return_value=mock_response):
-        result = client.translate("複雑な文です", _complex_analysis())
+        result = client.translate("複雑な文です")
 
-    assert result == ("复杂句子的翻译", "这里使用了N1语法...")
+    assert result == (None, "这里使用了N1语法的被动态...")
 
 
 def test_translate_returns_none_tuple_on_timeout() -> None:
@@ -74,7 +54,7 @@ def test_translate_returns_none_tuple_on_timeout() -> None:
         "src.llm.ollama_client.requests.post",
         side_effect=requests.exceptions.Timeout,
     ):
-        result = client.translate("テスト", _simple_analysis())
+        result = client.translate("テスト")
 
     assert result == (None, None)
 
@@ -86,7 +66,7 @@ def test_translate_returns_none_tuple_on_connection_error() -> None:
         "src.llm.ollama_client.requests.post",
         side_effect=requests.exceptions.ConnectionError,
     ):
-        result = client.translate("テスト", _simple_analysis())
+        result = client.translate("テスト")
 
     assert result == (None, None)
 
@@ -96,36 +76,42 @@ def test_translate_returns_none_tuple_on_connection_error() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_build_prompt_simple_uses_simple_template() -> None:
-    client = OllamaClient(_make_config())
-    prompt = client._build_prompt("テストです", _simple_analysis())
+def test_build_prompt_translation_mode_uses_translation_template() -> None:
+    client = OllamaClient(_make_config("translation"))
+    prompt = client._build_prompt("テストです")
 
-    assert "翻訳のみを出力" in prompt
     assert "テストです" in prompt
+    assert "翻译" in prompt or "翻訳" in prompt
 
 
-def test_build_prompt_complex_includes_formatted_hits() -> None:
-    client = OllamaClient(_make_config())
+def test_build_prompt_explanation_mode_uses_explanation_template() -> None:
+    client = OllamaClient(_make_explanation_config())
+    prompt = client._build_prompt("テストです")
 
-    vocab_hit = VocabHit(
-        surface="概念",
-        lemma="がいねん",
-        pos="名詞",
-        jlpt_level=1,
-        user_level=3,
+    assert "テストです" in prompt
+    assert "解析" in prompt or "解説" in prompt or "説明" in prompt
+
+
+def test_build_prompt_custom_translation_template() -> None:
+    config = AppConfig(
+        llm_mode="translation",
+        translation_template="Translate: {japanese_text}",
     )
-    grammar_hit = GrammarHit(
-        rule_id="r1",
-        matched_text="～にとって",
-        jlpt_level=2,
-        confidence_type="high",
-        description="に関して",
-    )
-    analysis = _complex_analysis(vocab_hits=[vocab_hit], grammar_hits=[grammar_hit])
-    prompt = client._build_prompt("テスト", analysis)
+    client = OllamaClient(config)
+    prompt = client._build_prompt("テスト")
 
-    assert "概念(がいねん, N1)" in prompt
-    assert "～にとって(N2, に関して)" in prompt
+    assert prompt == "Translate: テスト"
+
+
+def test_build_prompt_custom_explanation_template() -> None:
+    config = AppConfig(
+        llm_mode="explanation",
+        explanation_template="Explain: {japanese_text}",
+    )
+    client = OllamaClient(config)
+    prompt = client._build_prompt("テスト")
+
+    assert prompt == "Explain: テスト"
 
 
 # ---------------------------------------------------------------------------
@@ -133,32 +119,32 @@ def test_build_prompt_complex_includes_formatted_hits() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_parse_response_complex_with_both_markers() -> None:
-    client = OllamaClient(_make_config())
-    result = client._parse_response("翻訳：翻译结果\n解析：语法解析", is_complex=True)
+def test_parse_response_translation_mode_strips_whitespace() -> None:
+    client = OllamaClient(_make_config("translation"))
+    result = client._parse_response("  翻译结果  ")
 
-    assert result == ("翻译结果", "语法解析")
-
-
-def test_parse_response_complex_with_only_translation_marker() -> None:
-    client = OllamaClient(_make_config())
-    result = client._parse_response("翻訳：只有翻译没有解析", is_complex=True)
-
-    assert result == ("只有翻译没有解析", None)
+    assert result == ("翻译结果", None)
 
 
-def test_parse_response_complex_without_markers_fallback() -> None:
-    client = OllamaClient(_make_config())
-    result = client._parse_response("直接的翻译文本", is_complex=True)
+def test_parse_response_explanation_returns_explanation_only() -> None:
+    client = OllamaClient(_make_explanation_config())
+    result = client._parse_response("语法解析内容")
 
-    assert result == ("直接的翻译文本", None)
+    assert result == (None, "语法解析内容")
 
 
-def test_parse_response_empty_string() -> None:
-    client = OllamaClient(_make_config())
-    result = client._parse_response("", is_complex=True)
+def test_parse_response_explanation_strips_whitespace() -> None:
+    client = OllamaClient(_make_explanation_config())
+    result = client._parse_response("  语法解析内容  ")
 
-    assert result == ("", None)
+    assert result == (None, "语法解析内容")
+
+
+def test_parse_response_explanation_empty_string() -> None:
+    client = OllamaClient(_make_explanation_config())
+    result = client._parse_response("")
+
+    assert result == (None, None)
 
 
 # ---------------------------------------------------------------------------

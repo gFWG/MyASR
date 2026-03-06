@@ -102,7 +102,7 @@ class PipelineWorker(QThread):
                     self.error_occurred.emit(str(exc))
                     continue
 
-                translation, explanation = self._llm.translate(text, analysis)
+                translation, explanation = self._llm.translate(text)
 
                 result = SentenceResult(
                     japanese_text=text,
@@ -156,8 +156,6 @@ class PipelineWorker(QThread):
             japanese_text=result.japanese_text,
             chinese_translation=result.chinese_translation,
             explanation=result.explanation,
-            complexity_score=result.analysis.complexity_score,
-            is_complex=result.analysis.is_complex,
             source_context=None,
             created_at=result.created_at.isoformat(),
         )

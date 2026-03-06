@@ -43,9 +43,9 @@ def test_init_db_schema_columns(tmp_path: Path) -> None:
     assert "id" in sentence_cols
     assert "japanese_text" in sentence_cols
     assert "chinese_translation" in sentence_cols
-    assert "complexity_score" in sentence_cols
-    assert "is_complex" in sentence_cols
     assert "created_at" in sentence_cols
+    assert "complexity_score" not in sentence_cols
+    assert "is_complex" not in sentence_cols
 
     cur = conn.execute("PRAGMA table_info(highlight_vocab)")
     vocab_cols = {r[1] for r in cur.fetchall()}

@@ -1,5 +1,6 @@
 """Tests for SileroVAD wrapper."""
 
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -16,7 +17,9 @@ def make_audio(n_samples: int = CHUNK_SAMPLES) -> np.ndarray:
 
 
 @pytest.fixture
-def mock_silero(monkeypatch):
+def mock_silero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[tuple[MagicMock, MagicMock, MagicMock], None, None]:
     mock_model = MagicMock()
     mock_iterator = MagicMock()
     mock_iterator.return_value = None
@@ -27,7 +30,9 @@ def mock_silero(monkeypatch):
         yield mock_load, mock_vad_iter, mock_iterator
 
 
-def test_process_chunk_silence_returns_none(mock_silero):
+def test_process_chunk_silence_returns_none(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -39,7 +44,9 @@ def test_process_chunk_silence_returns_none(mock_silero):
     assert result is None
 
 
-def test_process_chunk_speech_start_sets_flag(mock_silero):
+def test_process_chunk_speech_start_sets_flag(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -52,7 +59,9 @@ def test_process_chunk_speech_start_sets_flag(mock_silero):
     assert vad._is_speech is True
 
 
-def test_process_chunk_speech_end_creates_segment(mock_silero):
+def test_process_chunk_speech_end_creates_segment(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -74,7 +83,9 @@ def test_process_chunk_speech_end_creates_segment(mock_silero):
     assert vad._audio_buffer == []
 
 
-def test_process_chunk_short_speech_filtered(mock_silero):
+def test_process_chunk_short_speech_filtered(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -91,7 +102,9 @@ def test_process_chunk_short_speech_filtered(mock_silero):
     assert not vad._is_speech
 
 
-def test_process_chunk_force_cut_at_30s(mock_silero):
+def test_process_chunk_force_cut_at_30s(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -117,7 +130,7 @@ def test_process_chunk_force_cut_at_30s(mock_silero):
     mock_iterator.reset_states.assert_called()
 
 
-def test_reset_clears_state(mock_silero):
+def test_reset_clears_state(mock_silero: tuple[MagicMock, MagicMock, MagicMock]) -> None:
     from src.vad.silero import SileroVAD
 
     _, _, mock_iterator = mock_silero
@@ -140,7 +153,9 @@ def test_reset_clears_state(mock_silero):
     mock_iterator.reset_states.assert_called_once()
 
 
-def test_pre_buffer_prepends_audio_to_speech(mock_silero) -> None:
+def test_pre_buffer_prepends_audio_to_speech(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
     """Pre-buffer captures silence chunks and prepends them on speech start."""
     from src.vad.silero import SileroVAD
 

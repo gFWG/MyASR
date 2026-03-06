@@ -44,7 +44,7 @@ python -c "from src.exceptions import *" && mypy src/exceptions.py
 **Files**: `src/config.py`, `tests/test_config.py`
 
 **Work**:
-- Define `AppConfig` dataclass with fields: `user_jlpt_level: int` (default 3), `complexity_vocab_threshold: int` (default 2), `complexity_n1_grammar_threshold: int` (default 1), `complexity_readability_threshold: float` (default 3.0), `complexity_ambiguous_grammar_threshold: int` (default 1), `ollama_url: str` (default "http://localhost:11434"), `ollama_model: str` (default "qwen3.5:4b"), `ollama_timeout_sec: float` (default 30.0), `sample_rate: int` (default 16000), `db_path: str` (default "data/myasr.db")
+- Define `AppConfig` dataclass with fields: `user_jlpt_level: int` (default 3), `llm_mode: Literal["translation", "explanation"]` (default "translation"), `translation_template: str` (default `DEFAULT_TRANSLATION_TEMPLATE`), `explanation_template: str` (default `DEFAULT_EXPLANATION_TEMPLATE`), `ollama_url: str` (default "http://localhost:11434"), `ollama_model: str` (default "qwen3.5:4b"), `ollama_timeout_sec: float` (default 30.0), `sample_rate: int` (default 16000), `db_path: str` (default "data/myasr.db")
 - Function `load_config() -> AppConfig` that loads from JSON file if exists, else returns defaults
 - Function `save_config(config: AppConfig) -> None` that writes to JSON
 
@@ -144,21 +144,9 @@ pytest tests/test_jlpt_vocab.py -x && mypy src/analysis/jlpt_vocab.py
 pytest tests/test_grammar.py -x && mypy src/analysis/grammar.py
 ```
 
-### Task 1.6: Implement complexity scorer
+### Task 1.6: ~~Implement complexity scorer~~ **REMOVED**
 
-**Files**: `src/analysis/complexity.py`, `tests/test_complexity.py`
-
-**Work**:
-- Class `ComplexityScorer`:
-  - `__init__(self, config: AppConfig) -> None` — Store threshold config
-  - `score(self, vocab_hits: list[VocabHit], grammar_hits: list[GrammarHit], text: str) -> tuple[float, bool]` — Compute composite complexity score using jreadability + JLPT weights. Return (score, is_complex). `is_complex` is True if ANY threshold exceeded (see `docs/architecture.md` complexity threshold table).
-
-**Done when**: Scorer correctly classifies known simple and complex sentences. Threshold logic matches documented defaults. Tests with edge cases.
-
-**Verify**:
-```bash
-pytest tests/test_complexity.py -x && mypy src/analysis/complexity.py
-```
+> Complexity scoring has been removed. LLM behavior is now controlled by user-selected mode (`translation` or `explanation`) in `AppConfig.llm_mode`, not by automatic sentence complexity analysis. Files `src/analysis/complexity.py` and `tests/test_complexity.py` have been deleted.
 
 ### Task 1.7: Assemble preprocessing pipeline
 
@@ -166,8 +154,8 @@ pytest tests/test_complexity.py -x && mypy src/analysis/complexity.py
 
 **Work**:
 - Class `PreprocessingPipeline`:
-  - `__init__(self, config: AppConfig) -> None` — Initialize FugashiTokenizer, JLPTVocabLookup, GrammarMatcher, ComplexityScorer
-  - `process(self, text: str) -> AnalysisResult` — Run tokenize → vocab lookup → grammar match → complexity score. Return `AnalysisResult`.
+  - `__init__(self, config: AppConfig) -> None` — Initialize FugashiTokenizer, JLPTVocabLookup, GrammarMatcher
+  - `process(self, text: str) -> AnalysisResult` — Run tokenize → vocab lookup → grammar match. Return `AnalysisResult`.
 - Verify latency: add timing log. Target < 50ms per sentence.
 
 **Done when**: Pipeline end-to-end produces correct `AnalysisResult` for ≥3 test sentences. Latency logged. Tests pass.
@@ -263,13 +251,13 @@ pytest tests/test_pipeline.py -x && mypy src/pipeline.py
 
 **Work**:
 - Class `OllamaClient`:
-  - `__init__(self, config: AppConfig) -> None` — Store URL, model, timeout
-  - `translate(self, japanese_text: str, analysis: AnalysisResult) -> tuple[str | None, str | None]` — Call Ollama API. If simple → translation only. If complex → translation + explanation. Return `(translation, explanation)`. Return `(None, None)` on failure (subtitle-only fallback).
-  - `_build_prompt(self, japanese_text: str, analysis: AnalysisResult) -> str` — Construct prompt from templates (see `docs/api-data.md`)
-  - `_parse_response(self, response_text: str, is_complex: bool) -> tuple[str, str | None]` — Parse LLM response into translation and optional explanation
+  - `__init__(self, config: AppConfig) -> None` — Store URL, model, timeout, mode (`config.llm_mode`), and prompt templates (`config.translation_template`, `config.explanation_template`)
+  - `translate(self, japanese_text: str) -> tuple[str | None, str | None]` — Call Ollama API. Uses `self._mode` to select prompt template and response parsing. In "translation" mode → returns `(translation, None)`. In "explanation" mode → returns `(None, explanation)`. Returns `(None, None)` on failure (subtitle-only fallback).
+  - `_build_prompt(self, japanese_text: str) -> str` — Construct prompt from the mode-appropriate template, substituting `{japanese_text}`
+  - `_parse_response(self, response_text: str) -> tuple[str | None, str | None]` — Parse LLM response based on current mode. Translation mode: entire response is the translation, returns `(translation, None)`. Explanation mode: entire response is the explanation, returns `(None, explanation)`.
   - `health_check(self) -> bool` — Check if Ollama is reachable
 
-**Done when**: Client sends correct prompts, parses responses, handles timeout/connection errors gracefully (returns None, no crash). Tests with mocked HTTP responses for success, timeout, and connection refused.
+**Done when**: Client sends correct prompts per mode, parses responses, handles timeout/connection errors gracefully (returns None, no crash). Tests with mocked HTTP responses for success, timeout, and connection refused, covering both translation and explanation modes.
 
 **Verify**:
 ```bash
@@ -282,8 +270,8 @@ pytest tests/test_ollama_client.py -x && mypy src/llm/ollama_client.py
 
 **Work**:
 - Add `OllamaClient` to `PipelineWorker.__init__`
-- After preprocessing, call `ollama_client.translate()` 
-- Populate `SentenceResult.chinese_translation` and `SentenceResult.explanation`
+- After preprocessing, call `ollama_client.translate(text)` 
+- Populate `SentenceResult.chinese_translation` and `SentenceResult.explanation` based on the configured LLM mode
 - On LLM failure: emit `SentenceResult` with `chinese_translation=None` (subtitle-only fallback)
 - Write completed `SentenceResult` to DB via `LearningRepository`
 
