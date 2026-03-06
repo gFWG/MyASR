@@ -1,0 +1,2 @@
+This plugin does not support raise()
+Dedup: OK, emissions = 1

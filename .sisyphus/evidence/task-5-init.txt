@@ -1,0 +1,8 @@
+OverlayWindow init: SUCCESS
+Flags: 264203
+Mode: 0
+Width: 800
+Height: 120
+JP browser read-only: True
+CN browser read-only: True
+Renderer type: HighlightRenderer

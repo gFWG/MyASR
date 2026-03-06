@@ -1,0 +1,6 @@
+This plugin does not support raise()
+Vocab show: OK
+Emissions: [('vocab', 5)]
+Level label: N5
+Word label: 食べる (食べ)
+Desc label: 動詞

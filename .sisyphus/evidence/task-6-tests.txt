@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-m4-ui-overlay
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1
+collecting ... collected 21 items
+
+tests/test_tooltip.py::test_tooltip_has_frameless_hint PASSED            [  4%]
+tests/test_tooltip.py::test_tooltip_has_stays_on_top_hint PASSED         [  9%]
+tests/test_tooltip.py::test_tooltip_has_tool_hint PASSED                 [ 14%]
+tests/test_tooltip.py::test_tooltip_max_width PASSED                     [ 19%]
+tests/test_tooltip.py::test_tooltip_record_triggered_signal_exists PASSED [ 23%]
+tests/test_tooltip.py::test_show_for_vocab_sets_level_label PASSED       [ 28%]
+tests/test_tooltip.py::test_show_for_vocab_sets_word_label PASSED        [ 33%]
+tests/test_tooltip.py::test_show_for_vocab_sets_desc_label PASSED        [ 38%]
+tests/test_tooltip.py::test_show_for_vocab_makes_widget_visible PASSED   [ 42%]
+tests/test_tooltip.py::test_show_for_grammar_sets_word_label PASSED      [ 47%]
+tests/test_tooltip.py::test_show_for_grammar_sets_level_label PASSED     [ 52%]
+tests/test_tooltip.py::test_show_for_grammar_sets_desc_label PASSED      [ 57%]
+tests/test_tooltip.py::test_show_for_vocab_emits_record_triggered_on_first_show PASSED [ 61%]
+tests/test_tooltip.py::test_show_for_vocab_does_not_emit_on_second_call_same_key PASSED [ 66%]
+tests/test_tooltip.py::test_show_for_vocab_emits_for_new_sentence_id PASSED [ 71%]
+tests/test_tooltip.py::test_show_for_grammar_emits_record_triggered_on_first_show PASSED [ 76%]
+tests/test_tooltip.py::test_show_for_grammar_does_not_emit_on_second_call_same_key PASSED [ 80%]
+tests/test_tooltip.py::test_hide_tooltip_hides_widget PASSED             [ 85%]
+tests/test_tooltip.py::test_reset_dedup_clears_shown_set PASSED          [ 90%]
+tests/test_tooltip.py::test_shown_set_is_initially_empty PASSED          [ 95%]
+tests/test_tooltip.py::test_vocab_and_grammar_same_highlight_id_are_separate_keys PASSED [100%]
+
+============================== 21 passed in 0.26s ==============================
