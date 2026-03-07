@@ -1,12 +1,17 @@
 """Audio capture module using sounddevice."""
 
 import logging
+import sys
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from src.config import AppConfig
 from src.exceptions import AudioCaptureError
+
+if TYPE_CHECKING:
+    from src.audio.backends import WasapiLoopbackCapture
 
 logger = logging.getLogger(__name__)
 
@@ -107,3 +112,26 @@ class AudioCapture:
             return list(sd.query_devices())
         except Exception as exc:
             raise AudioCaptureError(f"Failed to list audio devices: {exc}") from exc
+
+
+# Type alias for audio capture instances (protocol-like interface)
+type AudioCaptureLike = AudioCapture | WasapiLoopbackCapture
+
+
+def create_audio_capture(config: AppConfig) -> AudioCaptureLike:
+    """Factory to create the appropriate audio capture backend.
+
+    On Windows, uses WasapiLoopbackCapture for system audio loopback.
+    On other platforms, uses AudioCapture with sounddevice for microphone input.
+
+    Args:
+        config: Application configuration.
+
+    Returns:
+        An instance compatible with the AudioCapture interface.
+    """
+    if sys.platform == "win32":
+        from src.audio.backends import WasapiLoopbackCapture  # noqa: PLC0415
+
+        return WasapiLoopbackCapture(sample_rate=config.sample_rate)
+    return AudioCapture(sample_rate=config.sample_rate)

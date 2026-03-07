@@ -10,7 +10,7 @@ from PySide6.QtCore import QThread, Signal
 
 from src.analysis.pipeline import PreprocessingPipeline
 from src.asr.qwen_asr import QwenASR
-from src.audio.capture import AudioCapture
+from src.audio.capture import create_audio_capture
 from src.config import AppConfig
 from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord, SentenceResult
 from src.db.repository import LearningRepository
@@ -36,7 +36,7 @@ class PipelineWorker(QThread):
     ) -> None:
         super().__init__(parent)
         self._config = config
-        self._audio_capture = AudioCapture(sample_rate=config.sample_rate)
+        self._audio_capture = create_audio_capture(config)
         self._vad = SileroVAD(sample_rate=config.sample_rate)
         self._asr = QwenASR()
         self._preprocessing = PreprocessingPipeline(config)
