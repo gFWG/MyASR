@@ -113,8 +113,6 @@ def main() -> None:
         overlay.highlight_hovered.connect(_on_highlight_hovered)
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
 
-        # TODO(F4): QTimer(60s) -> review_repo.get_queue_count() -> tray.update_review_badge(count)
-
         _settings_dialog: SettingsDialog | None = None
 
         def _open_settings() -> None:
