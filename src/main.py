@@ -8,9 +8,10 @@ import logging
 import signal
 import sqlite3
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from src.config import AppConfig, load_config
 from src.db.models import GrammarHit, SentenceResult, VocabHit
@@ -124,6 +125,24 @@ def main() -> None:
         tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
         tray.settings_requested.connect(_open_settings)
         tray.history_requested.connect(_open_learning_panel)
+
+        def _quick_export() -> None:
+            file_path, _ = QFileDialog.getSaveFileName(
+                None,
+                "Quick Export",
+                "",
+                "JSON Files (*.json)",
+            )
+            if not file_path:
+                return
+            try:
+                json_str = repo.export_records("json")
+                Path(file_path).write_text(json_str, encoding="utf-8")
+                QMessageBox.information(None, "Export Complete", f"Exported to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(None, "Export Failed", str(e))
+
+        tray.quick_export_requested.connect(_quick_export)
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn))
