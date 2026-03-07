@@ -19,8 +19,17 @@ from src.db.schema import init_db
 from src.pipeline import PipelineWorker
 from src.ui.overlay import OverlayWindow
 from src.ui.tooltip import TooltipPopup
+from src.ui.tray import SystemTrayManager
 
 logger = logging.getLogger(__name__)
+
+
+def _open_settings() -> None:
+    logger.info("Settings dialog requested (not yet implemented)")
+
+
+def _open_learning_panel() -> None:
+    logger.info("Learning panel requested (not yet implemented)")
 
 
 def _cleanup(pipeline: PipelineWorker, conn: sqlite3.Connection) -> None:
@@ -55,13 +64,16 @@ def main() -> None:
     try:
         app: QApplication = QApplication.instance() or QApplication(sys.argv)  # type: ignore[assignment]  # instance() returns QCoreApplication|None but we always get QApplication here
 
+        app.setQuitOnLastWindowClosed(False)
+
         config: AppConfig = load_config()
         conn: sqlite3.Connection = init_db(config.db_path)
         repo = LearningRepository(conn)
 
-        overlay = OverlayWindow(user_level=config.user_jlpt_level)
+        overlay = OverlayWindow(config)
         tooltip = TooltipPopup()
         pipeline = PipelineWorker(config, db_conn=conn)
+        tray = SystemTrayManager()
 
         pipeline.sentence_ready.connect(overlay.on_sentence_ready)
 
@@ -105,6 +117,13 @@ def main() -> None:
 
         overlay.highlight_hovered.connect(_on_highlight_hovered)
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
+
+        # TODO(F4): QTimer(60s) -> review_repo.get_queue_count() -> tray.update_review_badge(count)
+
+        tray.quit_requested.connect(app.quit)
+        tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
+        tray.settings_requested.connect(_open_settings)
+        tray.history_requested.connect(_open_learning_panel)
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn))

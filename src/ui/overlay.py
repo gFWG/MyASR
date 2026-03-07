@@ -10,7 +10,7 @@ from __future__ import annotations
 import html as _html
 import logging
 
-from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -18,22 +18,23 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPainter,
     QPaintEvent,
+    QResizeEvent,
     QShortcut,
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QSizeGrip,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
+from src.config import AppConfig, save_config
 from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.ui.highlight import HighlightRenderer
 
 logger = logging.getLogger(__name__)
 
-_WINDOW_WIDTH = 800
-_WINDOW_HEIGHT = 120
 _JP_FONT_SIZE = 16
 _CN_FONT_SIZE = 14
 _BG_COLOR = QColor(30, 30, 30, 200)
@@ -75,9 +76,10 @@ class OverlayWindow(QWidget):
 
     highlight_hovered = Signal(object, object)  # (VocabHit|GrammarHit, QPoint)
 
-    def __init__(self, user_level: int = 5, parent: QWidget | None = None) -> None:
+    def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._user_level = user_level
+        self._config = config
+        self._user_level = config.user_jlpt_level
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -87,12 +89,13 @@ class OverlayWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
 
-        self.resize(_WINDOW_WIDTH, _WINDOW_HEIGHT)
+        self.resize(config.overlay_width, config.overlay_height)
 
-        screen_geo = QApplication.primaryScreen().geometry()
-        x = screen_geo.center().x() - _WINDOW_WIDTH // 2
-        y = screen_geo.bottom() - _WINDOW_HEIGHT - 40
-        self.move(x, y)
+        screen_width = QApplication.primaryScreen().geometry().width()
+        self.setMinimumSize(400, 80)
+        self.setMaximumSize(screen_width, 400)
+
+        self._center_on_screen()
 
         self._mode: int = 0
         self._drag_pos: QPoint | None = None
@@ -113,9 +116,18 @@ class OverlayWindow(QWidget):
         self._jp_browser.viewport().setMouseTracking(True)
         self._jp_browser.viewport().installEventFilter(self)
 
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
+
         QShortcut(QKeySequence("Ctrl+T"), self).activated.connect(self._toggle_mode)
 
         self.set_status("Initializing...")
+
+    def _center_on_screen(self) -> None:
+        screen_geo = QApplication.primaryScreen().geometry()
+        x = screen_geo.center().x() - self.width() // 2
+        y = screen_geo.bottom() - self.height() - 40
+        self.move(x, y)
 
     def on_sentence_ready(self, result: SentenceResult) -> None:
         """Display a new sentence result in the overlay.
@@ -174,6 +186,11 @@ class OverlayWindow(QWidget):
             global_pos = self._jp_browser.viewport().mapToGlobal(viewport_pos)
             self.highlight_hovered.emit(hit, global_pos)
 
+    def _save_size(self) -> None:
+        self._config.overlay_width = self.width()
+        self._config.overlay_height = self.height()
+        save_config(self._config)
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -181,8 +198,16 @@ class OverlayWindow(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(self.rect(), _CORNER_RADIUS, _CORNER_RADIUS)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "_size_grip"):
+            self._size_grip.move(self.width() - 16, self.height() - 16)
+        QTimer.singleShot(500, self._save_size)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            if hasattr(self, "_size_grip") and self._size_grip.geometry().contains(event.pos()):
+                return
             self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
 
