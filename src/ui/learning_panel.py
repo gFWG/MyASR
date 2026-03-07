@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import math
-import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -33,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from src.db.models import SentenceRecord
 from src.db.repository import LearningRepository
+from src.db.schema import init_db
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class LearningPanel(QWidget):
     def __init__(self, db_path: str | Path, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._db_path = Path(db_path)
-        self._conn = sqlite3.connect(str(self._db_path))
+        self._conn = init_db(str(self._db_path))
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._repo = LearningRepository(self._conn)
         self._current_page = 1
