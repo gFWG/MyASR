@@ -270,3 +270,36 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
 
     assert len(captured) == 1
     assert captured[0].grammar_hits == []
+
+
+def test_overlay_accepts_config_constructor(qapp: QApplication) -> None:
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ):
+        window = OverlayWindow(AppConfig())
+    assert window is not None
+
+
+def test_overlay_uses_config_dimensions(qapp: QApplication) -> None:
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ):
+        window = OverlayWindow(AppConfig(overlay_width=600, overlay_height=100))
+    assert window.width() == 600
+    assert window.height() == 100
+
+
+def test_overlay_minimum_size(overlay: OverlayWindow) -> None:
+    assert overlay.minimumWidth() >= 400
+    assert overlay.minimumHeight() >= 80
+
+
+def test_overlay_center_on_screen_method_exists(overlay: OverlayWindow) -> None:
+    assert hasattr(overlay, "_center_on_screen")
+
+
+def test_on_config_changed_updates_opacity(overlay: OverlayWindow) -> None:
+    overlay.on_config_changed(AppConfig(overlay_opacity=0.5))
+    assert overlay.windowOpacity() == pytest.approx(0.5, abs=0.01)
