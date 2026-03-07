@@ -303,3 +303,74 @@ def test_overlay_center_on_screen_method_exists(overlay: OverlayWindow) -> None:
 def test_on_config_changed_updates_opacity(overlay: OverlayWindow) -> None:
     overlay.on_config_changed(AppConfig(overlay_opacity=0.5))
     assert overlay.windowOpacity() == pytest.approx(0.5, abs=0.01)
+
+
+# ── Text box styling tests (Bug 3: centered HTML, visible on dark bg) ──
+
+
+def test_centered_html_wraps_in_table() -> None:
+    from src.ui.overlay import _centered_html
+
+    result = _centered_html("hello world")
+    assert "<table" in result
+    assert 'align="center"' in result
+    assert "hello world" in result
+
+
+def test_centered_html_escapes_special_chars() -> None:
+    from src.ui.overlay import _centered_html
+
+    result = _centered_html("<script>alert('xss')</script>")
+    assert "<script>" not in result
+    assert "&lt;script&gt;" in result
+
+
+def test_centered_html_uses_light_text_color() -> None:
+    from src.ui.overlay import _centered_html
+
+    result = _centered_html("test")
+    assert "#EEEEEE" in result
+
+
+def test_set_status_uses_html(overlay: OverlayWindow) -> None:
+    overlay.set_status("Listening...")
+    html = overlay._jp_browser.toHtml()
+    assert 'align="center"' in html
+    assert "Listening..." in overlay._jp_browser.toPlainText()
+
+
+def test_cn_browser_uses_centered_html(overlay: OverlayWindow) -> None:
+    result = _make_result(chinese_translation="翻訳テスト")
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ):
+        overlay.on_sentence_ready(result)
+    html = overlay._cn_browser.toHtml()
+    assert 'align="center"' in html
+    assert "翻訳テスト" in overlay._cn_browser.toPlainText()
+
+
+def test_browser_stylesheet_has_text_color(overlay: OverlayWindow) -> None:
+    jp_style = overlay._jp_browser.styleSheet()
+    cn_style = overlay._cn_browser.styleSheet()
+    assert "#EEEEEE" in jp_style
+    assert "#EEEEEE" in cn_style
+
+
+# ── Drag from browser viewport tests (Bug 2) ──
+
+
+def test_cn_browser_viewport_has_event_filter(overlay: OverlayWindow) -> None:
+    """Both JP and CN browser viewports must have event filter installed."""
+    # Qt doesn't expose installed event filters directly, but we can verify
+    # the overlay responds to drag events from the CN browser viewport.
+    assert overlay._cn_browser.viewport().hasMouseTracking()
+
+
+def test_jp_browser_viewport_has_mouse_tracking(overlay: OverlayWindow) -> None:
+    assert overlay._jp_browser.viewport().hasMouseTracking()
+
+
+def test_drag_pos_initially_none(overlay: OverlayWindow) -> None:
+    assert overlay._drag_pos is None

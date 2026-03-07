@@ -27,6 +27,12 @@ class SileroVAD:
         sample_rate: Audio sample rate in Hz (must be 16000 or 8000 for Silero).
     """
 
+    # Silero VAD requires chunks of at least sr / 31.25 samples.
+    # At 16 kHz that is 512 samples.  Audio backends may deliver shorter
+    # chunks (e.g. WASAPI loopback resampled from 48 kHz), so we accumulate
+    # incoming audio internally until we have a full 512-sample block.
+    _CHUNK_SAMPLES = 512
+
     def __init__(
         self,
         threshold: float = 0.5,
@@ -55,8 +61,11 @@ class SileroVAD:
         self._speech_start_sample: int = 0
         self._total_samples: int = 0
 
+        # Accumulation buffer for sub-512-sample incoming chunks
+        self._pending: np.ndarray = np.empty(0, dtype=np.float32)
+
         pre_buffer_samples = int(pre_buffer_ms * sample_rate / 1000)
-        chunk_size = 512
+        chunk_size = self._CHUNK_SAMPLES
         self._pre_buffer: deque[np.ndarray] = deque(
             maxlen=math.ceil(pre_buffer_samples / chunk_size),
         )
@@ -74,9 +83,12 @@ class SileroVAD:
     def process_chunk(self, audio: np.ndarray) -> list[AudioSegment] | None:
         """Process a single audio chunk and return completed speech segments.
 
-        Accumulates chunks internally until VADIterator signals the end of a
-        speech segment.  If accumulated speech exceeds 30 s the buffer is
-        force-flushed to prevent unbounded growth.
+        Incoming audio is first accumulated in ``_pending`` until at least
+        ``_CHUNK_SAMPLES`` (512) samples are available, then fed to the
+        VADIterator in exact 512-sample blocks.  This prevents the
+        "Input audio chunk is too short" error that occurs when backends
+        deliver fewer than 512 samples (e.g. WASAPI loopback resampled
+        from 48 kHz).
 
         Args:
             audio: 1-D float32 numpy array of audio samples at ``self._sample_rate``.
@@ -88,9 +100,37 @@ class SileroVAD:
         Raises:
             VADError: If the VADIterator raises an unexpected exception.
         """
-        results: list[AudioSegment] = []
         self._total_samples += len(audio)
 
+        # Accumulate incoming audio with any leftover from the previous call.
+        if len(self._pending) > 0:
+            self._pending = np.concatenate([self._pending, audio])
+        else:
+            self._pending = audio.copy()
+
+        results: list[AudioSegment] = []
+        cs = self._CHUNK_SAMPLES
+
+        # Process as many full 512-sample blocks as available.
+        while len(self._pending) >= cs:
+            block = self._pending[:cs]
+            self._pending = self._pending[cs:]
+            segment = self._process_vad_block(block)
+            if segment is not None:
+                results.extend(segment)
+
+        return results if results else None
+
+    def _process_vad_block(self, audio: np.ndarray) -> list[AudioSegment] | None:
+        """Feed a single 512-sample block to the VADIterator.
+
+        Args:
+            audio: Exactly ``_CHUNK_SAMPLES`` float32 samples.
+
+        Returns:
+            A list of completed ``AudioSegment`` objects, or ``None``.
+        """
+        results: list[AudioSegment] = []
         chunk_tensor = torch.from_numpy(audio).float()
 
         try:
@@ -151,6 +191,7 @@ class SileroVAD:
         self._vad_iterator.reset_states()
         self._audio_buffer = []
         self._pre_buffer.clear()
+        self._pending = np.empty(0, dtype=np.float32)
         self._is_speech = False
         self._total_samples = 0
         self._speech_start_sample = 0

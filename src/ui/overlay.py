@@ -7,7 +7,6 @@ and hover detection for vocabulary/grammar tooltips.
 
 from __future__ import annotations
 
-import html as _html
 import logging
 
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal
@@ -56,9 +55,21 @@ def _make_browser(font_size: int) -> QTextBrowser:
     browser.setFrameShape(QTextBrowser.Shape.NoFrame)
     browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    browser.setStyleSheet("background: transparent; border: none;")
+    browser.setStyleSheet("background: transparent; border: none; color: #EEEEEE;")
     browser.setOpenLinks(False)
     return browser
+
+
+def _centered_html(text: str, color: str = "#EEEEEE") -> str:
+    """Wrap plain text in centered HTML for QTextBrowser display."""
+    import html as _h
+
+    escaped = _h.escape(text)
+    return (
+        '<table align="center" width="95%">'
+        f'<tr><td align="center" style="color: {color};">{escaped}</td></tr>'
+        "</table>"
+    )
 
 
 class OverlayWindow(QWidget):
@@ -119,6 +130,10 @@ class OverlayWindow(QWidget):
         self._jp_browser.viewport().setMouseTracking(True)
         self._jp_browser.viewport().installEventFilter(self)
 
+        self._cn_browser.setMouseTracking(True)
+        self._cn_browser.viewport().setMouseTracking(True)
+        self._cn_browser.viewport().installEventFilter(self)
+
         self._size_grip = QSizeGrip(self)
         self._size_grip.setFixedSize(16, 16)
 
@@ -153,12 +168,12 @@ class OverlayWindow(QWidget):
                 user_level=self._user_level,
             )
         else:
-            rich_text = _html.escape(result.japanese_text)
+            rich_text = _centered_html(result.japanese_text)
 
         self._jp_browser.setHtml(rich_text)
 
         translation = result.chinese_translation or result.explanation or "Translation unavailable"
-        self._cn_browser.setPlainText(translation)
+        self._cn_browser.setHtml(_centered_html(translation))
 
         logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
 
@@ -198,13 +213,13 @@ class OverlayWindow(QWidget):
     def set_status(self, text: str) -> None:
         """Display a status message (e.g. 'Initializing...', 'Listening...').
 
-        Clears the Chinese browser and sets JP browser to plain status text.
+        Clears the Chinese browser and sets JP browser to centered status text.
 
         Args:
             text: Status string to display in the JP browser.
         """
-        self._jp_browser.setPlainText(text)
-        self._cn_browser.setPlainText("")
+        self._jp_browser.setHtml(_centered_html(text))
+        self._cn_browser.setHtml("")
         logger.debug("set_status: %s", text)
 
     def _toggle_mode(self) -> None:
@@ -263,7 +278,32 @@ class OverlayWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if watched is self._jp_browser.viewport() and isinstance(event, QMouseEvent):
-            if event.type() == QEvent.Type.MouseMove:
-                self._handle_hover_at_viewport_pos(event.position().toPoint())
+        jp_vp = self._jp_browser.viewport()
+        cn_vp = self._cn_browser.viewport()
+        is_browser_viewport = watched is jp_vp or watched is cn_vp
+
+        if is_browser_viewport and isinstance(event, QMouseEvent):
+            etype = event.type()
+
+            # Hover detection (JP browser only)
+            if watched is jp_vp and etype == QEvent.Type.MouseMove:
+                if not (event.buttons() & Qt.MouseButton.LeftButton):
+                    self._handle_hover_at_viewport_pos(event.position().toPoint())
+
+            # Forward drag events to the overlay
+            if etype == QEvent.Type.MouseButtonPress:
+                if event.button() == Qt.MouseButton.LeftButton:
+                    self._drag_pos = (
+                        event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                    )
+                    return True
+            elif etype == QEvent.Type.MouseMove:
+                if event.buttons() & Qt.MouseButton.LeftButton and self._drag_pos is not None:
+                    self.move(event.globalPosition().toPoint() - self._drag_pos)
+                    return True
+            elif etype == QEvent.Type.MouseButtonRelease:
+                if event.button() == Qt.MouseButton.LeftButton:
+                    self._drag_pos = None
+                    return True
+
         return super().eventFilter(watched, event)
