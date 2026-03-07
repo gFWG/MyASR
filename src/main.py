@@ -18,16 +18,13 @@ from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.pipeline import PipelineWorker
+from src.ui.learning_panel import LearningPanel
 from src.ui.overlay import OverlayWindow
 from src.ui.settings import SettingsDialog
 from src.ui.tooltip import TooltipPopup
 from src.ui.tray import SystemTrayManager
 
 logger = logging.getLogger(__name__)
-
-
-def _open_learning_panel() -> None:
-    logger.info("Learning panel requested (not yet implemented)")
 
 
 def _cleanup(pipeline: PipelineWorker, conn: sqlite3.Connection) -> None:
@@ -134,6 +131,18 @@ def main() -> None:
         tray.quit_requested.connect(app.quit)
         tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
         tray.settings_requested.connect(_open_settings)
+
+        _learning_panel: LearningPanel | None = None
+
+        def _open_learning_panel() -> None:
+            nonlocal _learning_panel
+            if _learning_panel is not None and _learning_panel.isVisible():
+                _learning_panel.raise_()
+                _learning_panel.activateWindow()
+                return
+            _learning_panel = LearningPanel(config.db_path)
+            _learning_panel.show()
+
         tray.history_requested.connect(_open_learning_panel)
 
         def _quick_export() -> None:
