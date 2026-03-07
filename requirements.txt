@@ -1,6 +1,8 @@
+--index-url https://download.pytorch.org/whl/cu128
 torch
 torchaudio
-sounddevice
+
+sounddevice; platform_system == "Linux"
 silero-vad
 fugashi
 unidic-lite
@@ -8,6 +10,9 @@ PySide6
 requests
 numpy
 qwen-asr
+PyAudioWPatch; platform_system == "Windows"
+
+# dev dependencies
 ruff
 mypy
 pytest
