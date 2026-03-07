@@ -41,7 +41,9 @@ class PreprocessingPipeline:
         start = time.perf_counter()
 
         tokens = self._tokenizer.tokenize(text)
-        vocab_hits = self._vocab_lookup.find_beyond_level(tokens, self._config.user_jlpt_level)
+        vocab_hits = self._vocab_lookup.find_beyond_level(
+            tokens, self._config.user_jlpt_level, text=text
+        )
         grammar_hits = self._grammar_matcher.match(text, self._config.user_jlpt_level)
 
         elapsed_ms = (time.perf_counter() - start) * 1000

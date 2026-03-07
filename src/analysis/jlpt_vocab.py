@@ -39,7 +39,9 @@ class JLPTVocabLookup:
         """
         return self._vocab.get(lemma)
 
-    def find_beyond_level(self, tokens: list[Token], user_level: int) -> list[VocabHit]:
+    def find_beyond_level(
+        self, tokens: list[Token], user_level: int, text: str = ""
+    ) -> list[VocabHit]:
         """Find tokens that are harder than the user's JLPT level.
 
         A word is "beyond level" when word_jlpt_level < user_level.
@@ -49,14 +51,29 @@ class JLPTVocabLookup:
         Args:
             tokens: List of Token objects to check.
             user_level: User's current JLPT level (1-5).
+            text: Original text for calculating character positions.
 
         Returns:
             List of VocabHit for words harder than user's level.
+            start_pos and end_pos are set based on text if provided.
         """
         hits: list[VocabHit] = []
+        search_start = 0
         for token in tokens:
             level = self.lookup(token.lemma)
             if level is not None and level < user_level:
+                if text:
+                    pos = text.find(token.surface, search_start)
+                    if pos >= 0:
+                        start_pos = pos
+                        end_pos = start_pos + len(token.surface)
+                        search_start = end_pos
+                    else:
+                        start_pos = 0
+                        end_pos = 0
+                else:
+                    start_pos = 0
+                    end_pos = 0
                 hits.append(
                     VocabHit(
                         surface=token.surface,
@@ -64,6 +81,8 @@ class JLPTVocabLookup:
                         pos=token.pos,
                         jlpt_level=level,
                         user_level=user_level,
+                        start_pos=start_pos,
+                        end_pos=end_pos,
                     )
                 )
         return hits

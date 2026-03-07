@@ -1,0 +1,3 @@
+<span style="color: #F9A825; font-weight: bold;">食べている</span>
+has_grammar_color: True
+has_vocab_color: False

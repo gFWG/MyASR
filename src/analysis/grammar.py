@@ -79,6 +79,8 @@ class GrammarMatcher:
                         jlpt_level=rule.jlpt_level,
                         confidence_type=rule.confidence_type,
                         description=rule.description,
+                        start_pos=m.start(),
+                        end_pos=m.end(),
                     )
                 )
         return hits

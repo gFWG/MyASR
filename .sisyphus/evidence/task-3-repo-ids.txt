@@ -1,0 +1,1 @@
+type=tuple, sentence_id=1, vocab_ids=[1], grammar_ids=[]

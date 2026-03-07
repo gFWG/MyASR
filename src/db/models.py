@@ -55,6 +55,8 @@ class VocabHit:
     pos: str
     jlpt_level: int
     user_level: int
+    start_pos: int
+    end_pos: int
 
 
 @dataclass
@@ -64,6 +66,8 @@ class GrammarHit:
     jlpt_level: int
     confidence_type: str
     description: str
+    start_pos: int
+    end_pos: int
 
 
 @dataclass
@@ -80,6 +84,9 @@ class SentenceResult:
     explanation: str | None
     analysis: AnalysisResult
     created_at: datetime = field(default_factory=datetime.now)
+    sentence_id: int | None = None
+    highlight_vocab_ids: list[int] | None = None
+    highlight_grammar_ids: list[int] | None = None
 
 
 @dataclass

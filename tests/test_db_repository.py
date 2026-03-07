@@ -81,9 +81,11 @@ def make_grammar(
 
 
 def test_insert_returns_positive_id(repo: LearningRepository) -> None:
-    rid = repo.insert_sentence(make_record(), [], [])
-    assert isinstance(rid, int)
-    assert rid >= 1
+    sentence_id, vocab_ids, grammar_ids = repo.insert_sentence(make_record(), [], [])
+    assert isinstance(sentence_id, int)
+    assert sentence_id >= 1
+    assert vocab_ids == []
+    assert grammar_ids == []
 
 
 def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
@@ -92,11 +94,11 @@ def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
         chinese_translation="昨天看了电影",
         source_context="movie",
     )
-    rid = repo.insert_sentence(rec, [], [])
+    sentence_id, _vocab_ids, _grammar_ids = repo.insert_sentence(rec, [], [])
     rows = repo.get_sentences(limit=10)
     assert len(rows) == 1
     r = rows[0]
-    assert r.id == rid
+    assert r.id == sentence_id
     assert r.japanese_text == "昨日映画を見た"
     assert r.chinese_translation == "昨天看了电影"
     assert r.source_context == "movie"
@@ -104,8 +106,10 @@ def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
 
 
 def test_insert_with_empty_vocab_grammar(repo: LearningRepository) -> None:
-    rid = repo.insert_sentence(make_record(), [], [])
-    assert rid >= 1
+    sentence_id, vocab_ids, grammar_ids = repo.insert_sentence(make_record(), [], [])
+    assert sentence_id >= 1
+    assert vocab_ids == []
+    assert grammar_ids == []
     rows = repo.get_sentences()
     assert len(rows) == 1
 
@@ -113,10 +117,36 @@ def test_insert_with_empty_vocab_grammar(repo: LearningRepository) -> None:
 def test_insert_with_vocab_and_grammar(repo: LearningRepository) -> None:
     vocab = [make_vocab(surface="映画", lemma="映画", jlpt_level=4)]
     grammar = [make_grammar(rule_id="N4_past", pattern="た")]
-    rid = repo.insert_sentence(make_record(), vocab, grammar)
-    assert rid >= 1
+    sentence_id, vocab_ids, grammar_ids = repo.insert_sentence(make_record(), vocab, grammar)
+    assert sentence_id >= 1
+    assert len(vocab_ids) == 1
+    assert all(vid > 0 for vid in vocab_ids)
+    assert len(grammar_ids) == 1
+    assert all(gid > 0 for gid in grammar_ids)
     rows = repo.get_sentences()
     assert len(rows) == 1
+
+
+def test_insert_returns_correct_id_counts_for_multiple_highlights(
+    repo: LearningRepository,
+) -> None:
+    vocab = [
+        make_vocab(surface="映画", lemma="映画", jlpt_level=4),
+        make_vocab(surface="猫", lemma="猫", jlpt_level=5),
+    ]
+    grammar = [
+        make_grammar(rule_id="N4_past", pattern="た"),
+        make_grammar(rule_id="N3_te", pattern="て"),
+        make_grammar(rule_id="N5_masu", pattern="ます"),
+    ]
+    sentence_id, vocab_ids, grammar_ids = repo.insert_sentence(make_record(), vocab, grammar)
+    assert sentence_id >= 1
+    assert len(vocab_ids) == 2
+    assert all(vid > 0 for vid in vocab_ids)
+    assert len(set(vocab_ids)) == 2
+    assert len(grammar_ids) == 3
+    assert all(gid > 0 for gid in grammar_ids)
+    assert len(set(grammar_ids)) == 3
 
 
 def test_get_sentences_ordering(repo: LearningRepository) -> None:
@@ -173,10 +203,10 @@ def test_search_matches_chinese_translation(repo: LearningRepository) -> None:
 
 def test_mark_tooltip_shown_vocab(repo: LearningRepository) -> None:
     vocab = [make_vocab()]
-    rid = repo.insert_sentence(make_record(), vocab, [])
+    sentence_id, _vocab_ids, _grammar_ids = repo.insert_sentence(make_record(), vocab, [])
 
     conn: sqlite3.Connection = repo._conn
-    cursor = conn.execute("SELECT id FROM highlight_vocab WHERE sentence_id=?", (rid,))
+    cursor = conn.execute("SELECT id FROM highlight_vocab WHERE sentence_id=?", (sentence_id,))
     vocab_id = cursor.fetchone()[0]
 
     cursor2 = conn.execute("SELECT tooltip_shown FROM highlight_vocab WHERE id=?", (vocab_id,))
@@ -190,10 +220,10 @@ def test_mark_tooltip_shown_vocab(repo: LearningRepository) -> None:
 
 def test_mark_tooltip_shown_grammar(repo: LearningRepository) -> None:
     grammar = [make_grammar()]
-    rid = repo.insert_sentence(make_record(), [], grammar)
+    sentence_id, _vocab_ids, _grammar_ids = repo.insert_sentence(make_record(), [], grammar)
 
     conn: sqlite3.Connection = repo._conn
-    cursor = conn.execute("SELECT id FROM highlight_grammar WHERE sentence_id=?", (rid,))
+    cursor = conn.execute("SELECT id FROM highlight_grammar WHERE sentence_id=?", (sentence_id,))
     grammar_id = cursor.fetchone()[0]
 
     repo.mark_tooltip_shown("grammar", grammar_id)

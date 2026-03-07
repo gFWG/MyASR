@@ -1,0 +1,31 @@
+1:"""Application entry point for MyASR Japanese learning overlay.
+3:Wires together the audio pipeline, overlay UI, tooltip, and learning repository
+17:from src.db.repository import LearningRepository
+19:from src.pipeline import PipelineWorker
+20:from src.ui.overlay import OverlayWindow
+21:from src.ui.tooltip import TooltipPopup
+26:def _cleanup(pipeline: PipelineWorker, conn: sqlite3.Connection) -> None:
+27:    """Stop the pipeline and close the database connection.
+30:        pipeline: The running PipelineWorker thread to stop.
+31:        conn: The SQLite connection to close.
+34:        pipeline.stop()
+36:        logger.exception("Error stopping pipeline during cleanup")
+41:        logger.exception("Error closing database connection during cleanup")
+45:    """Initialize and run the MyASR overlay application.
+60:        repo = LearningRepository(conn)
+62:        overlay = OverlayWindow()
+63:        tooltip = TooltipPopup()
+64:        pipeline = PipelineWorker(config, db_conn=conn)
+66:        pipeline.sentence_ready.connect(overlay.on_sentence_ready)
+68:        def _on_pipeline_error(msg: str) -> None:
+70:            overlay.set_status(f"Error: {msg}")
+72:        pipeline.error_occurred.connect(_on_pipeline_error)
+75:            result: SentenceResult | None = overlay._current_result
+102:                tooltip.show_for_vocab(hit, point, sentence_id, highlight_id)
+104:                tooltip.show_for_grammar(hit, point, sentence_id, highlight_id)
+106:        overlay.highlight_hovered.connect(_on_highlight_hovered)
+107:        tooltip.record_triggered.connect(repo.mark_tooltip_shown)
+110:        app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn))
+112:        pipeline.start()
+113:        overlay.set_status("Listening...")
+114:        overlay.show()

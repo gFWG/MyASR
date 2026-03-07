@@ -506,6 +506,8 @@ def test_to_db_records_converts_correctly(
         pos="名詞",
         jlpt_level=1,
         user_level=3,
+        start_pos=0,
+        end_pos=2,
     )
     grammar_hit = GrammarHit(
         rule_id="n1-001",
@@ -513,6 +515,8 @@ def test_to_db_records_converts_correctly(
         jlpt_level=1,
         confidence_type="exact",
         description="despite",
+        start_pos=2,
+        end_pos=9,
     )
     analysis = AnalysisResult(
         tokens=[],
@@ -557,3 +561,95 @@ def test_to_db_records_converts_correctly(
     assert grammar_recs[0].description == "despite"
     assert grammar_recs[0].is_beyond_level is True
     assert grammar_recs[0].tooltip_shown is False
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.AudioCapture")
+def test_pipeline_emits_sentence_id_when_db_connected(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+) -> None:
+    mock_llm_cls.return_value.translate.return_value = ("中国語訳", None)
+    analysis = _make_analysis_result()
+    mock_prep_cls.return_value.process.return_value = analysis
+
+    db_conn = init_db(":memory:")
+
+    from src.pipeline import PipelineWorker
+
+    worker = PipelineWorker(_make_config(), db_conn=db_conn)
+
+    results: list[SentenceResult] = []
+    worker.sentence_ready.connect(results.append)
+
+    text = "テスト"
+    result_analysis = worker._preprocessing.process(text)
+    translation, explanation = worker._llm.translate(text)
+    result = SentenceResult(
+        japanese_text=text,
+        chinese_translation=translation,
+        explanation=explanation,
+        analysis=result_analysis,
+    )
+
+    assert worker._repo is not None
+    record, vocab_recs, grammar_recs = worker._to_db_records(result)
+    sentence_id, vocab_ids, grammar_ids = worker._repo.insert_sentence(
+        record, vocab_recs, grammar_recs
+    )
+    result.sentence_id = sentence_id
+    result.highlight_vocab_ids = vocab_ids
+    result.highlight_grammar_ids = grammar_ids
+    worker.sentence_ready.emit(result)
+
+    assert len(results) == 1
+    assert results[0].sentence_id is not None
+    assert results[0].sentence_id >= 1
+    assert results[0].highlight_vocab_ids == []
+    assert results[0].highlight_grammar_ids == []
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.AudioCapture")
+def test_pipeline_emits_sentence_id_none_when_no_db(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+) -> None:
+    mock_llm_cls.return_value.translate.return_value = ("翻訳", None)
+    analysis = _make_analysis_result()
+    mock_prep_cls.return_value.process.return_value = analysis
+
+    from src.pipeline import PipelineWorker
+
+    worker = PipelineWorker(_make_config())
+
+    assert worker._repo is None
+
+    results: list[SentenceResult] = []
+    worker.sentence_ready.connect(results.append)
+
+    text = "テスト文章"
+    result = SentenceResult(
+        japanese_text=text,
+        chinese_translation="翻訳",
+        explanation=None,
+        analysis=analysis,
+    )
+    worker.sentence_ready.emit(result)
+
+    assert len(results) == 1
+    assert results[0].sentence_id is None
