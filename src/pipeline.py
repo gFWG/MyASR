@@ -2,7 +2,6 @@
 
 import logging
 import queue
-import sqlite3
 from typing import Any
 
 import numpy as np
@@ -31,32 +30,37 @@ class PipelineWorker(QThread):
     sentence_ready = Signal(object)  # emits SentenceResult
     error_occurred = Signal(str)
 
-    def __init__(
-        self, config: AppConfig, db_conn: sqlite3.Connection | None = None, parent: Any = None
-    ) -> None:
+    def __init__(self, config: AppConfig, db_path: str | None = None, parent: Any = None) -> None:
         super().__init__(parent)
         self._config = config
         self._audio_capture = create_audio_capture(config)
         self._vad = SileroVAD(sample_rate=config.sample_rate)
         self._asr = QwenASR()
         self._preprocessing = PreprocessingPipeline(config)
-        # Limit queue to ~16s of audio (500 chunks × 512 samples @ 16kHz)
+        # Limit queue to ~30s of audio (1000 chunks × 512 samples @ 16kHz)
         # to prevent unbounded memory growth when ASR is slower than capture.
-        self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=500)
+        self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1000)
         self._config_queue: queue.Queue[AppConfig] = queue.Queue()
         self._user_level: int = config.user_jlpt_level
         self._running = False
         self._llm = OllamaClient(config)
-        self._repo: LearningRepository | None = (
-            LearningRepository(db_conn) if db_conn is not None else None
-        )
+        self._db_path = db_path
+        self._repo: LearningRepository | None = None
 
     def _enqueue_audio(self, chunk: np.ndarray) -> None:
-        """Enqueue an audio chunk, dropping it if the queue is full."""
+        """Enqueue an audio chunk, dropping oldest if the queue is full."""
         try:
             self._audio_queue.put_nowait(chunk)
         except queue.Full:
-            logger.warning("Audio queue full — dropping chunk (ASR may be falling behind)")
+            try:
+                self._audio_queue.get_nowait()
+            except queue.Empty:
+                pass
+            try:
+                self._audio_queue.put_nowait(chunk)
+            except queue.Full:
+                pass
+            logger.warning("Audio queue full — dropped oldest chunk")
 
     def update_config(self, config: AppConfig) -> None:
         """Queue a config update to be applied at the next pipeline loop iteration.
@@ -73,6 +77,10 @@ class PipelineWorker(QThread):
     def run(self) -> None:
         """Main thread loop: capture → VAD → ASR → preprocessing → LLM → emit."""
         self._running = True
+
+        if self._db_path is not None:
+            self._repo = LearningRepository(db_path=self._db_path)
+
         try:
             self._audio_capture.start(callback=self._enqueue_audio)
         except AudioCaptureError as exc:
@@ -175,6 +183,11 @@ class PipelineWorker(QThread):
             self._asr.unload()
         except Exception as exc:
             logger.warning("Error unloading ASR: %s", exc)
+        if self._repo is not None:
+            try:
+                self._repo.close()
+            except Exception as exc:
+                logger.warning("Error closing repository: %s", exc)
 
     def _to_db_records(
         self, result: SentenceResult

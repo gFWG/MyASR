@@ -1,32 +1,60 @@
 The existing code running in Windows 11 encounters following bug/error:
 
-1. When playing the audio file, the following error occurs:
-'''following error occurs when running the command:
-python -m src.main
+1. 
+'''
+2026-03-07 21:28:37,809 src.pipeline WARNING Audio queue full — dropping chunk (ASR may be falling behind)
 '''
 
-'''error log:
-2026-03-07 20:12:11,085 __main__ ERROR Pipeline error: VADIterator failed during chunk processing: The following operation failed in the TorchScript interpreter.
-Traceback of TorchScript, serialized code (most recent call last):
-  File "code/__torch__/vad/model/vad_annotator.py", line 124, in forward
-    _21 = torch.gt(torch.div(sr1, (torch.size(x3))[1]), 31.25)
-    if _21:
-      ops.prim.RaiseException("Input audio chunk is too short", "builtins.ValueError")
-      ~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-    else:
-      pass
-
-Traceback of TorchScript, original code (most recent call last):
-  File "/home/keras/notebook/nvme1/adamnsandle/silero-models-research/vad/model/vad_annotator.py", line 675, in forward
-
-        if sr / x.shape[1] > 31.25:
-            raise ValueError("Input audio chunk is too short")
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-
-        return x, sr
-builtins.ValueError: Input audio chunk is too short
+2. 
 '''
+2026-03-07 21:28:37,816 src.pipeline ERROR Failed to write sentence to database
+Traceback (most recent call last):
+  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
+    cursor = self._conn.execute(
+             ^^^^^^^^^^^^^^^^^^^
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
 
-2. The overlay is always hard to drag and move, and only the bottom right corner of the overlay can be dragged, which is not user-friendly.
+During handling of the above exception, another exception occurred:
 
-3. The text box of overlay still does not fully meet the design requirements. Check carefully.
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
+    self._conn.rollback()
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
+    self._conn.rollback()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+2026-03-07 21:28:49,421 src.pipeline ERROR Failed to write sentence to database
+Traceback (most recent call last):
+  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
+    cursor = self._conn.execute(
+             ^^^^^^^^^^^^^^^^^^^
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\github\MyASR\src\pipeline.py", line 137, in run
+    sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
+    self._conn.rollback()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+2026-03-07 21:36:07,311 src.pipeline ERROR Failed to write sentence to database
+Traceback (most recent call last):
+  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
+    cursor = self._conn.execute(
+             ^^^^^^^^^^^^^^^^^^^
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\github\MyASR\src\pipeline.py", line 137, in run
+    sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
+    self._conn.rollback()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+'''

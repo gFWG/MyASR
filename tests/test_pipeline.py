@@ -1,6 +1,8 @@
 import os
+import queue
 import sqlite3
 from collections.abc import Callable, Generator
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -18,6 +20,7 @@ from src.db.models import (
     SentenceResult,
     VocabHit,
 )
+from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.exceptions import ASRError, AudioCaptureError
 
@@ -393,6 +396,7 @@ def test_pipeline_writes_to_db_on_success(
     mock_prep_cls: MagicMock,
     mock_llm_cls: MagicMock,
     qapp: QApplication,
+    tmp_path: Any,
 ) -> None:
     mock_llm_cls.return_value.translate.return_value = ("中国語訳", None)
     analysis = _make_analysis_result()
@@ -400,11 +404,13 @@ def test_pipeline_writes_to_db_on_success(
     mock_asr_cls.return_value.transcribe.return_value = "テスト"
     mock_vad_cls.return_value.process_chunk.return_value = [_make_audio_segment()]
 
-    db_conn = init_db(":memory:")
+    db_path = str(tmp_path / "test.db")
+    init_db(db_path)
 
     from src.pipeline import PipelineWorker
 
-    worker = PipelineWorker(_make_config(), db_conn=db_conn)
+    worker = PipelineWorker(_make_config(), db_path=db_path)
+    worker._repo = LearningRepository(db_path=db_path)
 
     results: list[SentenceResult] = []
     worker.sentence_ready.connect(results.append)
@@ -421,13 +427,16 @@ def test_pipeline_writes_to_db_on_success(
     worker.sentence_ready.emit(result)
 
     record, vocab_recs, grammar_recs = worker._to_db_records(result)
-    worker._repo.insert_sentence(record, vocab_recs, grammar_recs)  # type: ignore[union-attr]
+    worker._repo.insert_sentence(record, vocab_recs, grammar_recs)
 
-    cursor = db_conn.execute("SELECT japanese_text, chinese_translation FROM sentence_records")
+    verify_conn = sqlite3.connect(db_path)
+    cursor = verify_conn.execute("SELECT japanese_text, chinese_translation FROM sentence_records")
     rows = cursor.fetchall()
+    verify_conn.close()
     assert len(rows) == 1
     assert rows[0][0] == "テスト"
     assert rows[0][1] == "中国語訳"
+    worker._repo.close()
 
 
 @patch("src.pipeline.LearningRepository")
@@ -450,11 +459,10 @@ def test_pipeline_still_emits_when_db_write_fails(
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    db_conn = MagicMock(spec=sqlite3.Connection)
-
     from src.pipeline import PipelineWorker
 
-    worker = PipelineWorker(_make_config(), db_conn=db_conn)
+    worker = PipelineWorker(_make_config(), db_path=":memory:")
+    worker._repo = mock_repo_cls.return_value
 
     results: list[SentenceResult] = []
     worker.sentence_ready.connect(results.append)
@@ -575,16 +583,19 @@ def test_pipeline_emits_sentence_id_when_db_connected(
     mock_prep_cls: MagicMock,
     mock_llm_cls: MagicMock,
     qapp: QApplication,
+    tmp_path: Any,
 ) -> None:
     mock_llm_cls.return_value.translate.return_value = ("中国語訳", None)
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    db_conn = init_db(":memory:")
+    db_path = str(tmp_path / "test.db")
+    init_db(db_path)
 
     from src.pipeline import PipelineWorker
 
-    worker = PipelineWorker(_make_config(), db_conn=db_conn)
+    worker = PipelineWorker(_make_config(), db_path=db_path)
+    worker._repo = LearningRepository(db_path=db_path)
 
     results: list[SentenceResult] = []
     worker.sentence_ready.connect(results.append)
@@ -614,6 +625,7 @@ def test_pipeline_emits_sentence_id_when_db_connected(
     assert results[0].sentence_id >= 1
     assert results[0].highlight_vocab_ids == []
     assert results[0].highlight_grammar_ids == []
+    worker._repo.close()
 
 
 @patch("src.pipeline.OllamaClient")
@@ -653,3 +665,121 @@ def test_pipeline_emits_sentence_id_none_when_no_db(
 
     assert len(results) == 1
     assert results[0].sentence_id is None
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.create_audio_capture")
+def test_enqueue_audio_drops_oldest_when_full(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+) -> None:
+    from src.pipeline import PipelineWorker
+
+    config = _make_config()
+    worker = PipelineWorker(config)
+    worker._audio_queue = queue.Queue(maxsize=2)
+
+    chunk1 = np.array([1.0], dtype=np.float32)
+    chunk2 = np.array([2.0], dtype=np.float32)
+    chunk3 = np.array([3.0], dtype=np.float32)
+
+    worker._enqueue_audio(chunk1)
+    worker._enqueue_audio(chunk2)
+    assert worker._audio_queue.qsize() == 2
+
+    worker._enqueue_audio(chunk3)
+    assert worker._audio_queue.qsize() == 2
+
+    first = worker._audio_queue.get_nowait()
+    assert first[0] == 2.0
+    second = worker._audio_queue.get_nowait()
+    assert second[0] == 3.0
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.create_audio_capture")
+def test_pipeline_creates_repo_in_run_when_db_path_set(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+    tmp_path: Any,
+) -> None:
+    mock_audio_cls.return_value.start.side_effect = AudioCaptureError("test stop")
+
+    db_path = str(tmp_path / "test.db")
+    init_db(db_path)
+
+    from src.pipeline import PipelineWorker
+
+    worker = PipelineWorker(_make_config(), db_path=db_path)
+    assert worker._repo is None
+
+    worker.run()
+
+    assert worker._repo is not None
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.create_audio_capture")
+def test_pipeline_no_repo_when_no_db_path(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+) -> None:
+    mock_audio_cls.return_value.start.side_effect = AudioCaptureError("test stop")
+
+    from src.pipeline import PipelineWorker
+
+    worker = PipelineWorker(_make_config())
+    assert worker._repo is None
+
+    worker.run()
+
+    assert worker._repo is None
+
+
+@patch("src.pipeline.OllamaClient")
+@patch("src.pipeline.PreprocessingPipeline")
+@patch("src.pipeline.QwenASR")
+@patch("src.pipeline.SileroVAD")
+@patch("src.pipeline.create_audio_capture")
+def test_pipeline_cleanup_closes_repo(
+    mock_audio_cls: MagicMock,
+    mock_vad_cls: MagicMock,
+    mock_asr_cls: MagicMock,
+    mock_prep_cls: MagicMock,
+    mock_llm_cls: MagicMock,
+    qapp: QApplication,
+    tmp_path: Any,
+) -> None:
+    db_path = str(tmp_path / "test.db")
+    init_db(db_path)
+
+    from src.pipeline import PipelineWorker
+
+    worker = PipelineWorker(_make_config(), db_path=db_path)
+    worker._repo = LearningRepository(db_path=db_path)
+
+    worker._cleanup()
+
+    with pytest.raises(Exception):
+        worker._repo._conn.execute("SELECT 1")

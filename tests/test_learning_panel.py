@@ -64,7 +64,7 @@ def test_panel_has_search_and_pagination(qapp: QApplication, tmp_path: Path) -> 
 def test_pagination_calculates_pages(qapp: QApplication) -> None:
     """Insert 120 rows with page_size=50; total pages should be 3."""
     conn = init_db(":memory:")
-    repo = LearningRepository(conn)
+    repo = LearningRepository(conn=conn)
     for i in range(120):
         repo.insert_sentence(
             _make_record(
@@ -84,7 +84,7 @@ def test_pagination_calculates_pages(qapp: QApplication) -> None:
 def test_search_filters_results(qapp: QApplication) -> None:
     """Insert 2 rows; search for unique text in one; table should show 1 row."""
     conn = init_db(":memory:")
-    repo = LearningRepository(conn)
+    repo = LearningRepository(conn=conn)
     repo.insert_sentence(
         _make_record(japanese_text="唯一のテキストxyz", chinese_translation="unique xyz"),
         [],

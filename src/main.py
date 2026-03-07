@@ -63,11 +63,11 @@ def main() -> None:
 
         config: AppConfig = load_config()
         conn: sqlite3.Connection = init_db(config.db_path)
-        repo = LearningRepository(conn)
+        repo = LearningRepository(conn=conn)
 
         overlay = OverlayWindow(config)
         tooltip = TooltipPopup()
-        pipeline = PipelineWorker(config, db_conn=conn)
+        pipeline = PipelineWorker(config, db_path=config.db_path)
         tray = SystemTrayManager()
 
         pipeline.sentence_ready.connect(overlay.on_sentence_ready)

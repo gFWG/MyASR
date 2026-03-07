@@ -56,7 +56,7 @@ class LearningPanel(QWidget):
         self._db_path = Path(db_path)
         self._conn = init_db(str(self._db_path))
         self._conn.execute("PRAGMA journal_mode=WAL")
-        self._repo = LearningRepository(self._conn)
+        self._repo = LearningRepository(conn=self._conn)
         self._current_page = 1
         self._total_pages = 1
 

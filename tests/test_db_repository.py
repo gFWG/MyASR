@@ -13,7 +13,7 @@ from src.db.schema import init_db
 @pytest.fixture
 def repo() -> LearningRepository:
     conn = init_db(":memory:")
-    return LearningRepository(conn)
+    return LearningRepository(conn=conn)
 
 
 def make_record(
@@ -445,3 +445,57 @@ def test_get_sentence_with_highlights_found(repo: LearningRepository) -> None:
 def test_get_sentence_with_highlights_not_found(repo: LearningRepository) -> None:
     result = repo.get_sentence_with_highlights(999999)
     assert result is None
+
+
+def test_constructor_requires_db_path_or_conn() -> None:
+    with pytest.raises(ValueError, match="Supply one of"):
+        LearningRepository()
+
+
+def test_constructor_rejects_both_db_path_and_conn() -> None:
+    conn = init_db(":memory:")
+    with pytest.raises(ValueError, match="Supply db_path or conn, not both"):
+        LearningRepository(db_path=":memory:", conn=conn)
+
+
+def test_constructor_with_db_path(tmp_path: object) -> None:
+    from pathlib import Path
+
+    db_path = str(Path(str(tmp_path)) / "test.db")
+    init_db(db_path)
+    repo = LearningRepository(db_path=db_path)
+    sentence_id, _, _ = repo.insert_sentence(make_record(), [], [])
+    assert sentence_id >= 1
+    repo.close()
+
+
+def test_close_only_closes_owned_connection() -> None:
+    conn = init_db(":memory:")
+    repo = LearningRepository(conn=conn)
+    repo.close()
+    conn.execute("SELECT 1")
+
+
+def test_close_closes_owned_connection(tmp_path: object) -> None:
+    from pathlib import Path
+
+    db_path = str(Path(str(tmp_path)) / "test.db")
+    init_db(db_path)
+    repo = LearningRepository(db_path=db_path)
+    repo.close()
+    with pytest.raises(Exception):
+        repo._conn.execute("SELECT 1")
+
+
+def test_separate_repos_same_db_file(tmp_path: object) -> None:
+    from pathlib import Path
+
+    db_path = str(Path(str(tmp_path)) / "test.db")
+    init_db(db_path)
+    repo1 = LearningRepository(db_path=db_path)
+    repo2 = LearningRepository(db_path=db_path)
+    sentence_id, _, _ = repo1.insert_sentence(make_record(), [], [])
+    assert sentence_id >= 1
+    assert repo2.get_sentence_count() == 1
+    repo1.close()
+    repo2.close()

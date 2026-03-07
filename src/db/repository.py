@@ -16,10 +16,47 @@ class LearningRepository:
 
     Handles all CRUD operations for sentence records and their associated
     vocabulary and grammar highlights.
+
+    Each instance owns its own ``sqlite3.Connection`` so it is safe to use
+    from the thread that created it.  Pass a *db_path* to let the repository
+    open (and later close) the connection itself, **or** pass an existing
+    *conn* for backwards-compatible / test usage.
+
+    Args:
+        db_path: Filesystem path (or ``":memory:"``) to the SQLite database.
+            If provided, the repository opens a new connection with WAL mode
+            and foreign-key enforcement.
+        conn: An already-open ``sqlite3.Connection``.  Mutually exclusive
+            with *db_path*.
+
+    Raises:
+        ValueError: If neither or both of *db_path* and *conn* are supplied.
     """
 
-    def __init__(self, conn: sqlite3.Connection) -> None:
-        self._conn = conn
+    def __init__(
+        self,
+        db_path: str | None = None,
+        conn: sqlite3.Connection | None = None,
+    ) -> None:
+        if db_path is not None and conn is not None:
+            raise ValueError("Supply db_path or conn, not both")
+        if db_path is None and conn is None:
+            raise ValueError("Supply one of db_path or conn")
+
+        if db_path is not None:
+            self._conn = sqlite3.connect(db_path)
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA foreign_keys=ON")
+            self._owns_conn = True
+        else:
+            assert conn is not None  # for type narrowing
+            self._conn = conn
+            self._owns_conn = False
+
+    def close(self) -> None:
+        """Close the underlying connection if this repository owns it."""
+        if self._owns_conn:
+            self._conn.close()
 
     def insert_sentence(
         self,
