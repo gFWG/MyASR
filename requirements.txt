@@ -9,6 +9,7 @@ unidic-lite
 PySide6
 requests
 numpy
+scipy
 qwen-asr
 PyAudioWPatch; platform_system == "Windows"
 
