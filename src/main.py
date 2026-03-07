@@ -19,14 +19,11 @@ from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.pipeline import PipelineWorker
 from src.ui.overlay import OverlayWindow
+from src.ui.settings import SettingsDialog
 from src.ui.tooltip import TooltipPopup
 from src.ui.tray import SystemTrayManager
 
 logger = logging.getLogger(__name__)
-
-
-def _open_settings() -> None:
-    logger.info("Settings dialog requested (not yet implemented)")
 
 
 def _open_learning_panel() -> None:
@@ -120,6 +117,19 @@ def main() -> None:
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
 
         # TODO(F4): QTimer(60s) -> review_repo.get_queue_count() -> tray.update_review_badge(count)
+
+        _settings_dialog: SettingsDialog | None = None
+
+        def _open_settings() -> None:
+            nonlocal _settings_dialog
+            if _settings_dialog is not None and _settings_dialog.isVisible():
+                _settings_dialog.raise_()
+                _settings_dialog.activateWindow()
+                return
+            _settings_dialog = SettingsDialog(config)
+            _settings_dialog.config_changed.connect(overlay.on_config_changed)
+            _settings_dialog.config_changed.connect(pipeline.update_config)
+            _settings_dialog.show()
 
         tray.quit_requested.connect(app.quit)
         tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
