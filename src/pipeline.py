@@ -196,7 +196,7 @@ class PipelineWorker(QThread):
                 lemma=vh.lemma,
                 pos=vh.pos,
                 jlpt_level=vh.jlpt_level,
-                is_beyond_level=vh.jlpt_level > self._user_level,
+                is_beyond_level=vh.jlpt_level < self._user_level,
                 tooltip_shown=False,
             )
             for vh in result.analysis.vocab_hits
@@ -210,7 +210,7 @@ class PipelineWorker(QThread):
                 jlpt_level=gh.jlpt_level,
                 confidence_type=gh.confidence_type,
                 description=gh.description,
-                is_beyond_level=gh.jlpt_level > self._user_level,
+                is_beyond_level=gh.jlpt_level < self._user_level,
                 tooltip_shown=False,
             )
             for gh in result.analysis.grammar_hits

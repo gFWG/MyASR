@@ -42,7 +42,8 @@ class WasapiLoopbackCapture:
             AudioCaptureError: If no loopback device is found.
         """
         try:
-            return p.get_default_wasapi_loopback()
+            device_info: dict[str, Any] = p.get_default_wasapi_loopback()
+            return device_info
         except OSError as exc:
             raise AudioCaptureError("No WASAPI loopback device found") from exc
 
@@ -84,7 +85,7 @@ class WasapiLoopbackCapture:
             raise AudioCaptureError(f"Failed to open WASAPI stream: {exc}") from exc
 
     def _pa_callback(
-        self, in_data: bytes, frame_count: int, time_info: dict, status: int
+        self, in_data: bytes, frame_count: int, time_info: dict[str, Any], status: int
     ) -> tuple[None, int]:
         """Internal callback handling conversion and resampling.
 
@@ -107,6 +108,8 @@ class WasapiLoopbackCapture:
             audio_data = np.frombuffer(in_data, dtype=np.float32)
 
             # 2. Reshape to (frames, channels)
+            # _device_info is guaranteed non-None when stream is open
+            assert self._device_info is not None
             channels = self._device_info["maxInputChannels"]
             audio_data = audio_data.reshape(-1, channels)
 

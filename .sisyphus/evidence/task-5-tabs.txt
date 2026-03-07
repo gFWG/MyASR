@@ -1,0 +1,8 @@
+Tab names in SettingsDialog (QTabWidget, 4 tabs):
+1. "General"
+2. "Appearance"
+3. "Model"
+4. "Templates"
+
+Each built by _build_general_tab(), _build_appearance_tab(), _build_model_tab(), _build_templates_tab()
+Added via self._tabs.addTab(widget, "<name>")

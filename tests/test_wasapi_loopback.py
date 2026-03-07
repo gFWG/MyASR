@@ -12,7 +12,7 @@ from src.exceptions import AudioCaptureError
 
 
 @pytest.fixture
-def mock_pyaudiowpatch() -> Generator[dict[str, MagicMock], None, None]:
+def mock_pyaudiowpatch() -> Generator[dict[str, Any], None, None]:
     """Mock pyaudiowpatch module for testing."""
     mock_pyaudio = MagicMock()
     mock_pyaudio.paFloat32 = 1
@@ -44,7 +44,7 @@ def mock_pyaudiowpatch() -> Generator[dict[str, MagicMock], None, None]:
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_start_opens_stream(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_start_opens_stream(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that start() opens a WASAPI loopback stream with correct parameters."""
     from src.audio.backends import WasapiLoopbackCapture
 
@@ -68,7 +68,7 @@ def test_wasapi_start_opens_stream(mock_pyaudiowpatch: dict[str, MagicMock]) -> 
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_stop_closes_resources(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_stop_closes_resources(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that stop() closes stream and terminates PyAudio."""
     from src.audio.backends import WasapiLoopbackCapture
 
@@ -82,7 +82,7 @@ def test_wasapi_stop_closes_resources(mock_pyaudiowpatch: dict[str, MagicMock]) 
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_start_twice_raises_error(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_start_twice_raises_error(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that starting an already-running capture raises an error."""
     from src.audio.backends import WasapiLoopbackCapture
 
@@ -96,7 +96,7 @@ def test_wasapi_start_twice_raises_error(mock_pyaudiowpatch: dict[str, MagicMock
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_callback_downmixes_and_resamples(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_callback_downmixes_and_resamples(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that the callback correctly downmixes stereo to mono and resamples."""
 
     from src.audio.backends import WasapiLoopbackCapture
@@ -130,7 +130,7 @@ def test_wasapi_callback_downmixes_and_resamples(mock_pyaudiowpatch: dict[str, M
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_no_loopback_device_raises_error(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_no_loopback_device_raises_error(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that missing loopback device raises AudioCaptureError."""
     from src.audio.backends import WasapiLoopbackCapture
 
@@ -145,7 +145,7 @@ def test_wasapi_no_loopback_device_raises_error(mock_pyaudiowpatch: dict[str, Ma
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
-def test_wasapi_list_devices(mock_pyaudiowpatch: dict[str, MagicMock]) -> None:
+def test_wasapi_list_devices(mock_pyaudiowpatch: dict[str, Any]) -> None:
     """Test that list_devices returns device list."""
     from src.audio.backends import WasapiLoopbackCapture
 

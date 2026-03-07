@@ -1,0 +1,1 @@
+def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
