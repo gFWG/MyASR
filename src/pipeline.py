@@ -43,6 +43,8 @@ class PipelineWorker(QThread):
         # Limit queue to ~16s of audio (500 chunks × 512 samples @ 16kHz)
         # to prevent unbounded memory growth when ASR is slower than capture.
         self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=500)
+        self._config_queue: queue.Queue[AppConfig] = queue.Queue()
+        self._user_level: int = config.user_jlpt_level
         self._running = False
         self._llm = OllamaClient(config)
         self._repo: LearningRepository | None = (
@@ -56,6 +58,18 @@ class PipelineWorker(QThread):
         except queue.Full:
             logger.warning("Audio queue full — dropping chunk (ASR may be falling behind)")
 
+    def update_config(self, config: AppConfig) -> None:
+        """Queue a config update to be applied at the next pipeline loop iteration.
+
+        Thread-safe: can be called from the UI thread.
+        """
+        self._config_queue.put_nowait(config)
+
+    def _apply_config(self, config: AppConfig) -> None:
+        self._config = config
+        self._user_level = config.user_jlpt_level
+        self._llm = OllamaClient(config)
+
     def run(self) -> None:
         """Main thread loop: capture → VAD → ASR → preprocessing → LLM → emit."""
         self._running = True
@@ -68,6 +82,12 @@ class PipelineWorker(QThread):
             return
 
         while self._running:
+            try:
+                new_config = self._config_queue.get_nowait()
+                self._apply_config(new_config)
+            except queue.Empty:
+                pass
+
             try:
                 chunk = self._audio_queue.get(timeout=0.1)
             except queue.Empty:
@@ -176,7 +196,7 @@ class PipelineWorker(QThread):
                 lemma=vh.lemma,
                 pos=vh.pos,
                 jlpt_level=vh.jlpt_level,
-                is_beyond_level=True,
+                is_beyond_level=vh.jlpt_level > self._user_level,
                 tooltip_shown=False,
             )
             for vh in result.analysis.vocab_hits
@@ -190,7 +210,7 @@ class PipelineWorker(QThread):
                 jlpt_level=gh.jlpt_level,
                 confidence_type=gh.confidence_type,
                 description=gh.description,
-                is_beyond_level=True,
+                is_beyond_level=gh.jlpt_level > self._user_level,
                 tooltip_shown=False,
             )
             for gh in result.analysis.grammar_hits
