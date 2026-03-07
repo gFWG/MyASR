@@ -8,6 +8,9 @@ PySide6
 requests
 numpy
 qwen-asr
+PyAudioWPatch; platform_system == "Windows"
+
+# dev dependencies
 ruff
 mypy
 pytest
