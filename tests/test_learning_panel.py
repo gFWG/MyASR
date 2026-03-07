@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import sys
-from unittest.mock import patch
+from pathlib import Path
 
 import pytest
 from PySide6.QtWidgets import QApplication, QLineEdit, QPushButton
@@ -40,21 +40,22 @@ def _make_record(
 
 
 def _make_panel(qapp: QApplication, db_path: Path) -> LearningPanel:
+    init_db(str(db_path))
     return LearningPanel(db_path)
 
 
-def test_panel_creates_with_db_path(qapp: QApplication) -> None:
-    panel = _make_panel(qapp)
+def test_panel_creates_with_db_path(qapp: QApplication, tmp_path: Path) -> None:
+    panel = _make_panel(qapp, tmp_path / "test.db")
     assert panel is not None
 
 
-def test_panel_has_table_with_4_columns(qapp: QApplication) -> None:
-    panel = _make_panel(qapp)
+def test_panel_has_table_with_4_columns(qapp: QApplication, tmp_path: Path) -> None:
+    panel = _make_panel(qapp, tmp_path / "test.db")
     assert panel._table.columnCount() == 4
 
 
-def test_panel_has_search_and_pagination(qapp: QApplication) -> None:
-    panel = _make_panel(qapp)
+def test_panel_has_search_and_pagination(qapp: QApplication, tmp_path: Path) -> None:
+    panel = _make_panel(qapp, tmp_path / "test.db")
     assert isinstance(panel._search_edit, QLineEdit)
     assert isinstance(panel._prev_btn, QPushButton)
     assert isinstance(panel._next_btn, QPushButton)
@@ -100,13 +101,13 @@ def test_search_filters_results(qapp: QApplication) -> None:
     assert results[0].japanese_text == "唯一のテキストxyz"
 
 
-def test_refresh_method_callable(qapp: QApplication) -> None:
-    panel = _make_panel(qapp)
+def test_refresh_method_callable(qapp: QApplication, tmp_path: Path) -> None:
+    panel = _make_panel(qapp, tmp_path / "test.db")
     panel.refresh()
 
 
-def test_export_dialog_has_controls(qapp: QApplication) -> None:
-    panel = _make_panel(qapp)
+def test_export_dialog_has_controls(qapp: QApplication, tmp_path: Path) -> None:
+    panel = _make_panel(qapp, tmp_path / "test.db")
     assert hasattr(panel, "_open_export_dialog")
     assert callable(panel._open_export_dialog)
 
