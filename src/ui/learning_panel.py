@@ -10,7 +10,12 @@ from pathlib import Path
 
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDateEdit,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
@@ -18,6 +23,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QRadioButton,
     QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
@@ -277,8 +283,109 @@ class LearningPanel(QWidget):
             logger.warning("SentenceDetailDialog not yet available (sentence_detail.py missing)")
 
     def _open_export_dialog(self) -> None:
-        """Open the export dialog. Placeholder — not yet implemented."""
-        logger.info("Export dialog requested (placeholder)")
+        """Open the export dialog with date range, format, and highlights options.
+
+        Displays a QDialog that lets the user configure export parameters,
+        then calls export_records() and writes the result to a chosen file.
+        """
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Export Records")
+        dialog.setMinimumWidth(360)
+
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(10)
+
+        # ── Date range ───────────────────────────────────────────────────────
+        date_group = QGroupBox("Date Range")
+        date_form = QVBoxLayout(date_group)
+
+        from_row = QHBoxLayout()
+        from_row.addWidget(QLabel("From:"))
+        export_date_from = QDateEdit()
+        export_date_from.setCalendarPopup(True)
+        export_date_from.setDisplayFormat("yyyy-MM-dd")
+        export_date_from.setDate(self._date_from.date())
+        from_row.addWidget(export_date_from)
+        date_form.addLayout(from_row)
+
+        to_row = QHBoxLayout()
+        to_row.addWidget(QLabel("To:  "))
+        export_date_to = QDateEdit()
+        export_date_to.setCalendarPopup(True)
+        export_date_to.setDisplayFormat("yyyy-MM-dd")
+        export_date_to.setDate(self._date_to.date())
+        to_row.addWidget(export_date_to)
+        date_form.addLayout(to_row)
+
+        layout.addWidget(date_group)
+
+        # ── Format selection ─────────────────────────────────────────────────
+        format_group = QGroupBox("Format")
+        format_layout = QHBoxLayout(format_group)
+        json_radio = QRadioButton("JSON")
+        csv_radio = QRadioButton("CSV")
+        json_radio.setChecked(True)
+        format_layout.addWidget(json_radio)
+        format_layout.addWidget(csv_radio)
+        layout.addWidget(format_group)
+
+        # ── Options ──────────────────────────────────────────────────────────
+        highlights_check = QCheckBox("Include highlights")
+        highlights_check.setChecked(True)
+        layout.addWidget(highlights_check)
+
+        # ── Buttons ──────────────────────────────────────────────────────────
+        button_box = QDialogButtonBox()
+        export_btn = button_box.addButton("Export", QDialogButtonBox.ButtonRole.AcceptRole)
+        cancel_btn = button_box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
+        # cancel_btn is used implicitly via rejected signal; suppress unused warning
+        _ = cancel_btn
+        _ = export_btn
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        # ── Gather parameters ─────────────────────────────────────────────────
+        fmt = "json" if json_radio.isChecked() else "csv"
+        date_from_str = export_date_from.date().toString("yyyy-MM-dd")
+        date_to_str = export_date_to.date().toString("yyyy-MM-dd")
+        include_highlights = highlights_check.isChecked()
+
+        file_filter = "JSON Files (*.json)" if fmt == "json" else "CSV Files (*.csv)"
+        default_suffix = ".json" if fmt == "json" else ".csv"
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Export",
+            f"export{default_suffix}",
+            file_filter,
+        )
+        if not file_path:
+            return
+
+        try:
+            content = self._repo.export_records(
+                format=fmt,
+                date_from=date_from_str,
+                date_to=date_to_str,
+                include_highlights=include_highlights,
+            )
+            Path(file_path).write_text(content, encoding="utf-8")
+            logger.info("Exported records to %s (format=%s)", file_path, fmt)
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Records exported successfully to:\n{file_path}",
+            )
+        except Exception as exc:
+            logger.error("Export failed: %s", exc)
+            QMessageBox.critical(
+                self,
+                "Export Failed",
+                f"Failed to export records:\n{exc}",
+            )
 
     def _on_delete_by_date_clicked(self) -> None:
         """Prompt user for a cutoff date and delete records older than it."""
