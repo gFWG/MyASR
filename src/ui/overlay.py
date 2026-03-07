@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.config import AppConfig, save_config
-from src.db.models import GrammarHit, SentenceResult, VocabHit
+from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
 from src.ui.highlight import HighlightRenderer
 
 logger = logging.getLogger(__name__)
@@ -80,6 +80,8 @@ class OverlayWindow(QWidget):
         super().__init__(parent)
         self._config = config
         self._user_level = config.user_jlpt_level
+        self._enable_vocab: bool = config.enable_vocab_highlight
+        self._enable_grammar: bool = config.enable_grammar_highlight
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -88,6 +90,7 @@ class OverlayWindow(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setWindowOpacity(config.overlay_opacity)
 
         self.resize(config.overlay_width, config.overlay_height)
 
@@ -139,9 +142,14 @@ class OverlayWindow(QWidget):
         self._current_result = result
 
         if result.analysis is not None:
+            filtered_analysis = AnalysisResult(
+                tokens=result.analysis.tokens,
+                vocab_hits=result.analysis.vocab_hits if self._enable_vocab else [],
+                grammar_hits=result.analysis.grammar_hits if self._enable_grammar else [],
+            )
             rich_text = self._renderer.build_rich_text(
                 result.japanese_text,
-                result.analysis,
+                filtered_analysis,
                 user_level=self._user_level,
             )
         else:
@@ -153,6 +161,39 @@ class OverlayWindow(QWidget):
         self._cn_browser.setPlainText(translation)
 
         logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
+
+    def on_config_changed(self, config: AppConfig) -> None:
+        """Apply live config changes to the overlay without restarting.
+
+        Updates opacity, user JLPT level, font sizes, and highlight toggles.
+        If a sentence is currently displayed it is re-rendered to reflect the
+        new settings immediately.
+
+        Args:
+            config: Updated application configuration.
+        """
+        self._config = config
+        self.setWindowOpacity(config.overlay_opacity)
+        self._user_level = config.user_jlpt_level
+        self._enable_vocab = config.enable_vocab_highlight
+        self._enable_grammar = config.enable_grammar_highlight
+
+        self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
+        self._cn_browser.setFont(_make_font(config.overlay_font_size_cn))
+
+        if self._current_result is not None:
+            self.on_sentence_ready(self._current_result)
+
+        logger.debug(
+            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d cn_font=%d "
+            "vocab=%s grammar=%s",
+            config.overlay_opacity,
+            config.user_jlpt_level,
+            config.overlay_font_size_jp,
+            config.overlay_font_size_cn,
+            config.enable_vocab_highlight,
+            config.enable_grammar_highlight,
+        )
 
     def set_status(self, text: str) -> None:
         """Display a status message (e.g. 'Initializing...', 'Listening...').

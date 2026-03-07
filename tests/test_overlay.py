@@ -9,7 +9,8 @@ import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
-from src.db.models import AnalysisResult, SentenceResult
+from src.config import AppConfig
+from src.db.models import AnalysisResult, SentenceResult, VocabHit
 from src.ui.overlay import OverlayWindow
 
 
@@ -28,7 +29,7 @@ def overlay(qapp: QApplication) -> OverlayWindow:
         "src.ui.overlay.HighlightRenderer.build_rich_text",
         return_value="<b>テスト</b>",
     ):
-        window = OverlayWindow()
+        window = OverlayWindow(AppConfig())
     return window
 
 
@@ -165,3 +166,107 @@ def test_overlay_renderer_stored_as_instance(overlay: OverlayWindow) -> None:
     from src.ui.highlight import HighlightRenderer
 
     assert isinstance(overlay._renderer, HighlightRenderer)
+
+
+def test_on_config_changed_updates_user_level(overlay: OverlayWindow) -> None:
+    config = AppConfig(user_jlpt_level=2)
+    overlay.on_config_changed(config)
+    assert overlay._user_level == 2
+
+
+def test_on_config_changed_updates_enable_vocab(overlay: OverlayWindow) -> None:
+    config = AppConfig(enable_vocab_highlight=False)
+    overlay.on_config_changed(config)
+    assert overlay._enable_vocab is False
+
+
+def test_on_config_changed_updates_enable_grammar(overlay: OverlayWindow) -> None:
+    config = AppConfig(enable_grammar_highlight=False)
+    overlay.on_config_changed(config)
+    assert overlay._enable_grammar is False
+
+
+def test_on_config_changed_rerenders_current_result(overlay: OverlayWindow) -> None:
+    result = _make_result()
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ) as mock_build:
+        overlay.on_sentence_ready(result)
+        mock_build.reset_mock()
+        overlay.on_config_changed(AppConfig())
+        assert mock_build.called
+
+
+def test_on_config_changed_no_rerender_when_no_result(overlay: OverlayWindow) -> None:
+    overlay._current_result = None
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ) as mock_build:
+        overlay.on_config_changed(AppConfig())
+        mock_build.assert_not_called()
+
+
+def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
+    overlay._enable_vocab = False
+    vocab_hit = VocabHit(
+        surface="食べ",
+        lemma="食べる",
+        pos="動詞",
+        jlpt_level=4,
+        user_level=3,
+        start_pos=0,
+        end_pos=2,
+    )
+    analysis = AnalysisResult(tokens=[], vocab_hits=[vocab_hit], grammar_hits=[])
+    result = SentenceResult(
+        japanese_text="食べる",
+        chinese_translation="eat",
+        explanation=None,
+        analysis=analysis,
+    )
+    captured: list[AnalysisResult] = []
+
+    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
+        captured.append(a)
+        return "<b>食べる</b>"
+
+    with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
+        overlay.on_sentence_ready(result)
+
+    assert len(captured) == 1
+    assert captured[0].vocab_hits == []
+
+
+def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
+    from src.db.models import GrammarHit
+
+    overlay._enable_grammar = False
+    grammar_hit = GrammarHit(
+        rule_id="te-form",
+        matched_text="食べて",
+        jlpt_level=4,
+        confidence_type="exact",
+        description="te-form",
+        start_pos=0,
+        end_pos=3,
+    )
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[grammar_hit])
+    result = SentenceResult(
+        japanese_text="食べている",
+        chinese_translation="eating",
+        explanation=None,
+        analysis=analysis,
+    )
+    captured: list[AnalysisResult] = []
+
+    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
+        captured.append(a)
+        return "<b>食べている</b>"
+
+    with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
+        overlay.on_sentence_ready(result)
+
+    assert len(captured) == 1
+    assert captured[0].grammar_hits == []
