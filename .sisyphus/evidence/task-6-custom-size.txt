@@ -1,0 +1,1 @@
+self.resize(config.overlay_width, config.overlay_height)

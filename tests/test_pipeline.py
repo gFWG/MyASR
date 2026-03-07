@@ -58,7 +58,7 @@ def _make_audio_segment() -> AudioSegment:
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_emits_sentence_ready_on_valid_segment(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -126,7 +126,7 @@ def test_pipeline_emits_sentence_ready_on_valid_segment(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_skips_empty_asr_result(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -180,7 +180,7 @@ def test_pipeline_skips_empty_asr_result(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_handles_asr_error_gracefully(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -235,7 +235,7 @@ def test_pipeline_handles_asr_error_gracefully(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_emits_error_on_audio_capture_failure(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -269,7 +269,7 @@ def test_pipeline_emits_error_on_audio_capture_failure(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_stop_calls_cleanup(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -302,7 +302,7 @@ def test_stop_calls_cleanup(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_populates_translation_on_llm_success(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -342,7 +342,7 @@ def test_pipeline_populates_translation_on_llm_success(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_emits_with_none_on_llm_failure(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -385,7 +385,7 @@ def test_pipeline_emits_with_none_on_llm_failure(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_writes_to_db_on_success(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -435,7 +435,7 @@ def test_pipeline_writes_to_db_on_success(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_still_emits_when_db_write_fails(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -485,7 +485,7 @@ def test_pipeline_still_emits_when_db_write_fails(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_to_db_records_converts_correctly(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -567,7 +567,7 @@ def test_to_db_records_converts_correctly(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_emits_sentence_id_when_db_connected(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -620,7 +620,7 @@ def test_pipeline_emits_sentence_id_when_db_connected(
 @patch("src.pipeline.PreprocessingPipeline")
 @patch("src.pipeline.QwenASR")
 @patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.AudioCapture")
+@patch("src.pipeline.create_audio_capture")
 def test_pipeline_emits_sentence_id_none_when_no_db(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,

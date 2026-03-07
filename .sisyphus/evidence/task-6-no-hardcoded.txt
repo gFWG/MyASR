@@ -1,0 +1,2 @@
+No hardcoded resize(800, 120) found in overlay.py. Confirmed by grep:
+grep result: "92:        self.resize(config.overlay_width, config.overlay_height)"

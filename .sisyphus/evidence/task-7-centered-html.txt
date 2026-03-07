@@ -1,0 +1,22 @@
+Evidence: Table wrapping in build_rich_text() return statements
+File: /home/yuheng/MyASR-post-mvp/src/ui/highlight.py
+
+Lines 88-96 (after modification):
+
+        if not all_spans:
+            escaped_text = html.escape(japanese_text)
+            return (
+                '<table align="center" width="95%">'
+                f'<tr><td align="center">{escaped_text}</td></tr>'
+                '</table>'
+            )
+
+        rendered = self._render_spans(japanese_text, all_spans)
+        return (
+            '<table align="center" width="95%">'
+            f'<tr><td align="center">{rendered}</td></tr>'
+            '</table>'
+        )
+
+Both branches now wrap content in:
+<table align="center" width="95%"><tr><td align="center">...</td></tr></table>
