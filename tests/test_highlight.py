@@ -103,7 +103,8 @@ def test_build_rich_text_no_hits_returns_escaped_plain_text(
     renderer: HighlightRenderer, empty_analysis: AnalysisResult
 ) -> None:
     result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
-    assert result == html.escape("食べる")
+    # Output is wrapped in a centering table; the escaped text appears inside it
+    assert html.escape("食べる") in result
     assert "<span" not in result
 
 
@@ -312,3 +313,22 @@ def test_build_rich_text_multiple_vocab_hits_all_colored(
 
     assert "#C8E6C9" in result  # N4 vocab
     assert "#BBDEFB" in result  # N3 vocab
+
+
+# ------------------------------------------------------------------ #
+# build_rich_text — centering table wrapper                           #
+# ------------------------------------------------------------------ #
+
+
+def test_build_rich_text_contains_centering_table(
+    renderer: HighlightRenderer, empty_analysis: AnalysisResult
+) -> None:
+    result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
+    assert "<table" in result
+
+
+def test_build_rich_text_no_inline_block(
+    renderer: HighlightRenderer, empty_analysis: AnalysisResult
+) -> None:
+    result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
+    assert "inline-block" not in result

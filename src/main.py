@@ -8,17 +8,21 @@ import logging
 import signal
 import sqlite3
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from src.config import AppConfig, load_config
 from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.pipeline import PipelineWorker
+from src.ui.learning_panel import LearningPanel
 from src.ui.overlay import OverlayWindow
+from src.ui.settings import SettingsDialog
 from src.ui.tooltip import TooltipPopup
+from src.ui.tray import SystemTrayManager
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +59,16 @@ def main() -> None:
     try:
         app: QApplication = QApplication.instance() or QApplication(sys.argv)  # type: ignore[assignment]  # instance() returns QCoreApplication|None but we always get QApplication here
 
+        app.setQuitOnLastWindowClosed(False)
+
         config: AppConfig = load_config()
         conn: sqlite3.Connection = init_db(config.db_path)
         repo = LearningRepository(conn)
 
-        overlay = OverlayWindow(user_level=config.user_jlpt_level)
+        overlay = OverlayWindow(config)
         tooltip = TooltipPopup()
         pipeline = PipelineWorker(config, db_conn=conn)
+        tray = SystemTrayManager()
 
         pipeline.sentence_ready.connect(overlay.on_sentence_ready)
 
@@ -105,6 +112,54 @@ def main() -> None:
 
         overlay.highlight_hovered.connect(_on_highlight_hovered)
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
+
+        _settings_dialog: SettingsDialog | None = None
+
+        def _open_settings() -> None:
+            nonlocal _settings_dialog
+            if _settings_dialog is not None and _settings_dialog.isVisible():
+                _settings_dialog.raise_()
+                _settings_dialog.activateWindow()
+                return
+            _settings_dialog = SettingsDialog(config)
+            _settings_dialog.config_changed.connect(overlay.on_config_changed)
+            _settings_dialog.config_changed.connect(pipeline.update_config)
+            _settings_dialog.show()
+
+        tray.quit_requested.connect(app.quit)
+        tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
+        tray.settings_requested.connect(_open_settings)
+
+        _learning_panel: LearningPanel | None = None
+
+        def _open_learning_panel() -> None:
+            nonlocal _learning_panel
+            if _learning_panel is not None and _learning_panel.isVisible():
+                _learning_panel.raise_()
+                _learning_panel.activateWindow()
+                return
+            _learning_panel = LearningPanel(config.db_path)
+            _learning_panel.show()
+
+        tray.history_requested.connect(_open_learning_panel)
+
+        def _quick_export() -> None:
+            file_path, _ = QFileDialog.getSaveFileName(
+                None,
+                "Quick Export",
+                "",
+                "JSON Files (*.json)",
+            )
+            if not file_path:
+                return
+            try:
+                json_str = repo.export_records("json")
+                Path(file_path).write_text(json_str, encoding="utf-8")
+                QMessageBox.information(None, "Export Complete", f"Exported to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(None, "Export Failed", str(e))
+
+        tray.quick_export_requested.connect(_quick_export)
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn))

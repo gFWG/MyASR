@@ -303,3 +303,145 @@ def test_delete_before_cascades_to_highlights(repo: LearningRepository) -> None:
     g_count = conn.execute("SELECT COUNT(*) FROM highlight_grammar").fetchone()[0]
     assert v_count == 0
     assert g_count == 0
+
+
+def test_export_records_backward_compat(repo: LearningRepository) -> None:
+    repo.insert_sentence(make_record(japanese_text="後方互換"), [], [])
+    result = repo.export_records()
+    assert isinstance(result, str)
+    data = json.loads(result)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["japanese_text"] == "後方互換"
+
+
+def test_export_records_json_with_highlights(repo: LearningRepository) -> None:
+    vocab = [make_vocab(surface="猫", lemma="猫", jlpt_level=5)]
+    grammar = [make_grammar(pattern="た")]
+    repo.insert_sentence(make_record(japanese_text="猫が来た"), vocab, grammar)
+    result = repo.export_records("json")
+    data = json.loads(result)
+    assert len(data) == 1
+    record = data[0]
+    assert "vocab_highlights" in record
+    assert "grammar_highlights" in record
+    assert isinstance(record["vocab_highlights"], list)
+    assert len(record["vocab_highlights"]) == 1
+    assert record["vocab_highlights"][0]["lemma"] == "猫"
+
+
+def test_export_records_csv_with_highlights(repo: LearningRepository) -> None:
+    vocab = [make_vocab(surface="映画", lemma="映画", jlpt_level=4)]
+    repo.insert_sentence(make_record(japanese_text="映画を見た"), vocab, [])
+    result = repo.export_records("csv")
+    reader = csv.reader(io.StringIO(result))
+    rows = list(reader)
+    header = rows[0]
+    assert "vocab_count" in header
+    assert "grammar_count" in header
+    assert "vocab_lemmas" in header
+    assert "grammar_rules" in header
+
+
+def test_export_records_date_filtering(repo: LearningRepository) -> None:
+    repo.insert_sentence(
+        make_record(japanese_text="january", created_at="2024-01-15T00:00:00"), [], []
+    )
+    repo.insert_sentence(
+        make_record(japanese_text="march", created_at="2024-03-20T00:00:00"), [], []
+    )
+    repo.insert_sentence(
+        make_record(japanese_text="december", created_at="2024-12-01T00:00:00"), [], []
+    )
+    result = repo.export_records("json", date_from="2024-02-01", date_to="2024-11-30")
+    data = json.loads(result)
+    assert len(data) == 1
+    assert data[0]["japanese_text"] == "march"
+
+
+def test_export_records_without_highlights(repo: LearningRepository) -> None:
+    vocab = [make_vocab(surface="猫", lemma="猫", jlpt_level=5)]
+    repo.insert_sentence(make_record(japanese_text="猫がいる"), vocab, [])
+    result = repo.export_records("json", include_highlights=False)
+    data = json.loads(result)
+    assert len(data) == 1
+    record = data[0]
+    assert "vocab_highlights" not in record
+    assert "grammar_highlights" not in record
+
+
+def test_get_sentences_filtered_pagination(repo: LearningRepository) -> None:
+    for i in range(5):
+        repo.insert_sentence(
+            make_record(japanese_text=f"page_text{i}", created_at=f"2024-01-0{i + 1}T00:00:00"),
+            [],
+            [],
+        )
+    page1 = repo.get_sentences_filtered(limit=2, offset=0)
+    page2 = repo.get_sentences_filtered(limit=2, offset=2)
+    assert len(page1) == 2
+    assert len(page2) == 2
+    assert {r.japanese_text for r in page1}.isdisjoint({r.japanese_text for r in page2})
+
+
+def test_get_sentences_filtered_query_filter(repo: LearningRepository) -> None:
+    repo.insert_sentence(make_record(japanese_text="特別な文章abc"), [], [])
+    repo.insert_sentence(make_record(japanese_text="普通の文章"), [], [])
+    results = repo.get_sentences_filtered(query="特別な文章abc")
+    assert len(results) == 1
+    assert results[0].japanese_text == "特別な文章abc"
+
+
+def test_get_sentences_filtered_date_range(repo: LearningRepository) -> None:
+    repo.insert_sentence(
+        make_record(japanese_text="date_early", created_at="2023-01-01T00:00:00"),
+        [],
+        [],
+    )
+    repo.insert_sentence(
+        make_record(japanese_text="date_mid", created_at="2024-06-01T00:00:00"),
+        [],
+        [],
+    )
+    repo.insert_sentence(
+        make_record(japanese_text="date_late", created_at="2025-01-01T00:00:00"),
+        [],
+        [],
+    )
+    results = repo.get_sentences_filtered(date_from="2024-01-01", date_to="2024-12-31")
+    texts = [r.japanese_text for r in results]
+    assert "date_mid" in texts
+    assert "date_early" not in texts
+    assert "date_late" not in texts
+
+
+def test_get_sentences_filtered_invalid_sort_raises(repo: LearningRepository) -> None:
+    with pytest.raises(ValueError, match="Invalid sort_by"):
+        repo.get_sentences_filtered(sort_by="id")
+
+
+def test_get_sentence_count_matches_filtered(repo: LearningRepository) -> None:
+    repo.insert_sentence(make_record(japanese_text="カウントテストaaa"), [], [])
+    repo.insert_sentence(make_record(japanese_text="カウントテストbbb"), [], [])
+    repo.insert_sentence(make_record(japanese_text="別の文"), [], [])
+    count = repo.get_sentence_count(query="カウントテスト")
+    filtered = repo.get_sentences_filtered(query="カウントテスト")
+    assert count == len(filtered)
+    assert count == 2
+
+
+def test_get_sentence_with_highlights_found(repo: LearningRepository) -> None:
+    vocab = [make_vocab(surface="映画", lemma="映画", jlpt_level=4)]
+    grammar = [make_grammar(rule_id="N4_past", pattern="た")]
+    sentence_id, _v, _g = repo.insert_sentence(make_record(), vocab, grammar)
+    result = repo.get_sentence_with_highlights(sentence_id)
+    assert result is not None
+    record, vocab_list, grammar_list = result
+    assert isinstance(record, SentenceRecord)
+    assert len(vocab_list) == 1
+    assert len(grammar_list) == 1
+
+
+def test_get_sentence_with_highlights_not_found(repo: LearningRepository) -> None:
+    result = repo.get_sentence_with_highlights(999999)
+    assert result is None

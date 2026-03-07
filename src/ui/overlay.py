@@ -10,7 +10,7 @@ from __future__ import annotations
 import html as _html
 import logging
 
-from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -18,22 +18,23 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPainter,
     QPaintEvent,
+    QResizeEvent,
     QShortcut,
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QSizeGrip,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
-from src.db.models import GrammarHit, SentenceResult, VocabHit
+from src.config import AppConfig, save_config
+from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
 from src.ui.highlight import HighlightRenderer
 
 logger = logging.getLogger(__name__)
 
-_WINDOW_WIDTH = 800
-_WINDOW_HEIGHT = 120
 _JP_FONT_SIZE = 16
 _CN_FONT_SIZE = 14
 _BG_COLOR = QColor(30, 30, 30, 200)
@@ -75,9 +76,12 @@ class OverlayWindow(QWidget):
 
     highlight_hovered = Signal(object, object)  # (VocabHit|GrammarHit, QPoint)
 
-    def __init__(self, user_level: int = 5, parent: QWidget | None = None) -> None:
+    def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._user_level = user_level
+        self._config = config
+        self._user_level = config.user_jlpt_level
+        self._enable_vocab: bool = config.enable_vocab_highlight
+        self._enable_grammar: bool = config.enable_grammar_highlight
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -86,13 +90,15 @@ class OverlayWindow(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setWindowOpacity(config.overlay_opacity)
 
-        self.resize(_WINDOW_WIDTH, _WINDOW_HEIGHT)
+        self.resize(config.overlay_width, config.overlay_height)
 
-        screen_geo = QApplication.primaryScreen().geometry()
-        x = screen_geo.center().x() - _WINDOW_WIDTH // 2
-        y = screen_geo.bottom() - _WINDOW_HEIGHT - 40
-        self.move(x, y)
+        screen_width = QApplication.primaryScreen().geometry().width()
+        self.setMinimumSize(400, 80)
+        self.setMaximumSize(screen_width, 400)
+
+        self._center_on_screen()
 
         self._mode: int = 0
         self._drag_pos: QPoint | None = None
@@ -113,9 +119,18 @@ class OverlayWindow(QWidget):
         self._jp_browser.viewport().setMouseTracking(True)
         self._jp_browser.viewport().installEventFilter(self)
 
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
+
         QShortcut(QKeySequence("Ctrl+T"), self).activated.connect(self._toggle_mode)
 
         self.set_status("Initializing...")
+
+    def _center_on_screen(self) -> None:
+        screen_geo = QApplication.primaryScreen().geometry()
+        x = screen_geo.center().x() - self.width() // 2
+        y = screen_geo.bottom() - self.height() - 40
+        self.move(x, y)
 
     def on_sentence_ready(self, result: SentenceResult) -> None:
         """Display a new sentence result in the overlay.
@@ -127,9 +142,14 @@ class OverlayWindow(QWidget):
         self._current_result = result
 
         if result.analysis is not None:
+            filtered_analysis = AnalysisResult(
+                tokens=result.analysis.tokens,
+                vocab_hits=result.analysis.vocab_hits if self._enable_vocab else [],
+                grammar_hits=result.analysis.grammar_hits if self._enable_grammar else [],
+            )
             rich_text = self._renderer.build_rich_text(
                 result.japanese_text,
-                result.analysis,
+                filtered_analysis,
                 user_level=self._user_level,
             )
         else:
@@ -141,6 +161,39 @@ class OverlayWindow(QWidget):
         self._cn_browser.setPlainText(translation)
 
         logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
+
+    def on_config_changed(self, config: AppConfig) -> None:
+        """Apply live config changes to the overlay without restarting.
+
+        Updates opacity, user JLPT level, font sizes, and highlight toggles.
+        If a sentence is currently displayed it is re-rendered to reflect the
+        new settings immediately.
+
+        Args:
+            config: Updated application configuration.
+        """
+        self._config = config
+        self.setWindowOpacity(config.overlay_opacity)
+        self._user_level = config.user_jlpt_level
+        self._enable_vocab = config.enable_vocab_highlight
+        self._enable_grammar = config.enable_grammar_highlight
+
+        self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
+        self._cn_browser.setFont(_make_font(config.overlay_font_size_cn))
+
+        if self._current_result is not None:
+            self.on_sentence_ready(self._current_result)
+
+        logger.debug(
+            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d cn_font=%d "
+            "vocab=%s grammar=%s",
+            config.overlay_opacity,
+            config.user_jlpt_level,
+            config.overlay_font_size_jp,
+            config.overlay_font_size_cn,
+            config.enable_vocab_highlight,
+            config.enable_grammar_highlight,
+        )
 
     def set_status(self, text: str) -> None:
         """Display a status message (e.g. 'Initializing...', 'Listening...').
@@ -174,6 +227,11 @@ class OverlayWindow(QWidget):
             global_pos = self._jp_browser.viewport().mapToGlobal(viewport_pos)
             self.highlight_hovered.emit(hit, global_pos)
 
+    def _save_size(self) -> None:
+        self._config.overlay_width = self.width()
+        self._config.overlay_height = self.height()
+        save_config(self._config)
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -181,8 +239,16 @@ class OverlayWindow(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(self.rect(), _CORNER_RADIUS, _CORNER_RADIUS)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "_size_grip"):
+            self._size_grip.move(self.width() - 16, self.height() - 16)
+        QTimer.singleShot(500, self._save_size)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            if hasattr(self, "_size_grip") and self._size_grip.geometry().contains(event.pos()):
+                return
             self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
 

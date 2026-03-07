@@ -1,0 +1,43 @@
+Date Filtering Implementation
+==============================
+
+Date filtering is implemented using conditional WHERE clauses with parameterized SQL.
+
+Implementation pattern:
+```python
+where_clauses: list[str] = []
+params: list[object] = []
+
+if date_from is not None:
+    where_clauses.append("created_at >= ?")
+    params.append(date_from)
+if date_to is not None:
+    where_clauses.append("created_at <= ?")
+    params.append(date_to)
+
+where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+```
+
+SQL query structure:
+```sql
+SELECT id, japanese_text, chinese_translation, explanation,
+       source_context, created_at
+FROM sentence_records
+{where_sql}
+ORDER BY created_at DESC
+```
+
+Examples:
+- No date filters: WHERE clause omitted entirely
+- date_from only: WHERE created_at >= ?
+- date_to only: WHERE created_at <= ?
+- Both dates: WHERE created_at >= ? AND created_at <= ?
+
+All date values are passed as parameters (?) - NO f-string interpolation for SQL values.
+The WHERE clause construction uses f-string only for SQL structure (safe, no user data).
+
+Usage examples:
+- export_records("json", date_from="2024-01-01")
+- export_records("json", date_to="2024-12-31")
+- export_records("json", date_from="2024-01-01", date_to="2024-12-31")
+- export_records("csv", date_from="2024-06-01", include_highlights=True)

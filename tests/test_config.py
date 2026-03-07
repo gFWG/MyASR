@@ -83,3 +83,28 @@ def test_roundtrip_preserves_custom_templates(tmp_path: Path) -> None:
     loaded = load_config(path)
     assert loaded.translation_template == "Custom translation: {japanese_text}"
     assert loaded.explanation_template == "Custom explanation: {japanese_text}"
+
+
+def test_config_new_fields_have_defaults() -> None:
+    c = AppConfig()
+    assert c.overlay_opacity == 0.78
+    assert c.overlay_width == 800
+    assert c.overlay_height == 120
+    assert c.overlay_font_size_jp == 16
+    assert c.overlay_font_size_cn == 14
+    assert c.enable_vocab_highlight is True
+    assert c.enable_grammar_highlight is True
+    assert c.audio_device_id is None
+
+
+def test_config_backward_compat_unknown_keys_filtered(tmp_path: Path) -> None:
+    import json as _json
+
+    config_file = tmp_path / "config.json"
+    config_file.write_text(
+        _json.dumps({"user_jlpt_level": 4, "unknown_future_key": "ignored"}),
+        encoding="utf-8",
+    )
+    c = load_config(str(config_file))
+    assert c.user_jlpt_level == 4
+    assert not hasattr(c, "unknown_future_key")

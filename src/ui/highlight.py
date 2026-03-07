@@ -86,9 +86,19 @@ class HighlightRenderer:
         all_spans.sort(key=lambda s: s[0])
 
         if not all_spans:
-            return html.escape(japanese_text)
+            escaped_text = html.escape(japanese_text)
+            return (
+                '<table align="center" width="95%">'
+                f'<tr><td align="center">{escaped_text}</td></tr>'
+                "</table>"
+            )
 
-        return self._render_spans(japanese_text, all_spans)
+        rendered = self._render_spans(japanese_text, all_spans)
+        return (
+            '<table align="center" width="95%">'
+            f'<tr><td align="center">{rendered}</td></tr>'
+            "</table>"
+        )
 
     def get_highlight_at_position(
         self,

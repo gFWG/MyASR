@@ -35,6 +35,14 @@ class AppConfig:
     ollama_timeout_sec: float = 30.0
     sample_rate: int = 16000
     db_path: str = "data/myasr.db"
+    overlay_opacity: float = 0.78
+    overlay_width: int = 800
+    overlay_height: int = 120
+    overlay_font_size_jp: int = 16
+    overlay_font_size_cn: int = 14
+    enable_vocab_highlight: bool = True
+    enable_grammar_highlight: bool = True
+    audio_device_id: int | None = None
 
 
 def load_config(path: str = "data/config.json") -> AppConfig:
@@ -58,7 +66,9 @@ def load_config(path: str = "data/config.json") -> AppConfig:
         return AppConfig()
     defaults = dataclasses.asdict(AppConfig())
     defaults.update(loaded)
-    return AppConfig(**defaults)
+    known = {f.name for f in dataclasses.fields(AppConfig)}
+    filtered = {k: v for k, v in defaults.items() if k in known}
+    return AppConfig(**filtered)
 
 
 def save_config(config: AppConfig, path: str = "data/config.json") -> None:

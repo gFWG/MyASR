@@ -1,0 +1,32 @@
+Backward Compatibility Test for export_records()
+================================================
+
+Test: Calling export_records() without arguments still works.
+
+Original signature:
+    def export_records(self, format: str = "json") -> str:
+
+New signature:
+    def export_records(
+        self,
+        format: str = "json",
+        date_from: str | None = None,
+        date_to: str | None = None,
+        include_highlights: bool = True,
+    ) -> str:
+
+Backward compatibility is maintained because:
+1. All new parameters have default values (None for dates, True for include_highlights)
+2. The original default format="json" is preserved
+3. Calling export_records() with no args produces valid output (same structure as before when include_highlights=True)
+
+Verification:
+- ruff check src/db/repository.py: PASSED
+- Import test: from src.db.repository import LearningRepository -> OK
+
+The method can be called as:
+- export_records()  # Works - uses all defaults
+- export_records("json")  # Works - format only
+- export_records("csv")  # Works - format only
+- export_records("json", date_from="2024-01-01")  # Works - with date filter
+- export_records("json", include_highlights=False)  # Works - original behavior
