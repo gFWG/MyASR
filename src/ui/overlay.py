@@ -202,6 +202,9 @@ class OverlayWindow(QWidget):
                 if LLM failed gracefully.
         """
         translation = result.translation or "Translation unavailable"
+        if result.explanation:
+            translation = f"{translation}<br><small>{result.explanation}</small>"
+
         self._cn_browser.setHtml(_centered_html(translation))
         logger.debug("on_translation_ready: segment_id=%s", result.segment_id)
 
