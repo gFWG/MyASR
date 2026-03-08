@@ -219,7 +219,7 @@ def test_short_chunk_accumulates_before_processing(
     # VADIterator should NOT have been called (chunk buffered, not processed)
     mock_iterator.assert_not_called()
     # Pending buffer should hold the 200 samples
-    assert len(vad._pending) == 200
+    assert vad._pending_size == 200
 
 
 def test_short_chunks_accumulate_until_512(
@@ -237,22 +237,22 @@ def test_short_chunks_accumulate_until_512(
     chunk_341 = make_audio(341)
     vad.process_chunk(chunk_341)
     assert mock_iterator.call_count == 0
-    assert len(vad._pending) == 341
+    assert vad._pending_size == 341
 
     # Second chunk: 341 + 341 = 682 → one 512-block processed, 170 left over
     vad.process_chunk(chunk_341)
     assert mock_iterator.call_count == 1
-    assert len(vad._pending) == 170
+    assert vad._pending_size == 170
 
     # Third chunk: 170 + 341 = 511 → still not enough
     vad.process_chunk(chunk_341)
     assert mock_iterator.call_count == 1
-    assert len(vad._pending) == 511
+    assert vad._pending_size == 511
 
     # Fourth chunk: 511 + 341 = 852 → one more 512-block, 340 left
     vad.process_chunk(chunk_341)
     assert mock_iterator.call_count == 2
-    assert len(vad._pending) == 340
+    assert vad._pending_size == 340
 
 
 def test_exact_512_chunk_processed_immediately(
@@ -305,10 +305,10 @@ def test_reset_clears_pending_buffer(
 
     # Accumulate a short chunk
     vad.process_chunk(make_audio(200))
-    assert len(vad._pending) == 200
+    assert vad._pending_size == 200
 
     vad.reset()
-    assert len(vad._pending) == 0
+    assert vad._pending_size == 0
 
 
 def test_short_chunks_speech_detection_works(
@@ -334,6 +334,7 @@ def test_short_chunks_speech_detection_works(
 
     # Feed 4 × 300-sample chunks = 1200 samples → 2 × 512-sample blocks processed
     # Block 1: speech start, Block 2: speech end
+    result = None
     for _ in range(4):
         result = vad.process_chunk(make_audio(300))
 
@@ -341,3 +342,67 @@ def test_short_chunks_speech_detection_works(
     assert result is not None
     assert len(result) == 1
     assert isinstance(result[0], AudioSegment)
+
+
+# ── Performance tests ──────────────────────────────────────────────────────────
+
+
+def test_process_chunk_performance(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """process_chunk must handle 1000 chunks with mean latency < 5 ms each.
+
+    This guards against O(n²) accumulation hotspots (e.g. np.concatenate on
+    _pending every call) that would degrade at 31 chunks/sec sustained input.
+    """
+    import time
+
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+
+    vad = SileroVAD()
+
+    # 512-sample chunks at 16 kHz ≈ 31 chunks/sec (real-time audio rate)
+    chunk = make_audio(512)
+    n_chunks = 1000
+
+    start = time.perf_counter()
+    for _ in range(n_chunks):
+        vad.process_chunk(chunk)
+    elapsed = time.perf_counter() - start
+
+    mean_ms = (elapsed / n_chunks) * 1000
+    assert mean_ms < 5.0, (
+        f"process_chunk too slow: mean {mean_ms:.3f} ms/chunk (limit 5 ms). "
+        "Check for O(n²) accumulation in _pending ring buffer."
+    )
+
+
+def test_process_chunk_performance_short_chunks(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """Ring buffer must also be fast with sub-512 chunks (WASAPI resampled input)."""
+    import time
+
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+
+    vad = SileroVAD()
+
+    # 341-sample chunks simulate 48 kHz → 16 kHz resampled WASAPI loopback
+    chunk = make_audio(341)
+    n_chunks = 1000
+
+    start = time.perf_counter()
+    for _ in range(n_chunks):
+        vad.process_chunk(chunk)
+    elapsed = time.perf_counter() - start
+
+    mean_ms = (elapsed / n_chunks) * 1000
+    assert mean_ms < 5.0, (
+        f"process_chunk (short chunks) too slow: mean {mean_ms:.3f} ms/chunk (limit 5 ms)."
+    )

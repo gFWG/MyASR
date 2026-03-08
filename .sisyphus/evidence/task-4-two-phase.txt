@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-pipeline-perf
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1
+collecting ... collected 4 items
+
+tests/test_db_repository.py::test_insert_partial_creates_row_with_null_translation PASSED [ 25%]
+tests/test_db_repository.py::test_update_translation_fills_null_fields PASSED [ 50%]
+tests/test_db_repository.py::test_two_phase_write_produces_complete_record PASSED [ 75%]
+tests/test_db_repository.py::test_update_translation_nonexistent_row PASSED [100%]
+
+============================== 4 passed in 0.14s ===============================

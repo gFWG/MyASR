@@ -110,20 +110,15 @@ def test_wasapi_callback_downmixes_and_resamples(mock_pyaudiowpatch: dict[str, A
     stereo_data = np.random.rand(2048).astype(np.float32)
     in_data = stereo_data.tobytes()
 
-    # Mock scipy.signal.resample to avoid dependency on resampling quality
-    with patch("scipy.signal.resample") as mock_resample:
-        # resample returns same number of samples in this mock
+    with patch("src.audio.backends.soxr.resample") as mock_resample:
         mock_resample.return_value = np.zeros(341, dtype=np.float32)
 
         result = capture._pa_callback(in_data, 1024, {}, 0)
 
-        # Check return value
         assert result == (None, mock_pyaudiowpatch["module"].paContinue)
 
-        # Check that resample was called (48kHz -> 16kHz = 1/3 samples)
         mock_resample.assert_called_once()
 
-        # User callback should be called with resampled mono data
         user_callback.assert_called_once()
 
     capture.stop()

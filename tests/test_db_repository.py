@@ -8,6 +8,7 @@ import pytest
 from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
+from src.pipeline.types import ASRResult
 
 
 @pytest.fixture
@@ -499,3 +500,84 @@ def test_separate_repos_same_db_file(tmp_path: object) -> None:
     assert repo2.get_sentence_count() == 1
     repo1.close()
     repo2.close()
+
+
+# Two-phase write tests
+
+
+def test_insert_partial_creates_row_with_null_translation(repo: LearningRepository) -> None:
+    asr_result = ASRResult(text="猫が好きです", segment_id="seg-123", elapsed_ms=50.0)
+    row_id = repo.insert_partial(asr_result)
+
+    assert isinstance(row_id, int)
+    assert row_id >= 1
+
+    conn: sqlite3.Connection = repo._conn
+    cursor = conn.execute(
+        "SELECT id, japanese_text, chinese_translation, explanation "
+        "FROM sentence_records WHERE id=?",
+        (row_id,),
+    )
+    row = cursor.fetchone()
+    assert row is not None
+    assert row[0] == row_id
+    assert row[1] == "猫が好きです"
+    assert row[2] is None
+    assert row[3] is None
+
+
+def test_update_translation_fills_null_fields(repo: LearningRepository) -> None:
+    asr_result = ASRResult(text="犬が好きです", segment_id="seg-456", elapsed_ms=60.0)
+    row_id = repo.insert_partial(asr_result)
+
+    result = repo.update_translation(
+        row_id, translation="我喜欢狗", explanation="Subject marked with が expresses preference"
+    )
+
+    assert result is True
+
+    conn: sqlite3.Connection = repo._conn
+    cursor = conn.execute(
+        "SELECT chinese_translation, explanation FROM sentence_records WHERE id=?",
+        (row_id,),
+    )
+    row = cursor.fetchone()
+    assert row is not None
+    assert row[0] == "我喜欢狗"
+    assert row[1] == "Subject marked with が expresses preference"
+
+
+def test_two_phase_write_produces_complete_record(repo: LearningRepository) -> None:
+    asr_result = ASRResult(text="映画を見た", segment_id="seg-789", elapsed_ms=55.0)
+
+    row_id = repo.insert_partial(asr_result)
+    assert row_id >= 1
+
+    conn: sqlite3.Connection = repo._conn
+    cursor = conn.execute(
+        "SELECT japanese_text, chinese_translation, explanation FROM sentence_records WHERE id=?",
+        (row_id,),
+    )
+    row = cursor.fetchone()
+    assert row[0] == "映画を見た"
+    assert row[1] is None
+    assert row[2] is None
+
+    update_result = repo.update_translation(
+        row_id, translation="看了电影", explanation="Past tense verb を見た"
+    )
+    assert update_result is True
+
+    cursor2 = conn.execute(
+        "SELECT japanese_text, chinese_translation, explanation FROM sentence_records WHERE id=?",
+        (row_id,),
+    )
+    row2 = cursor2.fetchone()
+    assert row2[0] == "映画を見た"
+    assert row2[1] == "看了电影"
+    assert row2[2] == "Past tense verb を見た"
+
+
+def test_update_translation_nonexistent_row(repo: LearningRepository) -> None:
+    result = repo.update_translation(999999, translation="test", explanation="test")
+    assert result is False

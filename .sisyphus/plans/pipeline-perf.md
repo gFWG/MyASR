@@ -68,13 +68,13 @@ Transform the single-threaded pipeline into a multi-stage concurrent architectur
 - Performance instrumentation throughout pipeline
 
 ### Definition of Done
-- [ ] Zero "queue Full" warnings during 30-minute continuous audio test
-- [ ] ASR text displayed within 3 seconds of speech end
-- [ ] Translation displayed within 8 seconds of speech end
-- [ ] Zero audio data loss during ASR/LLM processing
-- [ ] Clean shutdown completes in <5 seconds with no orphan threads
-- [ ] `ruff check . && ruff format --check . && mypy . && pytest -x` all pass
-- [ ] Progressive UI: ASR text appears before translation
+- [x] Zero "queue Full" warnings during 30-minute continuous audio test
+- [x] ASR text displayed within 3 seconds of speech end
+- [x] Translation displayed within 8 seconds of speech end
+- [x] Zero audio data loss during ASR/LLM processing
+- [x] Clean shutdown completes in <5 seconds with no orphan threads
+- [x] `ruff check . && ruff format --check . && mypy . && pytest -x` all pass
+- [x] Progressive UI: ASR text appears before translation
 
 ### Must Have
 - Audio consumption never blocks on downstream processing
@@ -246,10 +246,10 @@ Max Concurrent: 5 (Wave 2)
   - `test_pipeline.py`: Test consumer — import must be updated
 
   **Acceptance Criteria**:
-  - [ ] `ls src/pipeline.py` → file does NOT exist (renamed away)
-  - [ ] `ls src/pipeline_legacy.py` → file exists
-  - [ ] `from src.pipeline_legacy import PipelineWorker` → works (python -c)
-  - [ ] `ruff check . && mypy . && pytest -x` → ALL PASS
+  - [x] `ls src/pipeline.py` → file does NOT exist (renamed away)
+  - [x] `ls src/pipeline_legacy.py` → file exists
+  - [x] `from src.pipeline_legacy import PipelineWorker` → works (python -c)
+  - [x] `ruff check . && mypy . && pytest -x` → ALL PASS
 
   **QA Scenarios**:
 
@@ -329,10 +329,10 @@ Max Concurrent: 5 (Wave 2)
   - `vad/silero.py:AudioSegment`: Must decide whether new SpeechSegment wraps or replaces this existing type
 
   **Acceptance Criteria**:
-  - [ ] Test file created: `tests/test_pipeline_types.py`
-  - [ ] `pytest tests/test_pipeline_types.py` → PASS (all type construction, field access, frozen immutability tests)
-  - [ ] `mypy src/pipeline/types.py` → 0 errors
-  - [ ] `ruff check src/pipeline/types.py` → 0 issues
+  - [x] Test file created: `tests/test_pipeline_types.py`
+  - [x] `pytest tests/test_pipeline_types.py` → PASS (all type construction, field access, frozen immutability tests)
+  - [x] `mypy src/pipeline/types.py` → 0 errors
+  - [x] `ruff check src/pipeline/types.py` → 0 issues
 
   **QA Scenarios**:
 
@@ -405,9 +405,9 @@ Max Concurrent: 5 (Wave 2)
   - `pipeline/types.py`: Timer results must match this type exactly
 
   **Acceptance Criteria**:
-  - [ ] Test file: `tests/test_perf.py`
-  - [ ] `pytest tests/test_perf.py` → PASS
-  - [ ] `mypy src/pipeline/perf.py` → 0 errors
+  - [x] Test file: `tests/test_perf.py`
+  - [x] `pytest tests/test_perf.py` → PASS
+  - [x] `mypy src/pipeline/perf.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -491,11 +491,11 @@ Max Concurrent: 5 (Wave 2)
   - Silero repo: ONNX flag compatibility varies by version — must verify before assuming it works
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_silero_vad.py` → ALL existing tests still pass (regression)
-  - [ ] New perf test: `process_chunk` < 5ms per 512-sample block
-  - [ ] `grep -n "np.concatenate.*_pending" src/vad/silero.py` → 0 matches (hotspot eliminated)
-  - [ ] `grep -n "\.float()" src/vad/silero.py` → 0 matches (redundancy removed)
-  - [ ] `mypy src/vad/silero.py` → 0 errors
+  - [x] `pytest tests/test_silero_vad.py` → ALL existing tests still pass (regression)
+  - [x] New perf test: `process_chunk` < 5ms per 512-sample block
+  - [x] `grep -n "np.concatenate.*_pending" src/vad/silero.py` → 0 matches (hotspot eliminated)
+  - [x] `grep -n "\.float()" src/vad/silero.py` → 0 matches (redundancy removed)
+  - [x] `mypy src/vad/silero.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -581,10 +581,10 @@ Max Concurrent: 5 (Wave 2)
   - `models.py`: Return types must match existing conventions
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_db_repository.py` → ALL tests pass (existing + new)
-  - [ ] New test: insert_partial creates row with NULL translation
-  - [ ] New test: update_translation fills in translation fields
-  - [ ] `mypy src/db/repository.py` → 0 errors
+  - [x] `pytest tests/test_db_repository.py` → ALL tests pass (existing + new)
+  - [x] New test: insert_partial creates row with NULL translation
+  - [x] New test: update_translation fills in translation fields
+  - [x] `mypy src/db/repository.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -665,12 +665,12 @@ Max Concurrent: 5 (Wave 2)
   - `silero.py:SileroVAD`: Must understand the dependency API to mock correctly in tests
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_vad_worker.py` → PASS (all unit tests)
-  - [ ] Test: worker processes 100 chunks without crash
-  - [ ] Test: worker stops cleanly within 2s
-  - [ ] Test: worker emits error_occurred on VAD exception
-  - [ ] Test: full segment_queue triggers drop + warning (not deadlock)
-  - [ ] `mypy src/pipeline/vad_worker.py` → 0 errors
+  - [x] `pytest tests/test_vad_worker.py` → PASS (all unit tests)
+  - [x] Test: worker processes 100 chunks without crash
+  - [x] Test: worker stops cleanly within 2s
+  - [x] Test: worker emits error_occurred on VAD exception
+  - [x] Test: full segment_queue triggers drop + warning (not deadlock)
+  - [x] `mypy src/pipeline/vad_worker.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -772,13 +772,13 @@ Max Concurrent: 5 (Wave 2)
   - Qwen3-ASR docs: Batch API signature varies — must verify list format before implementing
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_qwen_asr.py` → ALL existing tests pass (regression)
-  - [ ] `pytest tests/test_asr_worker.py` → PASS (new worker tests)
-  - [ ] Test: batch of 4 segments → 4 ASRResults
-  - [ ] Test: 500ms flush timeout fires when < batch_size segments available
-  - [ ] Test: blank transcription results filtered (not emitted)
-  - [ ] `grep -n "inference_mode" src/asr/qwen_asr.py` → at least 1 match
-  - [ ] `mypy src/asr/qwen_asr.py src/pipeline/asr_worker.py` → 0 errors
+  - [x] `pytest tests/test_qwen_asr.py` → ALL existing tests pass (regression)
+  - [x] `pytest tests/test_asr_worker.py` → PASS (new worker tests)
+  - [x] Test: batch of 4 segments → 4 ASRResults
+  - [x] Test: 500ms flush timeout fires when < batch_size segments available
+  - [x] Test: blank transcription results filtered (not emitted)
+  - [x] `grep -n "inference_mode" src/asr/qwen_asr.py` → at least 1 match
+  - [x] `mypy src/asr/qwen_asr.py src/pipeline/asr_worker.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -878,13 +878,13 @@ Max Concurrent: 5 (Wave 2)
   - Ollama API docs: Streaming format (each line is JSON with `response` field) must be parsed correctly
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_ollama_client.py` → PASS (updated tests)
-  - [ ] Test: async translate returns (translation, explanation) tuple
-  - [ ] Test: LRU cache hit skips HTTP call (mock verifies 1 call for 2 identical inputs)
-  - [ ] Test: LLMTimeoutError raised on timeout (not silent None)
-  - [ ] Test: LLMUnavailableError raised on connection failure
-  - [ ] `grep -n "requests.post" src/llm/ollama_client.py` → 0 matches (fully migrated to httpx)
-  - [ ] `mypy src/llm/ollama_client.py` → 0 errors
+  - [x] `pytest tests/test_ollama_client.py` → PASS (updated tests)
+  - [x] Test: async translate returns (translation, explanation) tuple
+  - [x] Test: LRU cache hit skips HTTP call (mock verifies 1 call for 2 identical inputs)
+  - [x] Test: LLMTimeoutError raised on timeout (not silent None)
+  - [x] Test: LLMUnavailableError raised on connection failure
+  - [x] `grep -n "requests.post" src/llm/ollama_client.py` → 0 matches (fully migrated to httpx)
+  - [x] `mypy src/llm/ollama_client.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -977,13 +977,13 @@ Max Concurrent: 5 (Wave 2)
   - `AsyncOllamaClient`: Must understand async API to drive from within QThread's asyncio loop
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_llm_worker.py` → PASS
-  - [ ] Test: ASRResult in → TranslationResult out within 3s (mock LLM)
-  - [ ] Test: LLMTimeoutError → TranslationResult with translation=None emitted
-  - [ ] Test: Ollama unavailable → worker continues processing next item
-  - [ ] Test: DB update_translation called with correct row_id
-  - [ ] Test: shutdown within 2s
-  - [ ] `mypy src/pipeline/llm_worker.py` → 0 errors
+  - [x] `pytest tests/test_llm_worker.py` → PASS
+  - [x] Test: ASRResult in → TranslationResult out within 3s (mock LLM)
+  - [x] Test: LLMTimeoutError → TranslationResult with translation=None emitted
+  - [x] Test: Ollama unavailable → worker continues processing next item
+  - [x] Test: DB update_translation called with correct row_id
+  - [x] Test: shutdown within 2s
+  - [x] `mypy src/pipeline/llm_worker.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -1064,11 +1064,11 @@ Max Concurrent: 5 (Wave 2)
   - `resample_poly` docs: Must verify it produces equivalent quality output
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_backends.py` → PASS (if exists, else new tests pass)
-  - [ ] Test: resampled output matches scipy.signal.resample within 1e-5 tolerance
-  - [ ] Test: resampling latency < 2ms per 1024-sample block
-  - [ ] `grep -n "import scipy" src/audio/backends.py` → only at module level (not inside function)
-  - [ ] `mypy src/audio/backends.py` → 0 errors
+  - [x] `pytest tests/test_backends.py` → PASS (if exists, else new tests pass)
+  - [x] Test: resampled output matches scipy.signal.resample within 1e-5 tolerance
+  - [x] Test: resampling latency < 2ms per 1024-sample block
+  - [x] `grep -n "import scipy" src/audio/backends.py` → only at module level (not inside function)
+  - [x] `mypy src/audio/backends.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -1156,14 +1156,14 @@ Max Concurrent: 5 (Wave 2)
   - Worker files: Must understand each worker's API to wire correctly
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_orchestrator.py` → PASS
-  - [ ] Test: start() launches 3 workers (all isRunning())
-  - [ ] Test: stop() terminates all workers within 5s total
-  - [ ] Test: shutdown order is LLM→ASR→VAD→audio (verified via mock call order)
-  - [ ] Test: error in VADWorker propagated to orchestrator's error_occurred signal
-  - [ ] Test: asr_ready signal forwarded from ASRWorker
-  - [ ] `src/pipeline.py` deleted (old monolithic worker)
-  - [ ] `mypy src/pipeline/orchestrator.py` → 0 errors
+  - [x] `pytest tests/test_orchestrator.py` → PASS
+  - [x] Test: start() launches 3 workers (all isRunning())
+  - [x] Test: stop() terminates all workers within 5s total
+  - [x] Test: shutdown order is LLM→ASR→VAD→audio (verified via mock call order)
+  - [x] Test: error in VADWorker propagated to orchestrator's error_occurred signal
+  - [x] Test: asr_ready signal forwarded from ASRWorker
+  - [x] `src/pipeline.py` deleted (old monolithic worker)
+  - [x] `mypy src/pipeline/orchestrator.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -1259,11 +1259,11 @@ Max Concurrent: 5 (Wave 2)
   - `main.py`: Signal wiring must be updated for new two-signal pattern
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_overlay.py` → PASS (new + existing tests)
-  - [ ] Test: on_asr_ready creates sentence card with Japanese text visible
-  - [ ] Test: on_translation_ready updates existing card (matched by segment_id)
-  - [ ] Test: translation=None shows "Translation unavailable"
-  - [ ] `mypy src/ui/overlay.py` → 0 errors
+  - [x] `pytest tests/test_overlay.py` → PASS (new + existing tests)
+  - [x] Test: on_asr_ready creates sentence card with Japanese text visible
+  - [x] Test: on_translation_ready updates existing card (matched by segment_id)
+  - [x] Test: translation=None shows "Translation unavailable"
+  - [x] `mypy src/ui/overlay.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -1352,12 +1352,12 @@ Max Concurrent: 5 (Wave 2)
   - Old `pipeline.py`: Feature parity checklist — nothing should be lost in migration
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_integration.py -m "not requires_ollama"` → PASS
-  - [ ] Stress test: 0 "queue Full" warnings in 60s at 2× speed
-  - [ ] Latency: speech-end → asr_ready < 3s (p95)
-  - [ ] Latency: speech-end → translation_ready < 10s (p95, with mock LLM)
-  - [ ] 3 rapid utterances: all 3 processed, 0 data loss
-  - [ ] `ruff check . && mypy . && pytest` → ALL PASS
+  - [x] `pytest tests/test_integration.py -m "not requires_ollama"` → PASS
+  - [x] Stress test: 0 "queue Full" warnings in 60s at 2× speed
+  - [x] Latency: speech-end → asr_ready < 3s (p95)
+  - [x] Latency: speech-end → translation_ready < 10s (p95, with mock LLM)
+  - [x] 3 rapid utterances: all 3 processed, 0 data loss
+  - [x] `ruff check . && mypy . && pytest` → ALL PASS
 
   **QA Scenarios**:
 
@@ -1443,10 +1443,10 @@ Max Concurrent: 5 (Wave 2)
   - `models.py`: Return types must match existing conventions
 
   **Acceptance Criteria**:
-  - [ ] `pytest tests/test_db_repository.py` → ALL tests pass (existing + new)
-  - [ ] New test: insert_partial creates row with NULL translation
-  - [ ] New test: update_translation fills in translation fields
-  - [ ] `mypy src/db/repository.py` → 0 errors
+  - [x] `pytest tests/test_db_repository.py` → ALL tests pass (existing + new)
+  - [x] New test: insert_partial creates row with NULL translation
+  - [x] New test: update_translation fills in translation fields
+  - [x] `mypy src/db/repository.py` → 0 errors
 
   **QA Scenarios**:
 
@@ -1483,19 +1483,19 @@ Max Concurrent: 5 (Wave 2)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in `.sisyphus/evidence/`. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check . && ruff format --check . && mypy . && pytest`. Review all changed files for: `type: ignore` without comment, empty excepts, print() in prod code, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names (data/result/item/temp).
   Output: `Lint [PASS/FAIL] | Types [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)
+- [x] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)
   Start from clean state. Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration (progressive display end-to-end, multi-segment handling, LLM failure graceful degradation). Test edge cases: rapid speech, silence, Ollama down. Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination: Task N touching Task M's files. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
@@ -1538,13 +1538,13 @@ python -m pytest tests/test_integration.py::test_no_queue_overflow -v --timeout=
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" requirements present and verified
-- [ ] All "Must NOT Have" items absent from codebase
-- [ ] Zero "queue Full" warnings in 60-second stress test at 2× speed
-- [ ] ASR display latency < 3 seconds (p95)
-- [ ] Translation display latency < 10 seconds (p95)
-- [ ] Clean shutdown < 5 seconds with no orphan threads
-- [ ] All tests pass (unit + integration)
-- [ ] ruff + mypy clean
-- [ ] Progressive UI verified: ASR text appears before translation
-- [ ] Old monolithic `src/pipeline.py` deleted
+- [x] All "Must Have" requirements present and verified
+- [x] All "Must NOT Have" items absent from codebase
+- [x] Zero "queue Full" warnings in 60-second stress test at 2× speed
+- [x] ASR display latency < 3 seconds (p95)
+- [x] Translation display latency < 10 seconds (p95)
+- [x] Clean shutdown < 5 seconds with no orphan threads
+- [x] All tests pass (unit + integration)
+- [x] ruff + mypy clean
+- [x] Progressive UI verified: ASR text appears before translation
+- [x] Old monolithic `src/pipeline.py` deleted
