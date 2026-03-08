@@ -17,7 +17,7 @@ from src.config import AppConfig, load_config
 from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
-from src.pipeline import PipelineWorker
+from src.pipeline_legacy import PipelineWorker
 from src.ui.learning_panel import LearningPanel
 from src.ui.overlay import OverlayWindow
 from src.ui.settings import SettingsDialog
