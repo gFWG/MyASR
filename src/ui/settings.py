@@ -214,13 +214,15 @@ class SettingsDialog(QDialog):
         self.close()
 
     def _on_test_connection(self) -> None:
+        import asyncio
+
         test_config = AppConfig(
             ollama_url=self._ollama_url_edit.text(),
             ollama_model=self._ollama_model_edit.text(),
             ollama_timeout_sec=self._ollama_timeout_spin.value(),
         )
         client = OllamaClient(test_config)
-        ok = client.health_check()
+        ok = asyncio.run(client.health_check_async())
         if ok:
             self._test_conn_label.setText("Connected ✓")
             logger.info("SettingsDialog: Ollama connection successful")
