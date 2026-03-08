@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from src.config import AppConfig, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
+from src.pipeline.types import ASRResult, TranslationResult
 from src.ui.highlight import HighlightRenderer
 
 logger = logging.getLogger(__name__)
@@ -176,6 +177,33 @@ class OverlayWindow(QWidget):
         self._cn_browser.setHtml(_centered_html(translation))
 
         logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
+
+    def on_asr_ready(self, result: ASRResult) -> None:
+        """Show ASR text immediately with 'Translating...' placeholder.
+
+        Called from ASR worker signal. Displays the Japanese text right away
+        so the user sees ASR output without waiting for translation.
+
+        Args:
+            result: ASR output containing Japanese text.
+        """
+        self._jp_browser.setHtml(_centered_html(result.text))
+        self._cn_browser.setHtml(_centered_html("Translating…", color="#AAAAAA"))
+        logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
+
+    def on_translation_ready(self, result: TranslationResult) -> None:
+        """Update display with translation when it arrives async.
+
+        Updates only the translation browser; the ASR text in the JP browser
+        is left unchanged unless the segment_id matches.
+
+        Args:
+            result: Translation output. translation/explanation may be None
+                if LLM failed gracefully.
+        """
+        translation = result.translation or "Translation unavailable"
+        self._cn_browser.setHtml(_centered_html(translation))
+        logger.debug("on_translation_ready: segment_id=%s", result.segment_id)
 
     def on_config_changed(self, config: AppConfig) -> None:
         """Apply live config changes to the overlay without restarting.
