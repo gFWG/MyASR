@@ -7,7 +7,7 @@ from src.pipeline.perf import PipelineMetrics, StageTimer, timed_stage
 from src.pipeline.types import PipelineStageMetrics
 
 
-def test_stage_timer_accuracy():
+def test_stage_timer_accuracy() -> None:
     """StageTimer should accurately measure elapsed time using perf_counter_ns."""
     sleep_seconds = 0.1  # 100ms
 
@@ -21,7 +21,7 @@ def test_stage_timer_accuracy():
     assert 90 <= result.elapsed_ms <= 150
 
 
-def test_pipeline_metrics_aggregation():
+def test_pipeline_metrics_aggregation() -> None:
     """PipelineMetrics should aggregate multiple stage results."""
     metrics = PipelineMetrics()
 
@@ -39,7 +39,7 @@ def test_pipeline_metrics_aggregation():
     assert result_dict["asr"] == 120.0
 
 
-def test_log_summary_uses_lazy_formatting():
+def test_log_summary_uses_lazy_formatting() -> None:
     """log_summary should use lazy formatting without errors."""
     logger = logging.getLogger("test_logger")
     logger.setLevel(logging.INFO)
@@ -57,13 +57,13 @@ def test_log_summary_uses_lazy_formatting():
     metrics.log_summary(logger)
 
 
-def test_timed_stage_decorator():
+def test_timed_stage_decorator() -> None:
     """@timed_stage decorator should measure function execution time."""
     logger = logging.getLogger("test_timed_stage")
     logger.setLevel(logging.INFO)
 
     @timed_stage("test_function")
-    def slow_function():
+    def slow_function() -> str:
         time.sleep(0.05)  # 50ms
         return "done"
 
@@ -72,7 +72,7 @@ def test_timed_stage_decorator():
     assert result == "done"
 
 
-def test_stage_timer_context_manager():
+def test_stage_timer_context_manager() -> None:
     """StageTimer should work as a context manager."""
     timer = StageTimer("my_stage")
 
@@ -87,13 +87,13 @@ def test_stage_timer_context_manager():
     assert t.result.elapsed_ms > 0
 
 
-def test_pipeline_metrics_empty():
+def test_pipeline_metrics_empty() -> None:
     """PipelineMetrics with no stages returns empty dict."""
     metrics = PipelineMetrics()
     assert metrics.to_dict() == {}
 
 
-def test_pipeline_metrics_log_empty():
+def test_pipeline_metrics_log_empty() -> None:
     """log_summary with no stages should not error."""
     logger = logging.getLogger("test_empty")
     logger.setLevel(logging.INFO)
