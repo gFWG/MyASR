@@ -7,6 +7,7 @@ import logging
 import sqlite3
 
 from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord
+from src.pipeline.types import ASRResult
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,66 @@ class LearningRepository:
         """Close the underlying connection if this repository owns it."""
         if self._owns_conn:
             self._conn.close()
+
+    def insert_partial(self, asr_result: ASRResult) -> int:
+        """Insert a sentence record with NULL translation and explanation.
+
+        Args:
+            asr_result: ASRResult containing transcribed text and segment_id.
+
+        Returns:
+            The auto-generated row ID (integer) of the inserted record.
+        """
+        from datetime import datetime
+
+        cursor = self._conn.execute(
+            """
+            INSERT INTO sentence_records
+                (japanese_text, chinese_translation, explanation, source_context, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                asr_result.text,
+                None,
+                None,
+                asr_result.segment_id,
+                datetime.now().isoformat(),
+            ),
+        )
+        row_id = cursor.lastrowid
+        if row_id is None:
+            raise RuntimeError("Failed to get lastrowid after INSERT")
+        self._conn.commit()
+        logger.info("Inserted partial sentence record id=%d", row_id)
+        return row_id
+
+    def update_translation(
+        self, row_id: int, translation: str | None, explanation: str | None
+    ) -> bool:
+        """Update translation and explanation for an existing sentence record.
+
+        Args:
+            row_id: Primary key ID of the sentence record to update.
+            translation: Chinese translation text, or None.
+            explanation: Grammar/vocab explanation, or None.
+
+        Returns:
+            True if the row was updated successfully, False if row not found.
+        """
+        cursor = self._conn.execute(
+            """
+            UPDATE sentence_records
+            SET chinese_translation = ?, explanation = ?
+            WHERE id = ?
+            """,
+            (translation, explanation, row_id),
+        )
+        if cursor.rowcount == 0:
+            logger.warning("No row found to update for row_id=%d", row_id)
+            return False
+        self._conn.commit()
+        logger.info("Updated translation for sentence record id=%d", row_id)
+        return True
 
     def insert_sentence(
         self,
