@@ -15,6 +15,7 @@ from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord, Sent
 from src.db.repository import LearningRepository
 from src.exceptions import ASRError, AudioCaptureError
 from src.llm.ollama_client import OllamaClient
+from src.profiling import PipelineProfiler, StageTimer
 from src.vad.silero import SileroVAD
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class PipelineWorker(QThread):
         self._llm = OllamaClient(config)
         self._db_path = db_path
         self._repo: LearningRepository | None = None
+        self._profiler = PipelineProfiler(config.profiling)
 
     def _enqueue_audio(self, chunk: np.ndarray) -> None:
         """Enqueue an audio chunk, dropping oldest if the queue is full."""
@@ -101,36 +103,43 @@ class PipelineWorker(QThread):
             except queue.Empty:
                 continue
 
-            try:
-                segments = self._vad.process_chunk(chunk)
-            except Exception as exc:
-                logger.error("VAD error: %s", exc)
-                self.error_occurred.emit(str(exc))
-                continue
+            with StageTimer("vad", self._profiler):
+                try:
+                    segments = self._vad.process_chunk(chunk)
+                except Exception as exc:
+                    logger.error("VAD error: %s", exc)
+                    self.error_occurred.emit(str(exc))
+                    continue
 
             if not segments:
                 continue
 
             for segment in segments:
-                try:
-                    text = self._asr.transcribe(
-                        segment.samples, sample_rate=self._config.sample_rate
-                    )
-                except ASRError as exc:
-                    logger.warning("ASR error (skipping segment): %s", exc)
-                    continue
+                self._profiler.start_sentence()
+
+                with StageTimer("asr", self._profiler):
+                    try:
+                        text = self._asr.transcribe(
+                            segment.samples, sample_rate=self._config.sample_rate
+                        )
+                    except ASRError as exc:
+                        logger.warning("ASR error (skipping segment): %s", exc)
+                        continue
 
                 if not text:
                     continue
 
-                try:
-                    analysis = self._preprocessing.process(text)
-                except Exception as exc:
-                    logger.error("Preprocessing error: %s", exc)
-                    self.error_occurred.emit(str(exc))
-                    continue
+                with StageTimer("analysis", self._profiler):
+                    try:
+                        analysis = self._preprocessing.process(text)
+                    except Exception as exc:
+                        logger.error("Preprocessing error: %s", exc)
+                        self.error_occurred.emit(str(exc))
+                        continue
 
-                translation, explanation = self._llm.translate(text)
+                with StageTimer("llm", self._profiler):
+                    # translation, explanation = self._llm.translate(text)
+                    translation, explanation = (None, None)  # Disable LLM calls for now
 
                 result = SentenceResult(
                     japanese_text=text,
@@ -140,20 +149,22 @@ class PipelineWorker(QThread):
                 )
 
                 if self._repo is not None:
-                    try:
-                        record, vocab_recs, grammar_recs = self._to_db_records(result)
-                        sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
-                            record, vocab_recs, grammar_recs
-                        )
-                        result.sentence_id = sentence_id
-                        result.highlight_vocab_ids = vocab_ids
-                        result.highlight_grammar_ids = grammar_ids
-                    except Exception:
-                        logger.exception("Failed to write sentence to database")
-                        result.sentence_id = None
-                        result.highlight_vocab_ids = []
-                        result.highlight_grammar_ids = []
+                    with StageTimer("db", self._profiler):
+                        try:
+                            record, vocab_recs, grammar_recs = self._to_db_records(result)
+                            sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
+                                record, vocab_recs, grammar_recs
+                            )
+                            result.sentence_id = sentence_id
+                            result.highlight_vocab_ids = vocab_ids
+                            result.highlight_grammar_ids = grammar_ids
+                        except Exception:
+                            logger.exception("Failed to write sentence to database")
+                            result.sentence_id = None
+                            result.highlight_vocab_ids = []
+                            result.highlight_grammar_ids = []
 
+                self._profiler.end_sentence()
                 self.sentence_ready.emit(result)
 
         self._cleanup()
