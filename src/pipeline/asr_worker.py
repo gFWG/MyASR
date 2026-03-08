@@ -1,5 +1,6 @@
 """ASR worker thread: consumes SpeechSegment objects, emits ASRResult objects."""
 
+import dataclasses
 import logging
 import queue
 import time
@@ -8,6 +9,7 @@ from typing import Any
 from PySide6.QtCore import QThread, Signal
 
 from src.asr.qwen_asr import QwenASR
+from src.db.repository import LearningRepository
 from src.exceptions import ASRError
 from src.pipeline.perf import StageTimer
 from src.pipeline.types import ASRResult, SpeechSegment
@@ -48,12 +50,14 @@ class AsrWorker(QThread):
         text_queue: queue.Queue[ASRResult],
         asr: QwenASR,
         config: dict[str, Any],
+        db_repo: LearningRepository | None = None,
     ) -> None:
         super().__init__()
         self._segment_queue = segment_queue
         self._text_queue = text_queue
         self._asr = asr
         self._config = config
+        self._db_repo = db_repo
         self._running: bool = False
 
     def run(self) -> None:
@@ -88,7 +92,7 @@ class AsrWorker(QThread):
                 seg = self._segment_queue.get(timeout=0.05)
                 batch.append(seg)
             except queue.Empty:
-                pass
+                pass  # expected: no segment yet, will flush on timeout if batch is non-empty
 
         if batch:
             self._flush_batch(batch)
@@ -115,6 +119,16 @@ class AsrWorker(QThread):
         )
 
         for result in results:
+            if self._db_repo is not None:
+                try:
+                    row_id = self._db_repo.insert_partial(result)
+                    result = dataclasses.replace(result, db_row_id=row_id)
+                except Exception as exc:  # noqa: BLE001  # DB errors must not crash ASR thread
+                    logger.warning(
+                        "insert_partial failed for segment %s: %s",
+                        result.segment_id,
+                        exc,
+                    )
             self.asr_ready.emit(result)
             try:
                 self._text_queue.put_nowait(result)

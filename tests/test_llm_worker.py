@@ -27,12 +27,13 @@ from src.pipeline.types import ASRResult, TranslationResult
 # ---------------------------------------------------------------------------
 
 
-def make_asr_result(text: str = "日本語テスト") -> ASRResult:
+def make_asr_result(text: str = "日本語テスト", db_row_id: int | None = None) -> ASRResult:
     """Create a dummy ASRResult."""
     return ASRResult(
         text=text,
         segment_id=str(uuid.uuid4()),
         elapsed_ms=10.0,
+        db_row_id=db_row_id,
     )
 
 
@@ -242,13 +243,13 @@ def test_llm_worker_calls_db_update_translation(
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
-    """db_repo.update_translation is called with segment_id after successful translation."""
+    """db_repo.update_translation is called with db_row_id after successful translation."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("DB更新テスト", None))
     mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
-    asr_result = make_asr_result("DB更新テスト文章")
+    asr_result = make_asr_result("DB更新テスト文章", db_row_id=42)
     text_q.put(asr_result)
 
     w = LlmWorker(
@@ -272,8 +273,8 @@ def test_llm_worker_calls_db_update_translation(
 
     assert mock_repo.update_translation.called, "Expected update_translation to be called"
     call_args = mock_repo.update_translation.call_args
-    # Called with row_id=segment_id (or segment_id as positional)
     assert call_args is not None
+    assert call_args.args[0] == 42, "Expected row_id=42 as first arg"
 
 
 # ---------------------------------------------------------------------------

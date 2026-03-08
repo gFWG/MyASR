@@ -5,8 +5,10 @@ inter-stage queues, instantiates the three worker threads, and wires their
 signals to caller-provided callbacks via :meth:`connect_signals`.
 """
 
+import dataclasses
 import logging
 import queue
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -52,7 +54,7 @@ class PipelineOrchestrator:
         self._text_queue: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
         self._result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
 
-        # ── Models (heavy GPU objects — injected at construction time) ───────
+        # ── Models (heavy GPU objects — created at construction time) ───────
         vad_model = SileroVAD(sample_rate=config.get("sample_rate", 16000))
 
         asr_model = QwenASR(model_path=config.get("model_path"))
@@ -64,6 +66,7 @@ class PipelineOrchestrator:
 
         db_path: str = config.get("db_path", ":memory:")
         db_repo = LearningRepository(db_path=db_path)
+        self._db_repo = db_repo
 
         # ── Workers ─────────────────────────────────────────────────────────
         self._vad_worker = VadWorker(
@@ -77,6 +80,7 @@ class PipelineOrchestrator:
             text_queue=self._text_queue,
             asr=asr_model,
             config=config,
+            db_repo=self._db_repo,
         )
         self._llm_worker = LlmWorker(
             text_queue=self._text_queue,
@@ -139,8 +143,8 @@ class PipelineOrchestrator:
 
     def connect_signals(
         self,
-        on_asr_ready: Any,
-        on_translation_ready: Any,
+        on_asr_ready: Callable[[ASRResult], None],
+        on_translation_ready: Callable[[TranslationResult], None],
     ) -> None:
         """Connect worker output signals to caller-provided callbacks.
 
@@ -157,17 +161,17 @@ class PipelineOrchestrator:
     # ── Signal properties ────────────────────────────────────────────────────
 
     @property
-    def asr_ready(self) -> Any:
+    def asr_ready(self) -> Any:  # PySide6 Signal has no usable stub type
         """The ``asr_ready`` signal forwarded from :class:`AsrWorker`."""
         return self._asr_worker.asr_ready
 
     @property
-    def translation_ready(self) -> Any:
+    def translation_ready(self) -> Any:  # PySide6 Signal has no usable stub type
         """The ``translation_ready`` signal forwarded from :class:`LlmWorker`."""
         return self._llm_worker.translation_ready
 
     @property
-    def error_occurred(self) -> list[Any]:
+    def error_occurred(self) -> list[Any]:  # PySide6 Signal has no usable stub type
         """List of ``error_occurred`` signals from all three workers.
 
         Callers can iterate and connect each signal to a single handler:
@@ -198,8 +202,6 @@ class PipelineOrchestrator:
         Returns:
             ``AppConfig`` instance suitable for ``AsyncOllamaClient``.
         """
-        import dataclasses
-
         known_fields = {f.name for f in dataclasses.fields(AppConfig)}
         filtered = {k: v for k, v in config.items() if k in known_fields}
         return AppConfig(**filtered)

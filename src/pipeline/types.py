@@ -1,6 +1,6 @@
 """Pipeline data types."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -30,11 +30,14 @@ class ASRResult:
         text: Transcribed text.
         segment_id: ID of the audio segment that was transcribed.
         elapsed_ms: Processing time in milliseconds.
+        db_row_id: Database row ID assigned after ``insert_partial()``, or None
+            if the record has not been persisted yet.
     """
 
     text: str
     segment_id: str
     elapsed_ms: float
+    db_row_id: int | None = field(default=None)
 
 
 @dataclass(frozen=True, slots=True)

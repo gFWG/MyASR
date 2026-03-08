@@ -563,3 +563,86 @@ def test_asr_worker_no_deadlock_on_full_text_queue(
     elapsed = time.monotonic() - t0
 
     assert elapsed < 2.0, f"stop() took {elapsed:.2f}s — potential deadlock on full text_queue"
+
+
+# ---------------------------------------------------------------------------
+# DB insert_partial wiring tests
+# ---------------------------------------------------------------------------
+
+
+def test_asr_worker_calls_insert_partial_and_sets_db_row_id(
+    qt_app: QCoreApplication,
+    text_queue: queue.Queue[ASRResult],
+    config: dict[str, Any],
+) -> None:
+    """When db_repo is provided, insert_partial is called and db_row_id is set on the result."""
+    AsrWorker = _import_asr_worker()
+
+    mock_asr = make_mock_asr(["日本語テスト"])
+    mock_db_repo = MagicMock()
+    mock_db_repo.insert_partial.return_value = 99
+
+    seg_q: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
+    flush_config = {"asr_batch_size": 1, "asr_flush_timeout_ms": 100}
+    w = AsrWorker(
+        segment_queue=seg_q,
+        text_queue=text_queue,
+        asr=mock_asr,
+        config=flush_config,
+        db_repo=mock_db_repo,
+    )
+
+    seg_q.put(make_segment())
+
+    w.start()
+    deadline = time.monotonic() + 3.0
+    result: ASRResult | None = None
+    while time.monotonic() < deadline:
+        try:
+            result = text_queue.get(timeout=0.1)
+            break
+        except queue.Empty:
+            pass
+
+    w.stop()
+
+    assert result is not None, "Expected an ASRResult in text_queue"
+    assert mock_db_repo.insert_partial.called, "Expected insert_partial to be called"
+    assert result.db_row_id == 99, f"Expected db_row_id=99, got {result.db_row_id}"
+
+
+def test_asr_worker_without_db_repo_leaves_db_row_id_none(
+    qt_app: QCoreApplication,
+    text_queue: queue.Queue[ASRResult],
+    config: dict[str, Any],
+) -> None:
+    """When db_repo is None (default), db_row_id stays None on the result."""
+    AsrWorker = _import_asr_worker()
+
+    mock_asr = make_mock_asr(["日本語テスト"])
+
+    seg_q: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
+    flush_config = {"asr_batch_size": 1, "asr_flush_timeout_ms": 100}
+    w = AsrWorker(
+        segment_queue=seg_q,
+        text_queue=text_queue,
+        asr=mock_asr,
+        config=flush_config,
+    )
+
+    seg_q.put(make_segment())
+
+    w.start()
+    deadline = time.monotonic() + 3.0
+    result: ASRResult | None = None
+    while time.monotonic() < deadline:
+        try:
+            result = text_queue.get(timeout=0.1)
+            break
+        except queue.Empty:
+            pass
+
+    w.stop()
+
+    assert result is not None, "Expected an ASRResult in text_queue"
+    assert result.db_row_id is None, "Expected db_row_id=None when no db_repo is set"

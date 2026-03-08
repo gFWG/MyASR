@@ -7,7 +7,9 @@ from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
+from src.db.repository import LearningRepository
 from src.exceptions import LLMTimeoutError, LLMUnavailableError
+from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.perf import StageTimer
 from src.pipeline.types import ASRResult, TranslationResult
 
@@ -31,7 +33,7 @@ class LlmWorker(QThread):
         text_queue: Input queue of ``ASRResult`` objects from ASR stage.
         result_queue: Output queue of ``TranslationResult`` objects for downstream.
         llm_client: Initialised async LLM client (injected, not created here).
-        db_repo: Database repository for persisting translation results.
+        db_repo: Database repository for persisting translation results, or None to skip.
         config: Worker configuration dict (currently unused, reserved for future use).
     """
 
@@ -42,8 +44,8 @@ class LlmWorker(QThread):
         self,
         text_queue: queue.Queue[ASRResult],
         result_queue: queue.Queue[TranslationResult],
-        llm_client: Any,
-        db_repo: Any,
+        llm_client: AsyncOllamaClient,
+        db_repo: LearningRepository | None,
         config: dict[str, Any],
     ) -> None:
         super().__init__()
@@ -107,12 +109,19 @@ class LlmWorker(QThread):
         )
 
         try:
-            self._db_repo.update_translation(
-                asr_result.segment_id,
-                translation,
-                explanation,
-            )
-        except Exception as exc:  # noqa: BLE001
+            if self._db_repo is not None:
+                if asr_result.db_row_id is not None:
+                    self._db_repo.update_translation(
+                        asr_result.db_row_id,
+                        translation,
+                        explanation,
+                    )
+                else:
+                    logger.warning(
+                        "No db_row_id on asr_result %s, skipping DB update",
+                        asr_result.segment_id,
+                    )
+        except Exception as exc:  # noqa: BLE001  # DB errors must not crash the LLM thread
             logger.warning(
                 "DB update_translation failed for segment %s: %s",
                 asr_result.segment_id,
