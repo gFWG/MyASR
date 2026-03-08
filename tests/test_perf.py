@@ -1,11 +1,9 @@
 """Tests for pipeline performance instrumentation."""
 
-import time
 import logging
+import time
 
-import pytest
-
-from src.pipeline.perf import StageTimer, PipelineMetrics, timed_stage
+from src.pipeline.perf import PipelineMetrics, StageTimer, timed_stage
 from src.pipeline.types import PipelineStageMetrics
 
 

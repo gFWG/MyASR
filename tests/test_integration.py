@@ -1,16 +1,20 @@
-"""Integration tests using real Japanese audio files.
+"""Integration tests: mock-based pipeline integration + real-audio GPU tests.
 
-These tests exercise the VAD and ASR components with actual speech data
-from dev/short.wav and dev/long.wav, validating that the pipeline produces
-meaningful transcription results on real audio.
+Fast integration tests (no GPU, no Ollama) verify the multi-stage pipeline
+with mock workers and mock models.  All fast tests run unconditionally.
 
-Requires: CUDA GPU for ASR model inference, dev/*.wav files present.
-Run with: pytest tests/test_integration.py -m "slow and gpu"
-Skip with: pytest -m "not slow"
+Real-audio tests using actual speech data (dev/short.wav, dev/long.wav) and GPU
+ASR inference are guarded by @slow and @gpu markers:
+    Run with: pytest tests/test_integration.py -m "slow and gpu"
+    Skip with: pytest -m "not slow"
 """
 
+import queue
 import sys
+import time
 from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -24,6 +28,166 @@ gpu = pytest.mark.gpu
 windows_only = pytest.mark.skipif(sys.platform != "win32", reason="Windows only test")
 
 DEV_DIR = Path(__file__).resolve().parent.parent / "dev"
+
+
+# ---------------------------------------------------------------------------
+# Qt app fixture shared by fast integration tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def qt_app() -> Any:
+    """Create a QCoreApplication for QThread-based worker tests."""
+    from PySide6.QtCore import QCoreApplication
+
+    app = QCoreApplication.instance()
+    if app is None:
+        app = QCoreApplication(sys.argv)
+    return app
+
+
+# ---------------------------------------------------------------------------
+# Helper: build minimal pipeline config
+# ---------------------------------------------------------------------------
+
+
+def _pipeline_config() -> dict[str, Any]:
+    return {
+        "sample_rate": 16000,
+        "asr_batch_size": 4,
+        "asr_flush_timeout_ms": 200,
+        "db_path": ":memory:",
+        "ollama_url": "http://localhost:11434",
+        "ollama_model": "qwen3.5:4b",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Helper: mock AudioSegment factory
+# ---------------------------------------------------------------------------
+
+
+def _mock_audio_segment(n_samples: int = 512) -> AudioSegment:
+    return AudioSegment(
+        samples=np.zeros(n_samples, dtype=np.float32),
+        duration_sec=n_samples / 16000.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Fast integration tests — no GPU, no Ollama, no real audio files
+# ---------------------------------------------------------------------------
+
+
+def test_vad_worker_processes_chunks_to_queue(qt_app: Any) -> None:
+    """VadWorker: audio chunks → SpeechSegments on segment_queue via mock VAD."""
+    from src.db.models import AudioSegment as DBAudioSegment
+    from src.pipeline.vad_worker import VadWorker
+
+    audio_q: queue.Queue[np.ndarray] = queue.Queue(maxsize=100)
+    seg_q: queue.Queue[Any] = queue.Queue(maxsize=20)
+
+    mock_vad = MagicMock()
+    mock_vad.process_chunk.return_value = [
+        DBAudioSegment(samples=np.zeros(512, dtype=np.float32), duration_sec=0.032)
+    ]
+
+    worker = VadWorker(audio_q, seg_q, mock_vad, {"sample_rate": 16000})
+    worker.start()
+    try:
+        for _ in range(5):
+            audio_q.put(np.zeros(512, dtype=np.float32))
+        results = []
+        for _ in range(5):
+            seg = seg_q.get(timeout=3.0)
+            results.append(seg)
+    finally:
+        worker.stop()
+
+    assert len(results) == 5
+    for seg in results:
+        assert hasattr(seg, "audio")
+        assert hasattr(seg, "sample_rate")
+        assert seg.sample_rate == 16000
+
+
+def test_vad_worker_throughput_100_chunks(qt_app: Any) -> None:
+    """VadWorker: 100 chunks processed < 2s (pure overhead, no GPU)."""
+    from src.db.models import AudioSegment as DBAudioSegment
+    from src.pipeline.vad_worker import VadWorker
+
+    audio_q: queue.Queue[np.ndarray] = queue.Queue(maxsize=200)
+    seg_q: queue.Queue[Any] = queue.Queue(maxsize=200)
+
+    mock_vad = MagicMock()
+    mock_vad.process_chunk.return_value = [
+        DBAudioSegment(samples=np.zeros(512, dtype=np.float32), duration_sec=0.032)
+    ]
+
+    worker = VadWorker(audio_q, seg_q, mock_vad, {"sample_rate": 16000})
+    for _ in range(100):
+        audio_q.put(np.zeros(512, dtype=np.float32))
+
+    start = time.monotonic()
+    worker.start()
+    results = []
+    try:
+        for _ in range(100):
+            seg = seg_q.get(timeout=5.0)
+            results.append(seg)
+    finally:
+        worker.stop()
+    elapsed = time.monotonic() - start
+
+    assert len(results) == 100
+    assert elapsed < 2.0, f"100 chunks took {elapsed:.2f}s, expected < 2s"
+
+
+def test_orchestrator_start_stop_lifecycle(qt_app: Any) -> None:
+    """PipelineOrchestrator: start() then stop() completes without error."""
+    from src.pipeline.orchestrator import PipelineOrchestrator
+
+    config = {"sample_rate": 16000, "vad_threshold": 0.5}
+
+    with (
+        patch("src.pipeline.orchestrator.SileroVAD") as MockVAD,
+        patch("src.pipeline.orchestrator.QwenASR") as MockASR,
+        patch("src.pipeline.orchestrator.AsyncOllamaClient") as MockLLM,
+        patch("src.pipeline.orchestrator.LearningRepository") as MockDB,
+    ):
+        MockVAD.return_value = MagicMock()
+        MockASR.return_value = MagicMock()
+        MockLLM.return_value = MagicMock()
+        MockDB.return_value = MagicMock()
+
+        orch = PipelineOrchestrator(config)
+        orch.start()
+        orch.stop()
+
+
+def test_orchestrator_put_audio_drops_when_full(qt_app: Any, caplog: Any) -> None:
+    """PipelineOrchestrator.put_audio(): drops chunks gracefully when audio_queue is full."""
+    import logging
+
+    from src.pipeline.orchestrator import PipelineOrchestrator
+
+    config = {"sample_rate": 16000}
+
+    with (
+        patch("src.pipeline.orchestrator.SileroVAD"),
+        patch("src.pipeline.orchestrator.QwenASR"),
+        patch("src.pipeline.orchestrator.AsyncOllamaClient"),
+        patch("src.pipeline.orchestrator.LearningRepository"),
+    ):
+        orch = PipelineOrchestrator(config)
+        while True:
+            try:
+                orch._audio_queue.put_nowait(np.zeros(512, dtype=np.float32))
+            except queue.Full:
+                break
+
+        with caplog.at_level(logging.WARNING):
+            orch.put_audio(np.zeros(512, dtype=np.float32))
 
 
 @slow
