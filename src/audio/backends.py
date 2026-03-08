@@ -5,10 +5,32 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
+import soxr
 
 from src.exceptions import AudioCaptureError
 
 logger = logging.getLogger(__name__)
+
+
+def resample_audio(audio: np.ndarray, in_rate: int, out_rate: int) -> np.ndarray:
+    """Resample a mono float32 audio array from in_rate to out_rate.
+
+    Uses soxr for high-quality, low-latency rational resampling.  Much faster
+    than FFT-based ``scipy.signal.resample`` for short fixed-ratio buffers
+    (e.g. 48 kHz → 16 kHz at 10 ms = 480 samples).
+
+    Args:
+        audio: 1-D float32 array of audio samples.
+        in_rate: Source sample rate in Hz.
+        out_rate: Target sample rate in Hz.
+
+    Returns:
+        Resampled 1-D float32 array.
+    """
+    if in_rate == out_rate:
+        return audio
+    resampled: np.ndarray = soxr.resample(audio, in_rate, out_rate, quality="HQ")
+    return resampled.astype(np.float32)
 
 
 class WasapiLoopbackCapture:
@@ -120,13 +142,8 @@ class WasapiLoopbackCapture:
                 audio_data = audio_data.flatten()
 
             # 4. Resample to target rate (16kHz)
-            # Use scipy.signal.resample for better quality
             native_rate = int(self._device_info["defaultSampleRate"])
-            if native_rate != self._target_rate:
-                num_samples = int(len(audio_data) * self._target_rate / native_rate)
-                from scipy.signal import resample  # noqa: PLC0415
-
-                audio_data = resample(audio_data, num_samples).astype(np.float32)
+            audio_data = resample_audio(audio_data, native_rate, self._target_rate)
 
             self._user_callback(audio_data)
 
