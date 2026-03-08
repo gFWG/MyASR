@@ -82,11 +82,17 @@ def orchestrator(
     mock_llm_client = MagicMock()
     mock_db_repo = MagicMock()
 
+    mock_capture = MagicMock()
+
     with (
         patch("src.pipeline.orchestrator.SileroVAD", return_value=mock_vad_model),
         patch("src.pipeline.orchestrator.QwenASR", return_value=mock_asr_model),
         patch("src.pipeline.orchestrator.AsyncOllamaClient", return_value=mock_llm_client),
         patch("src.pipeline.orchestrator.LearningRepository", return_value=mock_db_repo),
+        patch(
+            "src.pipeline.orchestrator.WasapiLoopbackCapture",
+            return_value=mock_capture,
+        ),
         patch(
             "src.pipeline.orchestrator.VadWorker",
             return_value=mock_workers["vad"],
@@ -151,6 +157,7 @@ def test_orchestrator_instantiates_workers(
         patch("src.pipeline.orchestrator.QwenASR"),
         patch("src.pipeline.orchestrator.AsyncOllamaClient"),
         patch("src.pipeline.orchestrator.LearningRepository"),
+        patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
         patch(
             "src.pipeline.orchestrator.VadWorker",
         ) as MockVadWorker,

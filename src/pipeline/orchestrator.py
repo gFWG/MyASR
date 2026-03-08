@@ -14,8 +14,8 @@ from typing import Any
 import numpy as np
 
 from src.asr.qwen_asr import QwenASR
+from src.audio.backends import WasapiLoopbackCapture
 from src.config import AppConfig
-from src.db.repository import LearningRepository
 from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.llm_worker import LlmWorker
@@ -65,8 +65,6 @@ class PipelineOrchestrator:
         llm_client = AsyncOllamaClient(app_cfg)
 
         db_path: str = config.get("db_path", ":memory:")
-        db_repo = LearningRepository(db_path=db_path)
-        self._db_repo = db_repo
 
         # ── Workers ─────────────────────────────────────────────────────────
         self._vad_worker = VadWorker(
@@ -80,14 +78,21 @@ class PipelineOrchestrator:
             text_queue=self._text_queue,
             asr=asr_model,
             config=config,
-            db_repo=self._db_repo,
+            db_path=db_path,
         )
         self._llm_worker = LlmWorker(
             text_queue=self._text_queue,
             result_queue=self._result_queue,
             llm_client=llm_client,
-            db_repo=db_repo,
+            db_path=db_path,
             config=config,
+        )
+
+        # ── Audio capture (started in start(), stopped in stop()) ────────────
+        # Each call to start() re-starts capture; WasapiLoopbackCapture feeds
+        # raw PCM chunks into put_audio(), which enqueues them for VadWorker.
+        self._capture = WasapiLoopbackCapture(
+            sample_rate=config.get("sample_rate", 16000),
         )
 
         self._running: bool = False
@@ -97,26 +102,29 @@ class PipelineOrchestrator:
     # ── Lifecycle ────────────────────────────────────────────────────────────
 
     def start(self) -> None:
-        """Start all worker threads in pipeline order (VAD → ASR → LLM)."""
-        logger.info("Starting pipeline workers: VAD → ASR → LLM")
+        """Start audio capture then all worker threads (capture → VAD → ASR → LLM)."""
+        logger.info("Starting audio capture and pipeline workers: capture → VAD → ASR → LLM")
+        self._capture.start(callback=self.put_audio)
         self._vad_worker.start()
         self._asr_worker.start()
         self._llm_worker.start()
         self._running = True
 
     def stop(self) -> None:
-        """Stop all worker threads in reverse pipeline order (LLM → ASR → VAD).
+        """Stop all worker threads then audio capture (LLM → ASR → VAD → capture).
 
         Each worker is stopped then waited on for up to 3 seconds to allow
         in-flight items to drain gracefully before the upstream worker stops.
+        Audio capture is stopped last so any in-flight chunks can still be drained.
         """
-        logger.info("Stopping pipeline workers: LLM → ASR → VAD")
+        logger.info("Stopping pipeline workers: LLM → ASR → VAD → capture")
         self._llm_worker.stop()
         self._llm_worker.wait(3000)
         self._asr_worker.stop()
         self._asr_worker.wait(3000)
         self._vad_worker.stop()
         self._vad_worker.wait(3000)
+        self._capture.stop()
         self._running = False
 
     # ── Audio ingress ────────────────────────────────────────────────────────

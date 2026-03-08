@@ -154,12 +154,18 @@ def test_orchestrator_start_stop_lifecycle(qt_app: Any) -> None:
         patch("src.pipeline.orchestrator.SileroVAD") as MockVAD,
         patch("src.pipeline.orchestrator.QwenASR") as MockASR,
         patch("src.pipeline.orchestrator.AsyncOllamaClient") as MockLLM,
-        patch("src.pipeline.orchestrator.LearningRepository") as MockDB,
+        patch("src.pipeline.orchestrator.WasapiLoopbackCapture") as MockCapture,
+        patch("src.pipeline.orchestrator.VadWorker") as MockVadW,
+        patch("src.pipeline.orchestrator.AsrWorker") as MockAsrW,
+        patch("src.pipeline.orchestrator.LlmWorker") as MockLlmW,
     ):
         MockVAD.return_value = MagicMock()
         MockASR.return_value = MagicMock()
         MockLLM.return_value = MagicMock()
-        MockDB.return_value = MagicMock()
+        MockCapture.return_value = MagicMock()
+        MockVadW.return_value = MagicMock()
+        MockAsrW.return_value = MagicMock()
+        MockLlmW.return_value = MagicMock()
 
         orch = PipelineOrchestrator(config)
         orch.start()
@@ -178,7 +184,6 @@ def test_orchestrator_put_audio_drops_when_full(qt_app: Any, caplog: Any) -> Non
         patch("src.pipeline.orchestrator.SileroVAD"),
         patch("src.pipeline.orchestrator.QwenASR"),
         patch("src.pipeline.orchestrator.AsyncOllamaClient"),
-        patch("src.pipeline.orchestrator.LearningRepository"),
     ):
         orch = PipelineOrchestrator(config)
         while True:
@@ -497,13 +502,13 @@ class TestPipelineOrchestratorIntegration:
             patch("src.pipeline.orchestrator.SileroVAD"),
             patch("src.pipeline.orchestrator.QwenASR"),
             patch("src.pipeline.orchestrator.AsyncOllamaClient"),
-            patch("src.pipeline.orchestrator.LearningRepository"),
+            patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
             patch("src.pipeline.orchestrator.VadWorker", return_value=mock_workers["vad"]),
             patch("src.pipeline.orchestrator.AsrWorker", return_value=mock_workers["asr"]),
             patch("src.pipeline.orchestrator.LlmWorker", return_value=mock_workers["llm"]),
         ):
             orch = PipelineOrchestrator(config=_pipeline_config())
-        return orch
+            yield orch
 
     def test_start_calls_workers_in_vad_asr_llm_order(
         self,

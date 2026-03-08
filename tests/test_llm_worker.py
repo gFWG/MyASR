@@ -111,23 +111,23 @@ def test_llm_worker_init_stores_attributes(
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
-    """LlmWorker stores queues, llm_client, db_repo, and config on construction."""
+    """LlmWorker stores queues, llm_client, db_path, and config on construction."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client()
-    mock_repo = make_mock_db_repo()
 
     w = LlmWorker(
         text_queue=text_queue,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
     assert w._text_queue is text_queue
     assert w._result_queue is result_queue
     assert w._llm_client is mock_client
-    assert w._db_repo is mock_repo
+    assert w._db_path is None
+    assert w._db_repo is None
     assert w._config is config
     assert w._running is False
 
@@ -141,13 +141,12 @@ def test_llm_worker_has_signals(
     """LlmWorker must expose error_occurred and translation_ready signals."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client()
-    mock_repo = make_mock_db_repo()
 
     w = LlmWorker(
         text_queue=text_queue,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -168,7 +167,6 @@ def test_llm_worker_full_translate_flow_produces_result(
     """A single ASRResult → TranslationResult with translation in result_queue."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("これは翻訳です", None))
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     asr_result = make_asr_result("今日は天気がいいですね")
@@ -178,7 +176,7 @@ def test_llm_worker_full_translate_flow_produces_result(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -209,7 +207,6 @@ def test_llm_worker_translate_flow_emits_signal(
     """translation_ready signal emitted with correct TranslationResult."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("翻訳テスト", None))
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     asr_result = make_asr_result("テスト文章")
@@ -219,7 +216,7 @@ def test_llm_worker_translate_flow_emits_signal(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -244,6 +241,8 @@ def test_llm_worker_calls_db_update_translation(
     config: dict[str, Any],
 ) -> None:
     """db_repo.update_translation is called with db_row_id after successful translation."""
+    from unittest.mock import patch as _patch
+
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("DB更新テスト", None))
     mock_repo = make_mock_db_repo()
@@ -252,24 +251,25 @@ def test_llm_worker_calls_db_update_translation(
     asr_result = make_asr_result("DB更新テスト文章", db_row_id=42)
     text_q.put(asr_result)
 
-    w = LlmWorker(
-        text_queue=text_q,
-        result_queue=result_queue,
-        llm_client=mock_client,
-        db_repo=mock_repo,
-        config=config,
-    )
+    with _patch("src.pipeline.llm_worker.LearningRepository", return_value=mock_repo):
+        w = LlmWorker(
+            text_queue=text_q,
+            result_queue=result_queue,
+            llm_client=mock_client,
+            db_path=":memory:",
+            config=config,
+        )
 
-    w.start()
-    deadline = time.monotonic() + 3.0
-    while time.monotonic() < deadline:
-        try:
-            result_queue.get(timeout=0.1)
-            break
-        except queue.Empty:
-            pass
+        w.start()
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            try:
+                result_queue.get(timeout=0.1)
+                break
+            except queue.Empty:
+                pass
 
-    w.stop()
+        w.stop()
 
     assert mock_repo.update_translation.called, "Expected update_translation to be called"
     call_args = mock_repo.update_translation.call_args
@@ -290,7 +290,6 @@ def test_llm_worker_timeout_error_emits_with_none_translation(
     """LLMTimeoutError → translation_ready emitted with translation=None."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(side_effect=LLMTimeoutError("Timeout"))
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     asr_result = make_asr_result("タイムアウトテスト")
@@ -300,7 +299,7 @@ def test_llm_worker_timeout_error_emits_with_none_translation(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -338,7 +337,6 @@ def test_llm_worker_timeout_error_continues_processing(
 
     mock_client = MagicMock()
     mock_client.translate_async = _side_effect
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     text_q.put(make_asr_result("一回目タイムアウト"))
@@ -348,7 +346,7 @@ def test_llm_worker_timeout_error_continues_processing(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -382,7 +380,6 @@ def test_llm_worker_unavailable_error_emits_with_none_translation(
     """LLMUnavailableError → translation_ready emitted with translation=None."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(side_effect=LLMUnavailableError("Connection refused"))
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     asr_result = make_asr_result("接続エラーテスト")
@@ -392,7 +389,7 @@ def test_llm_worker_unavailable_error_emits_with_none_translation(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -431,7 +428,6 @@ def test_llm_worker_unavailable_error_continues_processing(
 
     mock_client = MagicMock()
     mock_client.translate_async = _side_effect
-    mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
     text_q.put(make_asr_result("接続なし"))
@@ -441,7 +437,7 @@ def test_llm_worker_unavailable_error_continues_processing(
         text_queue=text_q,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -475,13 +471,12 @@ def test_llm_worker_stop_completes_within_2s(
     """stop() must complete within 2 seconds."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client()
-    mock_repo = make_mock_db_repo()
 
     w = LlmWorker(
         text_queue=text_queue,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -505,13 +500,12 @@ def test_llm_worker_running_flag_false_after_stop(
     """_running should be False after stop() is called."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client()
-    mock_repo = make_mock_db_repo()
 
     w = LlmWorker(
         text_queue=text_queue,
         result_queue=result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -535,7 +529,6 @@ def test_llm_worker_drops_result_when_result_queue_full(
     """When result_queue is full, results are dropped with a warning (no deadlock)."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("テスト", None))
-    mock_repo = make_mock_db_repo()
 
     # Full result queue (maxsize=1, already filled)
     full_result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=1)
@@ -555,7 +548,7 @@ def test_llm_worker_drops_result_when_result_queue_full(
         text_queue=text_q,
         result_queue=full_result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 
@@ -582,7 +575,6 @@ def test_llm_worker_no_deadlock_on_full_result_queue(
     """Worker must not deadlock when result_queue is full — stop() finishes in <2s."""
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("テスト", None))
-    mock_repo = make_mock_db_repo()
 
     full_result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=1)
     dummy = TranslationResult(
@@ -604,7 +596,7 @@ def test_llm_worker_no_deadlock_on_full_result_queue(
         text_queue=text_q,
         result_queue=full_result_queue,
         llm_client=mock_client,
-        db_repo=mock_repo,
+        db_path=None,
         config=config,
     )
 

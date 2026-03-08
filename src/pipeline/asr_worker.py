@@ -50,14 +50,15 @@ class AsrWorker(QThread):
         text_queue: queue.Queue[ASRResult],
         asr: QwenASR,
         config: dict[str, Any],
-        db_repo: LearningRepository | None = None,
+        db_path: str | None = None,
     ) -> None:
         super().__init__()
         self._segment_queue = segment_queue
         self._text_queue = text_queue
         self._asr = asr
         self._config = config
-        self._db_repo = db_repo
+        self._db_path = db_path
+        self._db_repo: LearningRepository | None = None
         self._running: bool = False
 
     def run(self) -> None:
@@ -68,6 +69,7 @@ class AsrWorker(QThread):
         batch call is timed via ``StageTimer``.  Results are emitted and placed
         into ``_text_queue`` non-blockingly.
         """
+        self._db_repo = LearningRepository(self._db_path) if self._db_path else None
         self._running = True
         batch_size: int = self._config.get("asr_batch_size", 4)
         flush_timeout_ms: float = float(self._config.get("asr_flush_timeout_ms", 500))

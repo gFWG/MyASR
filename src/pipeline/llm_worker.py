@@ -33,7 +33,9 @@ class LlmWorker(QThread):
         text_queue: Input queue of ``ASRResult`` objects from ASR stage.
         result_queue: Output queue of ``TranslationResult`` objects for downstream.
         llm_client: Initialised async LLM client (injected, not created here).
-        db_repo: Database repository for persisting translation results, or None to skip.
+        db_path: Path to the SQLite database file, or None to skip DB writes.
+            A fresh ``LearningRepository`` is created inside ``run()`` so that
+            the sqlite3 connection is owned by this thread (thread-affinity rule).
         config: Worker configuration dict (currently unused, reserved for future use).
     """
 
@@ -45,15 +47,16 @@ class LlmWorker(QThread):
         text_queue: queue.Queue[ASRResult],
         result_queue: queue.Queue[TranslationResult],
         llm_client: AsyncOllamaClient,
-        db_repo: LearningRepository | None,
-        config: dict[str, Any],
+        db_path: str | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         super().__init__()
         self._text_queue = text_queue
         self._result_queue = result_queue
         self._llm_client = llm_client
-        self._db_repo = db_repo
-        self._config = config
+        self._db_path = db_path
+        self._db_repo: LearningRepository | None = None
+        self._config: dict[str, Any] = config if config is not None else {}
         self._running: bool = False
 
     def run(self) -> None:
@@ -61,7 +64,10 @@ class LlmWorker(QThread):
 
         Creates a fresh asyncio event loop for this thread, runs the async
         processing coroutine until stopped, then closes the loop in a finally block.
+        A fresh LearningRepository is created here (in the worker thread) to
+        satisfy sqlite3 thread-affinity requirements.
         """
+        self._db_repo = LearningRepository(self._db_path) if self._db_path else None
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:

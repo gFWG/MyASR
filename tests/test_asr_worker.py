@@ -14,7 +14,7 @@ import queue
 import time
 import uuid
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -584,27 +584,30 @@ def test_asr_worker_calls_insert_partial_and_sets_db_row_id(
 
     seg_q: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
     flush_config = {"asr_batch_size": 1, "asr_flush_timeout_ms": 100}
-    w = AsrWorker(
-        segment_queue=seg_q,
-        text_queue=text_queue,
-        asr=mock_asr,
-        config=flush_config,
-        db_repo=mock_db_repo,
-    )
 
-    seg_q.put(make_segment())
+    with patch("src.pipeline.asr_worker.LearningRepository") as MockLearningRepository:
+        MockLearningRepository.return_value = mock_db_repo
+        w = AsrWorker(
+            segment_queue=seg_q,
+            text_queue=text_queue,
+            asr=mock_asr,
+            config=flush_config,
+            db_path=":memory:",
+        )
 
-    w.start()
-    deadline = time.monotonic() + 3.0
-    result: ASRResult | None = None
-    while time.monotonic() < deadline:
-        try:
-            result = text_queue.get(timeout=0.1)
-            break
-        except queue.Empty:
-            pass
+        seg_q.put(make_segment())
 
-    w.stop()
+        w.start()
+        deadline = time.monotonic() + 3.0
+        result: ASRResult | None = None
+        while time.monotonic() < deadline:
+            try:
+                result = text_queue.get(timeout=0.1)
+                break
+            except queue.Empty:
+                pass
+
+        w.stop()
 
     assert result is not None, "Expected an ASRResult in text_queue"
     assert mock_db_repo.insert_partial.called, "Expected insert_partial to be called"
