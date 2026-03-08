@@ -23,22 +23,16 @@ class StageTimer:
         with StageTimer("vad") as timer:
             # ... do work ...
             pass
-        print(timer.result.elapsed_ms)
+        logger.info("elapsed: %.2f ms", timer.result.elapsed_ms)
     """
 
     def __init__(self, stage_name: str) -> None:
-        """Initialize the stage timer.
-
-        Args:
-            stage_name: Name of the pipeline stage being timed.
-        """
         self._stage_name = stage_name
         self._start_ns: int = 0
         self._end_ns: int = 0
         self._result: PipelineStageMetrics | None = None
 
     def __enter__(self) -> StageTimer:
-        """Start timing on context entry."""
         self._start_ns = time.perf_counter_ns()
         return self
 
@@ -48,7 +42,6 @@ class StageTimer:
         exc_val: BaseException | None,
         exc_tb: object,
     ) -> None:
-        """Stop timing on context exit and compute results."""
         self._end_ns = time.perf_counter_ns()
         elapsed_ns = self._end_ns - self._start_ns
         elapsed_ms = elapsed_ns / 1_000_000  # Convert ns to ms
@@ -76,15 +69,9 @@ class PipelineMetrics:
     """
 
     def __init__(self) -> None:
-        """Initialize empty metrics aggregator."""
         self._results: list[PipelineStageMetrics] = []
 
     def add(self, result: PipelineStageMetrics) -> None:
-        """Add a stage timing result to the aggregator.
-
-        Args:
-            result: Timing result from a pipeline stage.
-        """
         self._results.append(result)
 
     def to_dict(self) -> dict[str, float]:

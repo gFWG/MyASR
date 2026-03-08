@@ -188,7 +188,7 @@ class SettingsDialog(QDialog):
     def _collect_config(self) -> AppConfig:
         return AppConfig(
             user_jlpt_level=self._jlpt_level_spin.value(),
-            llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]
+            llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]  # QComboBox returns str; AppConfig.llm_mode is a Literal — safe at runtime
             overlay_opacity=self._opacity_slider.value() / 100.0,
             overlay_font_size_jp=self._font_size_jp_spin.value(),
             overlay_font_size_cn=self._font_size_cn_spin.value(),

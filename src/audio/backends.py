@@ -5,7 +5,14 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import soxr
+
+try:
+    import soxr as _soxr
+
+    _HAVE_SOXR = True
+except ImportError:
+    _soxr = None  # optional: scipy fallback used instead
+    _HAVE_SOXR = False
 
 from src.exceptions import AudioCaptureError
 
@@ -15,9 +22,8 @@ logger = logging.getLogger(__name__)
 def resample_audio(audio: np.ndarray, in_rate: int, out_rate: int) -> np.ndarray:
     """Resample a mono float32 audio array from in_rate to out_rate.
 
-    Uses soxr for high-quality, low-latency rational resampling.  Much faster
-    than FFT-based ``scipy.signal.resample`` for short fixed-ratio buffers
-    (e.g. 48 kHz → 16 kHz at 10 ms = 480 samples).
+    Uses soxr for high-quality, low-latency rational resampling when available.
+    Falls back to ``scipy.signal.resample_poly`` if soxr is not installed.
 
     Args:
         audio: 1-D float32 array of audio samples.
@@ -29,7 +35,15 @@ def resample_audio(audio: np.ndarray, in_rate: int, out_rate: int) -> np.ndarray
     """
     if in_rate == out_rate:
         return audio
-    resampled: np.ndarray = soxr.resample(audio, in_rate, out_rate, quality="HQ")
+    if _HAVE_SOXR:
+        resampled: np.ndarray = _soxr.resample(audio, in_rate, out_rate, quality="HQ")
+    else:
+        from math import gcd
+
+        from scipy.signal import resample_poly
+
+        divisor = gcd(in_rate, out_rate)
+        resampled = resample_poly(audio, out_rate // divisor, in_rate // divisor)
     return resampled.astype(np.float32)
 
 

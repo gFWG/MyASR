@@ -48,7 +48,7 @@ class AsyncOllamaClient:
             original_cache_clear()
             client_ref._result_cache.clear()
 
-        _cached_sentinel.cache_clear = _combined_cache_clear  # type: ignore[method-assign]
+        _cached_sentinel.cache_clear = _combined_cache_clear  # type: ignore[method-assign]  # lru_cache.cache_clear is typed as Callable[[], None]; replacing it is safe
         self.translate_cached = _cached_sentinel
 
     async def __aenter__(self) -> "AsyncOllamaClient":

@@ -1,0 +1,278 @@
+================================================================================
+F2 CODE QUALITY REVIEW — pipeline-perf branch
+Date: 2026-03-08
+Reviewer: Sisyphus-Junior (claude-sonnet-4.6)
+================================================================================
+
+SUMMARY
+-------
+Lint [PASS] | Format [PASS] | Types [PASS] | Tests [259 pass / 1 fail / 90 errors] | Files [4 clean / 2 issues] | VERDICT: REJECT
+
+================================================================================
+SECTION 1 — AUTOMATED TOOL RESULTS
+================================================================================
+
+RUFF LINT (ruff check . --exclude .venv)
+  Result: PASS — "All checks passed!"
+  Exit code: 0
+
+RUFF FORMAT (ruff format --check . --exclude .venv)
+  Result: PASS — "69 files already formatted"
+  Exit code: 0
+
+MYPY (mypy src/ --ignore-missing-imports)
+  Result: PASS — "Success: no issues found in 38 source files"
+  Exit code: 0
+
+PYTEST (pytest -x --tb=short -q)
+  The headless test environment causes QCoreApplication/QApplication conflicts
+  across test modules that create Qt objects. This is a test-infrastructure bug
+  unrelated to the pipeline code under review.
+
+  Isolated non-Qt tests: 259 passed, 14 skipped, 1 FAILED
+  Qt tests (test_overlay, test_pipeline, test_settings, test_tooltip, test_tray,
+             test_learning_panel): 90 ERRORS — all due to QCoreApplication
+             singleton conflict in the headless CI environment (test fixture
+             ordering issue, not pipeline code).
+
+  FAILED TEST:
+    tests/test_pipeline_migration.py::test_pipeline_module_no_longer_exists
+    — Expected `from src import pipeline` to raise ImportError, but
+      src/pipeline/ package EXISTS in this branch. The test asserts that the
+      old monolithic pipeline module was removed, but the new `src/pipeline/`
+      package satisfies the import. This is a stale/contradictory test: it
+      expects the namespace to be gone, but the branch intentionally introduces
+      src/pipeline/ as the new package. The test needs to be updated or removed.
+    Root cause: test_pipeline_migration.py:13 — test checks wrong invariant
+                for this branch's design.
+
+================================================================================
+SECTION 2 — src/pipeline/ FILE-BY-FILE REVIEW
+================================================================================
+
+FILE: src/pipeline/__init__.py
+  Status: CLEAN
+  Content: single line — """Pipeline package."""
+  Issues: None
+
+FILE: src/pipeline/types.py (74 lines)
+  Status: CLEAN
+  Issues:
+    — MINOR (AI slop): All four dataclasses have verbose attribute-level
+      docstrings in the class docstring (Attributes: sections) that simply
+      restate what the field names already make obvious.  E.g. `segment_id:
+      Unique identifier for this segment (uuid4 string)` — the name `segment_id`
+      already communicates this.  Not a blocking issue, but adds ~30 lines of
+      noise.  AGENTS.md says "Skip for obvious one-liners" — this principle
+      should extend to self-evident dataclass fields.
+    — Otherwise: correct frozen/slots dataclasses, proper type annotations,
+      clean __all__.
+
+FILE: src/pipeline/perf.py (132 lines)
+  Status: ISSUES FOUND
+  Issues:
+    [WARN] perf.py:26 — `print(timer.result.elapsed_ms)` appears in the class
+      docstring Example: block (not runtime code). The grep flagged it as a
+      print() in production code. On careful inspection it is inside a
+      triple-quoted docstring, so it is NOT a runtime print. False alarm from
+      grep — no runtime issue. However, the example shows print() instead of
+      logging, which is a mild style inconsistency for a project that forbids
+      print() in production code.  Recommendation: update the example to use
+      `logger.info(...)` to match project conventions.
+
+    [WARN] perf.py:78-79, perf.py:82-88 — Excessive docstrings on trivial
+      one-liners: `__init__` ("Initialize empty metrics aggregator."),
+      `__enter__` ("Start timing on context entry."), `__exit__` ("Stop timing
+      on context exit and compute results."), `add` ("Add a stage timing result
+      to the aggregator.") — these docstrings are longer than the method bodies
+      and offer no additional information. AGENTS.md: "Skip for obvious
+      one-liners." This is textbook AI slop padding.
+
+    [WARN] perf.py — `dataclasses` is imported inside `_build_app_config` in
+      orchestrator.py (see below), not here — but perf.py itself is fine.
+
+FILE: src/pipeline/vad_worker.py (110 lines)
+  Status: CLEAN (minor note)
+  Issues:
+    — `config: dict[str, Any]` — `Any` is used for the config value type.
+      Acceptable since config is a heterogeneous dict, but a TypedDict or
+      Protocol would be cleaner. Not blocking.
+    — All except blocks are either `queue.Empty: continue` (correct — expected
+      control flow) or `Exception: logger.error(...) + emit`. No empty/swallowed
+      exceptions.
+    — No type: ignore, no print(), no commented-out code.
+    — `from typing import Any` is used; `Any` appears only in the config type.
+
+FILE: src/pipeline/asr_worker.py (131 lines)
+  Status: ISSUES FOUND
+  Issues:
+    [MINOR] asr_worker.py:90-91 — `except queue.Empty: pass` — silent pass
+      on queue.Empty is intentional here (the loop will retry on the next
+      iteration or flush on timeout). However, per project style guidelines,
+      even expected exceptions should have a comment explaining why silence
+      is appropriate. Current code:
+        ```
+        except queue.Empty:
+            pass
+        ```
+      Recommend: add `# expected: no segment yet, batch will flush on timeout`
+      or convert to `continue` with a comment.
+
+    [MINOR] asr_worker.py:117 — variable name `result` in the for loop
+      `for result in results:` — this is a generic name but in context is
+      clear (result of type ASRResult). Borderline; not blocking.
+
+FILE: src/pipeline/llm_worker.py (139 lines)
+  Status: ISSUES FOUND
+  Issues:
+    [MEDIUM] llm_worker.py:45-46 — `llm_client: Any` and `db_repo: Any` —
+      both are typed as Any with no comment explaining why. The llm_client
+      should be typed as `AsyncOllamaClient` (it's imported in orchestrator.py
+      and passed directly). The db_repo should be typed as
+      `LearningRepository | None` (it can be None when no DB path is set, per
+      orchestrator usage). Using `Any` defeats mypy's ability to catch interface
+      mismatches at the worker level. AGENTS.md: "Avoid Any. If truly needed,
+      comment why."
+      Locations: llm_worker.py:45, llm_worker.py:46
+
+    [MINOR] llm_worker.py:115 — `except Exception as exc:  # noqa: BLE001`
+      — broad exception suppressed with noqa. The noqa is documented with
+      the ruff code (BLE001 = blind exception) but there is no human-readable
+      comment explaining WHY we catch all exceptions here (to prevent DB errors
+      from crashing the LLM thread). Add a comment: `# DB errors must not
+      propagate into the LLM thread`.
+
+    [MINOR] llm_worker.py:109-120 — `self._db_repo.update_translation(...)` is
+      called unconditionally even when `self._db_repo` could be None (as seen
+      in orchestrator where db_path defaults to ":memory:" and a real repo is
+      always created — but if LlmWorker is tested or used standalone, a None
+      db_repo would crash at line 110 with AttributeError, not a clean error).
+
+FILE: src/pipeline/orchestrator.py (205 lines)
+  Status: ISSUES FOUND
+  Issues:
+    [MEDIUM] orchestrator.py:160, 165, 170 — Properties `asr_ready`,
+      `translation_ready`, `error_occurred` return `Any` / `list[Any]`. These
+      should return proper Qt Signal types. The lack of typing here means callers
+      get no IDE/mypy support for `.connect()`. The correct type would be
+      `SignalInstance` from PySide6 stubs, or at minimum a comment explaining the
+      Any. AGENTS.md: "Avoid Any. If truly needed, comment why."
+      Locations: orchestrator.py:160, 165, 170
+
+    [MEDIUM] orchestrator.py:142-143 — `on_asr_ready: Any` and
+      `on_translation_ready: Any` in `connect_signals` — these should be typed
+      as `Callable[[ASRResult], None]` and `Callable[[TranslationResult], None]`
+      respectively to give callers type safety.
+
+    [MINOR] orchestrator.py:201 — `import dataclasses` is a deferred import
+      inside `_build_app_config()`. Deferred imports are sometimes used to avoid
+      circular imports, but dataclasses is stdlib and there is no circular import
+      risk here. Should be moved to the module-level imports. This is a style
+      violation against the project's import conventions.
+
+    [MINOR] orchestrator.py:56 — `SileroVAD` and `QwenASR` are instantiated
+      inside `__init__` (heavy GPU objects). The class docstring says models are
+      "injected at construction time" but that's misleading — they are CREATED
+      here, not injected. Either fix the docstring or refactor to true DI to
+      enable unit testing without GPU.
+
+================================================================================
+SECTION 3 — CHECKLIST SUMMARY
+================================================================================
+
+1. type: ignore comments — None found in src/pipeline/. The three type:ignore
+   instances in the codebase are in src/main.py, src/ui/settings.py, and
+   src/llm/ollama_client.py (outside scope). All three have documented reasons.
+   ✅ PASS (in-scope files clean)
+
+2. Empty except blocks — asr_worker.py:90-91 has `except queue.Empty: pass`
+   without a comment. Technically not "empty" (it correctly does nothing) but
+   lacks a justification comment.
+   ⚠️ WARN (minor)
+
+3. print() in production code — The only print() found is inside a docstring
+   example in perf.py:26. Not runtime code. However, the example uses print()
+   where project convention requires logging.
+   ⚠️ WARN (docstring style)
+
+4. Commented-out code — None found in src/pipeline/. The two comment lines in
+   orchestrator.py:60-61 are explanatory prose, not dead code.
+   ✅ PASS
+
+5. Unused imports — Ruff found none. Manual check: `from typing import Any` in
+   all four worker files — used, not unused.
+   ✅ PASS
+
+6. AI slop patterns:
+   - Excessive docstrings on trivial methods: YES in perf.py (__init__,
+     __enter__, __exit__, add all have docstrings longer than their bodies).
+   - Generic variable names: `result` in asr_worker.py for-loop (minor).
+   - Over-abstraction: `connect_signals()` adds a thin wrapper over direct
+     signal connection — borderline, not clearly harmful.
+   ⚠️ WARN (perf.py docstring padding)
+
+7. Missing type annotations on public functions/methods:
+   - llm_worker.py:45-46: `llm_client: Any`, `db_repo: Any` — should be
+     concrete types.
+   - orchestrator.py:142-143, 160, 165, 170: `Any` used where `Callable` or
+     `SignalInstance` types would be appropriate.
+   ⚠️ MEDIUM (not blocking mypy since --ignore-missing-imports hides PySide6
+              stub gaps, but violates project "Avoid Any" rule)
+
+================================================================================
+SECTION 4 — ISSUE INDEX
+================================================================================
+
+BLOCKING / MUST-FIX:
+  [T1] tests/test_pipeline_migration.py:13 — Stale test asserts src.pipeline
+       cannot be imported, but this branch intentionally adds src/pipeline/.
+       Test must be deleted or updated. Currently causes 1 test failure.
+
+MEDIUM / SHOULD-FIX:
+  [M1] llm_worker.py:45-46 — `llm_client: Any`, `db_repo: Any` — use concrete
+       types `AsyncOllamaClient` and `LearningRepository | None`.
+  [M2] orchestrator.py:142-143 — `on_asr_ready: Any`, `on_translation_ready: Any`
+       — use `Callable[[ASRResult], None]` and `Callable[[TranslationResult], None]`.
+  [M3] orchestrator.py:160, 165, 170 — signal properties typed as Any; add
+       comment explaining PySide6 stub limitation if Any is truly unavoidable.
+
+MINOR / NICE-TO-FIX:
+  [N1] asr_worker.py:90-91 — `except queue.Empty: pass` — add inline comment
+       justifying the silence.
+  [N2] llm_worker.py:115 — `# noqa: BLE001` without human explanation; add
+       comment like `# DB errors must not crash the LLM thread`.
+  [N3] orchestrator.py:201 — `import dataclasses` inside method body; move to
+       module-level imports.
+  [N4] orchestrator.py docstring — "models injected at construction time" is
+       misleading; models are CREATED in __init__, not injected. Fix docstring.
+  [N5] perf.py:26 — docstring example uses `print()` instead of `logging`.
+  [N6] perf.py — excessive docstrings on __init__, __enter__, __exit__, add,
+       to_dict, log_summary. Many are one-line methods with 3-4 line docstrings.
+
+NOT ISSUES (false alarms):
+  — print() at perf.py:26 is inside a docstring string literal, not runtime.
+  — `except queue.Empty: continue` in vad_worker.py and llm_worker.py is
+    correct control flow, not a swallowed error.
+  — Comments at orchestrator.py:60-61 are explanatory prose, not dead code.
+
+================================================================================
+VERDICT: REJECT
+================================================================================
+
+Reason: One test failure (test_pipeline_migration.py stale test [T1]) is a
+hard blocker — the branch ships a contradictory test that immediately fails CI.
+Additionally, three medium-severity Any usage issues [M1, M2, M3] violate the
+project's explicit "Avoid Any" code style rule without justification comments.
+
+Required before APPROVE:
+  1. Fix or remove test_pipeline_migration.py::test_pipeline_module_no_longer_exists [T1]
+  2. Address Any usage in LlmWorker.__init__ and PipelineOrchestrator [M1, M2, M3]
+
+Recommended (non-blocking):
+  3. Address minor issues N1–N6 as listed above.
+
+Note: Qt test errors (90 errors in test_overlay, test_pipeline etc.) are a
+pre-existing test infrastructure issue (QCoreApplication singleton conflict in
+headless environment). These are NOT regressions introduced by this branch and
+should be tracked separately.
+================================================================================
