@@ -30,7 +30,7 @@ def qt_app() -> QCoreApplication:
     app = QCoreApplication.instance()
     if app is None:
         app = QCoreApplication(sys.argv)
-    return app  # type: ignore[return-value]  # QCoreApplication.instance() returns QCoreApplication|None
+    return app  # QCoreApplication.instance() returns QCoreApplication|None
 
 
 @pytest.fixture()
