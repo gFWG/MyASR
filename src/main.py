@@ -17,7 +17,7 @@ from src.config import AppConfig, load_config
 from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
-from src.pipeline_legacy import PipelineWorker
+from src.pipeline.orchestrator import PipelineOrchestrator
 from src.ui.learning_panel import LearningPanel
 from src.ui.overlay import OverlayWindow
 from src.ui.settings import SettingsDialog
@@ -27,11 +27,11 @@ from src.ui.tray import SystemTrayManager
 logger = logging.getLogger(__name__)
 
 
-def _cleanup(pipeline: PipelineWorker, conn: sqlite3.Connection) -> None:
+def _cleanup(pipeline: PipelineOrchestrator, conn: sqlite3.Connection) -> None:
     """Stop the pipeline and close the database connection.
 
     Args:
-        pipeline: The running PipelineWorker thread to stop.
+        pipeline: The running PipelineOrchestrator to stop.
         conn: The SQLite connection to close.
     """
     try:
@@ -67,16 +67,24 @@ def main() -> None:
 
         overlay = OverlayWindow(config)
         tooltip = TooltipPopup()
-        pipeline = PipelineWorker(config, db_path=config.db_path)
-        tray = SystemTrayManager()
 
-        pipeline.sentence_ready.connect(overlay.on_sentence_ready)
+        pipeline_config: dict[str, object] = {
+            "sample_rate": config.sample_rate,
+            "asr_batch_size": 4,
+            "asr_flush_timeout_ms": 500,
+            "db_path": config.db_path,
+            "ollama_url": config.ollama_url,
+            "ollama_model": config.ollama_model,
+        }
+        pipeline = PipelineOrchestrator(config=pipeline_config)
+        tray = SystemTrayManager()
 
         def _on_pipeline_error(msg: str) -> None:
             logger.error("Pipeline error: %s", msg)
             overlay.set_status(f"Error: {msg}")
 
-        pipeline.error_occurred.connect(_on_pipeline_error)
+        for error_signal in pipeline.error_occurred:
+            error_signal.connect(_on_pipeline_error)
 
         def _on_highlight_hovered(hit: VocabHit | GrammarHit, point: QPoint) -> None:
             result: SentenceResult | None = overlay._current_result
@@ -123,7 +131,6 @@ def main() -> None:
                 return
             _settings_dialog = SettingsDialog(config)
             _settings_dialog.config_changed.connect(overlay.on_config_changed)
-            _settings_dialog.config_changed.connect(pipeline.update_config)
             _settings_dialog.show()
 
         tray.quit_requested.connect(app.quit)
