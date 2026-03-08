@@ -57,11 +57,11 @@ def _make_audio_segment() -> AudioSegment:
     return AudioSegment(samples=np.zeros(16000, dtype=np.float32), duration_sec=1.0)
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_emits_sentence_ready_on_valid_segment(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -90,7 +90,7 @@ def test_pipeline_emits_sentence_ready_on_valid_segment(
 
     mock_audio.start.side_effect = fake_start
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -125,11 +125,11 @@ def test_pipeline_emits_sentence_ready_on_valid_segment(
     assert results[0].analysis is analysis
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_skips_empty_asr_result(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -147,7 +147,7 @@ def test_pipeline_skips_empty_asr_result(
     mock_vad.process_chunk.return_value = [segment]
     mock_asr.transcribe.return_value = ""
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -179,11 +179,11 @@ def test_pipeline_skips_empty_asr_result(
     assert len(errors) == 0
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_handles_asr_error_gracefully(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -201,7 +201,7 @@ def test_pipeline_handles_asr_error_gracefully(
     mock_vad.process_chunk.return_value = [segment]
     mock_asr.transcribe.side_effect = ASRError("model failed")
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -234,11 +234,11 @@ def test_pipeline_handles_asr_error_gracefully(
     assert len(errors) == 0
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_emits_error_on_audio_capture_failure(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -251,7 +251,7 @@ def test_pipeline_emits_error_on_audio_capture_failure(
     mock_audio = mock_audio_cls.return_value
     mock_audio.start.side_effect = AudioCaptureError("no device")
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -268,11 +268,11 @@ def test_pipeline_emits_error_on_audio_capture_failure(
     assert worker._running is False
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_stop_calls_cleanup(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -286,7 +286,7 @@ def test_stop_calls_cleanup(
     mock_vad = mock_vad_cls.return_value
     mock_asr = mock_asr_cls.return_value
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -301,11 +301,11 @@ def test_stop_calls_cleanup(
 # ── New tests ────────────────────────────────────────────────────────────────
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_populates_translation_on_llm_success(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -318,7 +318,7 @@ def test_pipeline_populates_translation_on_llm_success(
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -341,11 +341,11 @@ def test_pipeline_populates_translation_on_llm_success(
     assert results[0].explanation == "解説文"
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_emits_with_none_on_llm_failure(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -358,7 +358,7 @@ def test_pipeline_emits_with_none_on_llm_failure(
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -384,11 +384,11 @@ def test_pipeline_emits_with_none_on_llm_failure(
     assert results[0].explanation is None
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_writes_to_db_on_success(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -407,7 +407,7 @@ def test_pipeline_writes_to_db_on_success(
     db_path = str(tmp_path / "test.db")
     init_db(db_path)
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config(), db_path=db_path)
     worker._repo = LearningRepository(db_path=db_path)
@@ -439,12 +439,12 @@ def test_pipeline_writes_to_db_on_success(
     worker._repo.close()
 
 
-@patch("src.pipeline.LearningRepository")
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.LearningRepository")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_still_emits_when_db_write_fails(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -459,7 +459,7 @@ def test_pipeline_still_emits_when_db_write_fails(
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config(), db_path=":memory:")
     worker._repo = mock_repo_cls.return_value
@@ -489,11 +489,11 @@ def test_pipeline_still_emits_when_db_write_fails(
     assert results[0].chinese_translation == "翻訳"
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_to_db_records_converts_correctly(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -504,7 +504,7 @@ def test_to_db_records_converts_correctly(
 ) -> None:
     mock_llm_cls.return_value.translate.return_value = (None, None)
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -571,11 +571,11 @@ def test_to_db_records_converts_correctly(
     assert grammar_recs[0].tooltip_shown is False
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_emits_sentence_id_when_db_connected(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -592,7 +592,7 @@ def test_pipeline_emits_sentence_id_when_db_connected(
     db_path = str(tmp_path / "test.db")
     init_db(db_path)
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config(), db_path=db_path)
     worker._repo = LearningRepository(db_path=db_path)
@@ -628,11 +628,11 @@ def test_pipeline_emits_sentence_id_when_db_connected(
     worker._repo.close()
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_emits_sentence_id_none_when_no_db(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -645,7 +645,7 @@ def test_pipeline_emits_sentence_id_none_when_no_db(
     analysis = _make_analysis_result()
     mock_prep_cls.return_value.process.return_value = analysis
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
 
@@ -667,11 +667,11 @@ def test_pipeline_emits_sentence_id_none_when_no_db(
     assert results[0].sentence_id is None
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_enqueue_audio_drops_oldest_when_full(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -680,7 +680,7 @@ def test_enqueue_audio_drops_oldest_when_full(
     mock_llm_cls: MagicMock,
     qapp: QApplication,
 ) -> None:
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     config = _make_config()
     worker = PipelineWorker(config)
@@ -703,11 +703,11 @@ def test_enqueue_audio_drops_oldest_when_full(
     assert second[0] == 3.0
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_creates_repo_in_run_when_db_path_set(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -722,7 +722,7 @@ def test_pipeline_creates_repo_in_run_when_db_path_set(
     db_path = str(tmp_path / "test.db")
     init_db(db_path)
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config(), db_path=db_path)
     assert worker._repo is None
@@ -732,11 +732,11 @@ def test_pipeline_creates_repo_in_run_when_db_path_set(
     assert worker._repo is not None
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_no_repo_when_no_db_path(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -747,7 +747,7 @@ def test_pipeline_no_repo_when_no_db_path(
 ) -> None:
     mock_audio_cls.return_value.start.side_effect = AudioCaptureError("test stop")
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config())
     assert worker._repo is None
@@ -757,11 +757,11 @@ def test_pipeline_no_repo_when_no_db_path(
     assert worker._repo is None
 
 
-@patch("src.pipeline.OllamaClient")
-@patch("src.pipeline.PreprocessingPipeline")
-@patch("src.pipeline.QwenASR")
-@patch("src.pipeline.SileroVAD")
-@patch("src.pipeline.create_audio_capture")
+@patch("src.pipeline_legacy.OllamaClient")
+@patch("src.pipeline_legacy.PreprocessingPipeline")
+@patch("src.pipeline_legacy.QwenASR")
+@patch("src.pipeline_legacy.SileroVAD")
+@patch("src.pipeline_legacy.create_audio_capture")
 def test_pipeline_cleanup_closes_repo(
     mock_audio_cls: MagicMock,
     mock_vad_cls: MagicMock,
@@ -774,7 +774,7 @@ def test_pipeline_cleanup_closes_repo(
     db_path = str(tmp_path / "test.db")
     init_db(db_path)
 
-    from src.pipeline import PipelineWorker
+    from src.pipeline_legacy import PipelineWorker
 
     worker = PipelineWorker(_make_config(), db_path=db_path)
     worker._repo = LearningRepository(db_path=db_path)

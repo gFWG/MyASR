@@ -204,7 +204,7 @@ Max Concurrent: 5 (Wave 2)
 
 ### Wave 0: Prerequisite Rename (Task 0)
 
-- [ ] 0. Rename `src/pipeline.py` → `src/pipeline_legacy.py` to Unblock Package Creation
+- [x] 0. Rename `src/pipeline.py` → `src/pipeline_legacy.py` to Unblock Package Creation
 
   **What to do**:
   - RED: Write a test that `from src.pipeline_legacy import PipelineWorker` works (migration test).
@@ -283,7 +283,7 @@ Max Concurrent: 5 (Wave 2)
 
 ### Wave 1: Foundation (Tasks 1-4)
 
-- [ ] 1. Pipeline Types & Data Models
+- [x] 1. Pipeline Types & Data Models
 
   **What to do**:
   - RED: Write tests for all new data types: `SpeechSegment` (audio ndarray + metadata), `ASRResult` (text + timing + segment ref), `TranslationResult` (translation + explanation + ASRResult ref), `PipelineStageMetrics` (stage name, start/end time, duration). Test serialization, equality, field access.
@@ -364,7 +364,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/pipeline/__init__.py`, `src/pipeline/types.py`, `tests/test_pipeline_types.py`
   - Pre-commit: `pytest tests/test_pipeline_types.py -x`
 
-- [ ] 2. Performance Instrumentation Utility
+- [x] 2. Performance Instrumentation Utility
 
   **What to do**:
   - RED: Write tests for a `StageTimer` context manager that records stage name, start/end time, and elapsed_ms. Test that it measures real wall-clock time (within 10ms tolerance). Test `PipelineMetrics` class that aggregates timers and exposes `to_dict()` for logging.
@@ -438,7 +438,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/pipeline/perf.py`, `tests/test_perf.py`
   - Pre-commit: `pytest tests/test_perf.py -x`
 
-- [ ] 3. VAD Optimization — ONNX Mode + Ring Buffer
+- [x] 3. VAD Optimization — ONNX Mode + Ring Buffer
 
   **What to do**:
   - RED: Write tests for optimized SileroVAD: (a) ONNX model loads successfully, (b) process_chunk uses ring buffer (no np.concatenate), (c) no redundant `.float()` on already-float32 audio, (d) speech detection still works correctly (same segments as before), (e) process_chunk completes within 5ms for a 512-sample block.
@@ -538,7 +538,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/vad/silero.py`, `tests/test_silero_vad.py`
   - Pre-commit: `pytest tests/test_silero_vad.py -x`
 
-- [ ] 4. DB Repository Two-Phase Write
+- [x] 4. DB Repository Two-Phase Write
 
   **What to do**:
   - RED: Write tests for: (a) `insert_partial(asr_result)` inserts row with `chinese_translation=NULL, explanation=NULL`, returns row_id. (b) `update_translation(row_id, translation, explanation)` fills in the NULL fields. (c) Verify row integrity after both phases. (d) `update_translation` on non-existent row_id raises or returns False.
@@ -617,7 +617,7 @@ Max Concurrent: 5 (Wave 2)
 
 ### Wave 2: Worker Threads (Tasks 5-9)
 
-- [ ] 5. VAD Worker Thread
+- [x] 5. VAD Worker Thread
 
   **What to do**:
   - RED: Write tests for `VADWorker(QThread)`: (a) constructor accepts audio_queue (input) and segment_queue (output), (b) run() dequeues audio chunks and feeds to SileroVAD.process_chunk(), (c) when AudioSegment detected, converts to pipeline SpeechSegment type and puts on segment_queue, (d) stop() cleanly terminates within 2s, (e) handles empty audio_queue gracefully (no crash on timeout), (f) emits error_occurred signal on exception instead of crashing. Test with mock VAD and mock queues.
@@ -717,7 +717,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/pipeline/vad_worker.py`, `tests/test_vad_worker.py`
   - Pre-commit: `pytest tests/test_vad_worker.py -x`
 
-- [ ] 6. ASR Batch Transcription & ASR Worker
+- [x] 6. ASR Batch Transcription & ASR Worker
 
   **What to do**:
   - RED: Write tests for: (a) `QwenASR.transcribe_batch(segments: list[SpeechSegment]) -> list[ASRResult]` — batch API, (b) `transcribe_batch` uses `torch.inference_mode()` context, (c) `ASRWorker(QThread)` that pulls segments from segment_queue, batches up to 4 (or flushes after 500ms timeout), calls transcribe_batch, runs preprocessing (fugashi), emits asr_ready signal per result, puts ASRResult on text_queue, (d) worker handles empty segment after transcribe (filters blank text), (e) shutdown test.
@@ -823,7 +823,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/asr/qwen_asr.py`, `src/pipeline/asr_worker.py`, `tests/test_qwen_asr.py`, `tests/test_asr_worker.py`
   - Pre-commit: `pytest tests/test_asr_worker.py tests/test_qwen_asr.py -x`
 
-- [ ] 7. Async LLM Client — httpx Streaming + LRU Cache
+- [x] 7. Async LLM Client — httpx Streaming + LRU Cache
 
   **What to do**:
   - RED: Write tests for new `AsyncOllamaClient`: (a) `async translate(text) -> tuple[str|None, str|None]` using httpx.AsyncClient, (b) streaming mode: TTFT < response arrives incrementally, (c) LRU cache: identical text input returns cached result without HTTP call, (d) connection pooling: reuses connections (httpx default), (e) timeout reduced to 15s (was 30s), (f) proper error handling: raises `LLMTimeoutError` on timeout, `LLMUnavailableError` on connection failure (using existing custom exceptions), (g) health_check still works.
@@ -928,7 +928,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/llm/ollama_client.py`, `tests/test_ollama_client.py`
   - Pre-commit: `pytest tests/test_ollama_client.py -x`
 
-- [ ] 8. LLM Worker Thread
+- [x] 8. LLM Worker Thread
 
   **What to do**:
   - RED: Write tests for `LLMWorker(QThread)`: (a) pulls ASRResult from text_queue, calls async translate, puts TranslationResult on result_queue, (b) emits `translation_ready(TranslationResult)` signal, (c) handles LLMTimeoutError gracefully — emits result with translation=None, (d) handles Ollama unavailable — logs warning, continues processing next item, (e) runs asyncio event loop internally for httpx async calls, (f) handles DB update_translation via two-phase write, (g) shutdown within 2s.
@@ -1020,7 +1020,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/pipeline/llm_worker.py`, `tests/test_llm_worker.py`
   - Pre-commit: `pytest tests/test_llm_worker.py -x`
 
-- [ ] 9. WASAPI Resampling Optimization (Windows)
+- [x] 9. WASAPI Resampling Optimization (Windows)
 
   **What to do**:
   - RED: Write tests for optimized resampling: (a) `_resample()` produces identical output to scipy.signal.resample for same input, (b) resampling latency < 2ms per callback block (was FFT-based, slower), (c) module-level import (not inside callback).
@@ -1103,7 +1103,7 @@ Max Concurrent: 5 (Wave 2)
 
 ### Wave 3: Integration (Tasks 10-11)
 
-- [ ] 10. Pipeline Orchestrator — Multi-Threaded Coordinator
+- [x] 10. Pipeline Orchestrator — Multi-Threaded Coordinator
 
   **What to do**:
   - RED: Write tests for `PipelineOrchestrator`: (a) creates and wires all workers (VADWorker, ASRWorker, LLMWorker), (b) creates inter-stage queues (audio_queue, segment_queue, text_queue, result_queue), (c) start() launches all workers in correct order, (d) stop() shuts down in reverse order (LLM→ASR→VAD→audio), drains queues, (e) error from any worker propagated via error_occurred signal, (f) asr_ready signal forwarded for progressive display, (g) translation_ready signal forwarded, (h) config update applied to all workers safely (queue new config, apply at safe point).
@@ -1210,7 +1210,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `src/pipeline/orchestrator.py`, `src/main.py`, `tests/test_orchestrator.py`
   - Pre-commit: `pytest tests/test_orchestrator.py -x`
 
-- [ ] 11. Progressive UI Display — ASR First, Translation Async
+- [x] 11. Progressive UI Display — ASR First, Translation Async
 
   **What to do**:
   - RED: Write tests for: (a) overlay.on_asr_ready() displays transcription text immediately, (b) overlay.on_translation_ready() updates the same sentence card with translation, (c) sentence card shows "Translating..." indicator while waiting for LLM, (d) sentence card with translation=None (LLM failed) shows "Translation unavailable" instead of blank, (e) multiple rapid ASR results display in order without UI glitch.
@@ -1304,7 +1304,7 @@ Max Concurrent: 5 (Wave 2)
 
 ### Wave 4: End-to-End Validation (Task 12)
 
-- [ ] 12. Integration Test & Performance Validation
+- [x] 12. Integration Test & Performance Validation
 
   **What to do**:
   - RED: Write integration tests: (a) end-to-end pipeline with real audio file → VAD → ASR → preprocessing → LLM → UI signals, (b) queue overflow stress test: feed audio at 2× real-time for 60s, assert no "queue Full" warnings, (c) latency test: measure time from speech-end to asr_ready signal (target < 3s), (d) measure time from speech-end to translation_ready signal (target < 10s with real Ollama), (e) concurrent speech: 3 rapid utterances, all processed without data loss.
