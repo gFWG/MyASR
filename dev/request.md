@@ -1,18 +1,27 @@
-The existing code running in Windows 11 encounters following bug/error/warning:
+Existing bugs running in Windows 11:
 
-1. Any modification to "Settings-Model" is not saved.
+1. When exiting the program, the following error is thrown in the console:
+'''
+asyncio ERROR Task was destroyed but it is pending!
+task: <Task pending name='Task-144' coro=<<async_generator_athrow without __name__>()>>
+'''
+
+2. The shortcut to switch Previous/Next sentence is not working.
+
+Possible bugs running in Windows 11:
+
+1. Two files (data\myasr.db-shm, data\myasr.db-wal) are generated and never deleted.
 
 The following improvements are proposed:
 
-1. “Settings-Model” should support custom parsing formats(e.g. <tr></tr>), with the default being empty (returning the full output).
+1. Shortcut keys should be placed in a separate tab within the settings.
 
-2. Supports two overlay display modes, which can be switched in Settings:
-    - "Both" mode: Displays both the ASR result and LLM response in a single overlay.
-    - "Single" mode: Displays only ASR result or LLM response, use shortcut keys to switch between them.
+2. Shortcut keys should be bound to keyboard buttons rather than manually inputting key combinations.
 
-3. Supports context switching: Press a key to switch between the previous/next sentence.
+3. For all settings with only two options(e.g. LLM Mode, Display Mode..), a toggle button should be used instead of a dropdown list.
 
-4. Add shortcut key functionality and bind it in settings. Shortcut keys support the following functions:
-    - "previous sentence": Switch to the previous sentence in the context.
-    - "next sentence": Switch to the next sentence in the context.
-    - "toggle display mode": Switch between "Both" and "Single" overlay display modes
+4. The settings interface does not close automatically after pressing the "Save" button.
+
+5. If the "Parse Format" is an invaild regex, a red text prompt stating “Invalid Regex!” should appear below the input field after saving.
+
+6. The shortcut to toggle display should only take effect whrn the "Display Mode" is set to "single" and it should not change the display mode to "single" if it is currently set to "both".

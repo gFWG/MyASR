@@ -23,8 +23,7 @@ venv/
 *.flac
 
 # Runtime data
-data/myasr.db
-data/config.json
+data/
 
 # OS
 .DS_Store
