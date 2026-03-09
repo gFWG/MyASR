@@ -64,8 +64,8 @@ class SettingsDialog(QDialog):
         self._build_general_tab()
         self._build_appearance_tab()
         self._build_model_tab()
-        self._build_shortcuts_tab()
         self._build_templates_tab()
+        self._build_shortcuts_tab()
 
         button_bar = QHBoxLayout()
         self._save_btn = QPushButton("Save")
@@ -237,6 +237,7 @@ class SettingsDialog(QDialog):
 
         self._regex_error_label = QLabel("")
         self._regex_error_label.setStyleSheet("color: red;")
+        self._regex_error_label.setVisible(False)
         layout.addRow("", self._regex_error_label)
 
         test_row = QHBoxLayout()
