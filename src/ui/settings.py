@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
+    QKeySequenceEdit,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -256,16 +257,13 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QFormLayout(widget)
 
-        self._shortcut_prev_edit = QLineEdit()
-        self._shortcut_prev_edit.setPlaceholderText("e.g. Ctrl+Left")
+        self._shortcut_prev_edit = QKeySequenceEdit()
         layout.addRow("Shortcut: Prev Sentence", self._shortcut_prev_edit)
 
-        self._shortcut_next_edit = QLineEdit()
-        self._shortcut_next_edit.setPlaceholderText("e.g. Ctrl+Right")
+        self._shortcut_next_edit = QKeySequenceEdit()
         layout.addRow("Shortcut: Next Sentence", self._shortcut_next_edit)
 
-        self._shortcut_toggle_edit = QLineEdit()
-        self._shortcut_toggle_edit.setPlaceholderText("e.g. Ctrl+T")
+        self._shortcut_toggle_edit = QKeySequenceEdit()
         layout.addRow("Shortcut: Toggle Display", self._shortcut_toggle_edit)
 
         self._tabs.addTab(widget, "Shortcuts")
@@ -325,9 +323,9 @@ class SettingsDialog(QDialog):
         self._llm_parse_format_edit.setText(config.llm_parse_format)
 
         self._select_display_mode(config.overlay_display_mode)
-        self._shortcut_prev_edit.setText(config.shortcut_prev_sentence)
-        self._shortcut_next_edit.setText(config.shortcut_next_sentence)
-        self._shortcut_toggle_edit.setText(config.shortcut_toggle_display)
+        self._shortcut_prev_edit.setKeySequence(QKeySequence(config.shortcut_prev_sentence))
+        self._shortcut_next_edit.setKeySequence(QKeySequence(config.shortcut_next_sentence))
+        self._shortcut_toggle_edit.setKeySequence(QKeySequence(config.shortcut_toggle_display))
 
         self._translation_template_edit.setPlainText(config.translation_template)
         self._explanation_template_edit.setPlainText(config.explanation_template)
@@ -366,9 +364,9 @@ class SettingsDialog(QDialog):
             overlay_height=self._config.overlay_height,
             audio_device_id=self._config.audio_device_id,
             overlay_display_mode=self._display_mode_value,  # type: ignore[arg-type]
-            shortcut_prev_sentence=self._shortcut_prev_edit.text(),
-            shortcut_next_sentence=self._shortcut_next_edit.text(),
-            shortcut_toggle_display=self._shortcut_toggle_edit.text(),
+            shortcut_prev_sentence=self._shortcut_prev_edit.keySequence().toString(),
+            shortcut_next_sentence=self._shortcut_next_edit.keySequence().toString(),
+            shortcut_toggle_display=self._shortcut_toggle_edit.keySequence().toString(),
         )
 
     def _on_save(self) -> None:

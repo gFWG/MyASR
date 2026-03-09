@@ -107,11 +107,10 @@ def test_on_sentence_ready_explanation_fallback(overlay: OverlayWindow) -> None:
     assert "Grammar explanation" in overlay._cn_browser.toPlainText()
 
 
-def test_toggle_mode_changes_from_both_to_single_jp(overlay: OverlayWindow) -> None:
+def test_toggle_mode_noop_when_both(overlay: OverlayWindow) -> None:
     overlay._display_mode = "both"
     overlay._toggle_mode()
-    assert overlay._display_mode == "single"
-    assert overlay._single_sub_mode == "jp"
+    assert overlay._display_mode == "both"
 
 
 def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow) -> None:
@@ -122,24 +121,34 @@ def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow)
     assert overlay._single_sub_mode == "cn"
 
 
-def test_toggle_mode_changes_from_single_cn_to_both(overlay: OverlayWindow) -> None:
+def test_toggle_mode_cycles_jp_cn_when_single(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "jp"
+    overlay._toggle_mode()
+    assert overlay._single_sub_mode == "cn"
+    overlay._toggle_mode()
+    assert overlay._single_sub_mode == "jp"
+
+
+def test_toggle_mode_single_cn_cycles_back_to_jp(overlay: OverlayWindow) -> None:
     overlay._display_mode = "single"
     overlay._single_sub_mode = "cn"
     overlay._toggle_mode()
-    assert overlay._display_mode == "both"
+    assert overlay._display_mode == "single"
+    assert overlay._single_sub_mode == "jp"
 
 
 def test_toggle_mode_hides_cn_browser_in_single_jp(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "both"
-    overlay._toggle_mode()
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "jp"
+    overlay._apply_display_mode()
     assert overlay._cn_browser.isHidden()
     assert not overlay._jp_browser.isHidden()
 
 
 def test_toggle_mode_shows_both_browsers_in_both(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "cn"
-    overlay._toggle_mode()
+    overlay._display_mode = "both"
+    overlay._apply_display_mode()
     assert not overlay._cn_browser.isHidden()
     assert not overlay._jp_browser.isHidden()
 
@@ -516,12 +525,32 @@ def test_on_config_changed_updates_display_mode(overlay: OverlayWindow) -> None:
 
 
 def test_on_config_changed_rebinds_shortcuts(overlay: OverlayWindow) -> None:
-    old_shortcuts = list(overlay._shortcuts)
     config = AppConfig(shortcut_toggle_display="Ctrl+X")
-    overlay.on_config_changed(config)
-    for sc in old_shortcuts:
-        assert not sc.isEnabled()
-    assert len(overlay._shortcuts) == 3
+    with patch(
+        "src.ui.overlay.GlobalShortcutManager.update_shortcuts",
+    ) as mock_update:
+        overlay.on_config_changed(config)
+        mock_update.assert_called_once_with(config)
+
+
+def test_overlay_has_global_shortcut_manager(overlay: OverlayWindow) -> None:
+    from src.ui.shortcuts import GlobalShortcutManager
+
+    assert isinstance(overlay._shortcut_mgr, GlobalShortcutManager)
+
+
+def test_overlay_shortcut_mgr_signals_connected(qapp: QApplication) -> None:
+    with patch("src.ui.overlay.GlobalShortcutManager.start"):
+        window = OverlayWindow(AppConfig())
+    with patch.object(window, "_toggle_mode") as mock_toggle:
+        window._shortcut_mgr.toggle_display_triggered.emit()
+        mock_toggle.assert_called_once()
+    with patch.object(window, "_prev_sentence") as mock_prev:
+        window._shortcut_mgr.prev_sentence_triggered.emit()
+        mock_prev.assert_called_once()
+    with patch.object(window, "_next_sentence") as mock_next:
+        window._shortcut_mgr.next_sentence_triggered.emit()
+        mock_next.assert_called_once()
 
 
 def test_apply_display_mode_single_jp_hides_cn(overlay: OverlayWindow) -> None:

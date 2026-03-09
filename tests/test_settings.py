@@ -190,9 +190,9 @@ def test_shortcut_fields_populated(qapp: QApplication) -> None:
         shortcut_toggle_display="Ctrl+D",
     )
     d = SettingsDialog(config)
-    assert d._shortcut_prev_edit.text() == "Alt+Left"
-    assert d._shortcut_next_edit.text() == "Alt+Right"
-    assert d._shortcut_toggle_edit.text() == "Ctrl+D"
+    assert d._shortcut_prev_edit.keySequence().toString() == "Alt+Left"
+    assert d._shortcut_next_edit.keySequence().toString() == "Alt+Right"
+    assert d._shortcut_toggle_edit.keySequence().toString() == "Ctrl+D"
 
 
 def test_collect_config_includes_parse_format(dialog: SettingsDialog) -> None:
@@ -208,9 +208,11 @@ def test_collect_config_includes_display_mode(dialog: SettingsDialog) -> None:
 
 
 def test_collect_config_includes_shortcuts(dialog: SettingsDialog) -> None:
-    dialog._shortcut_prev_edit.setText("Ctrl+Up")
-    dialog._shortcut_next_edit.setText("Ctrl+Down")
-    dialog._shortcut_toggle_edit.setText("Ctrl+M")
+    from PySide6.QtGui import QKeySequence
+
+    dialog._shortcut_prev_edit.setKeySequence(QKeySequence("Ctrl+Up"))
+    dialog._shortcut_next_edit.setKeySequence(QKeySequence("Ctrl+Down"))
+    dialog._shortcut_toggle_edit.setKeySequence(QKeySequence("Ctrl+M"))
     collected = dialog._collect_config()
     assert collected.shortcut_prev_sentence == "Ctrl+Up"
     assert collected.shortcut_next_sentence == "Ctrl+Down"

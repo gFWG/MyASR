@@ -11,14 +11,13 @@ import logging
 
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import (
+    QCloseEvent,
     QColor,
     QFont,
-    QKeySequence,
     QMouseEvent,
     QPainter,
     QPaintEvent,
     QResizeEvent,
-    QShortcut,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -32,6 +31,7 @@ from src.config import AppConfig, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult, TranslationResult
 from src.ui.highlight import HighlightRenderer
+from src.ui.shortcuts import GlobalShortcutManager
 
 logger = logging.getLogger(__name__)
 
@@ -143,30 +143,15 @@ class OverlayWindow(QWidget):
         self._size_grip = QSizeGrip(self)
         self._size_grip.setFixedSize(16, 16)
 
-        self._shortcuts: list[QShortcut] = []
-        self._bind_shortcuts(config)
+        self._shortcut_mgr = GlobalShortcutManager(config, self)
+        self._shortcut_mgr.toggle_display_triggered.connect(self._toggle_mode)
+        self._shortcut_mgr.prev_sentence_triggered.connect(self._prev_sentence)
+        self._shortcut_mgr.next_sentence_triggered.connect(self._next_sentence)
+        self._shortcut_mgr.start()
 
         self._apply_display_mode()
 
         self.set_status("Initializing...")
-
-    def _bind_shortcuts(self, config: AppConfig) -> None:
-        for sc in self._shortcuts:
-            sc.setEnabled(False)
-            sc.deleteLater()
-        self._shortcuts.clear()
-
-        toggle_sc = QShortcut(QKeySequence(config.shortcut_toggle_display), self)
-        toggle_sc.activated.connect(self._toggle_mode)
-        self._shortcuts.append(toggle_sc)
-
-        prev_sc = QShortcut(QKeySequence(config.shortcut_prev_sentence), self)
-        prev_sc.activated.connect(self._prev_sentence)
-        self._shortcuts.append(prev_sc)
-
-        next_sc = QShortcut(QKeySequence(config.shortcut_next_sentence), self)
-        next_sc.activated.connect(self._next_sentence)
-        self._shortcuts.append(next_sc)
 
     def _apply_display_mode(self) -> None:
         if self._display_mode == "both":
@@ -259,7 +244,7 @@ class OverlayWindow(QWidget):
         self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
         self._cn_browser.setFont(_make_font(config.overlay_font_size_cn))
 
-        self._bind_shortcuts(config)
+        self._shortcut_mgr.update_shortcuts(config)
         self._apply_display_mode()
 
         if self._current_result is not None:
@@ -289,13 +274,11 @@ class OverlayWindow(QWidget):
 
     def _toggle_mode(self) -> None:
         if self._display_mode == "both":
-            self._display_mode = "single"
-            self._single_sub_mode = "jp"
-        elif self._single_sub_mode == "jp":
+            return
+        if self._single_sub_mode == "jp":
             self._single_sub_mode = "cn"
         else:
-            self._display_mode = "both"
-
+            self._single_sub_mode = "jp"
         self._apply_display_mode()
         logger.debug(
             "_toggle_mode: display_mode=%s sub_mode=%s",
@@ -399,3 +382,7 @@ class OverlayWindow(QWidget):
                     return True
 
         return super().eventFilter(watched, event)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._shortcut_mgr.stop()
+        super().closeEvent(event)
