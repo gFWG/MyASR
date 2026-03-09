@@ -1,0 +1,17 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-bugfix-improvements
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 10 items / 4 deselected / 6 selected
+
+tests/test_shortcuts.py::test_key_conversion_ctrl_left PASSED            [ 16%]
+tests/test_shortcuts.py::test_key_conversion_ctrl_t PASSED               [ 33%]
+tests/test_shortcuts.py::test_key_conversion_ctrl_right PASSED           [ 50%]
+tests/test_shortcuts.py::test_key_conversion_f5 PASSED                   [ 66%]
+tests/test_shortcuts.py::test_key_conversion_shift_alt_x PASSED          [ 83%]
+tests/test_shortcuts.py::test_key_conversion_invalid_raises PASSED       [100%]
+
+======================= 6 passed, 4 deselected in 0.08s ========================
