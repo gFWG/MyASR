@@ -1,4 +1,4 @@
-"""Tests for AsyncOllamaClient (httpx-based async client with LRU cache)."""
+"""Tests for AsyncOllamaClient (OpenAI-compatible /v1/chat/completions)."""
 
 import json
 from collections.abc import AsyncGenerator
@@ -11,33 +11,33 @@ from src.config import AppConfig
 from src.exceptions import LLMTimeoutError, LLMUnavailableError
 from src.llm.ollama_client import AsyncOllamaClient
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+
+def _make_config(
+    llm_mode: str = "translation",
+    **kwargs: object,
+) -> AppConfig:
+    return AppConfig(llm_mode=llm_mode, **kwargs)  # type: ignore[arg-type]
 
 
-def _make_config(llm_mode: str = "translation") -> AppConfig:
-    return AppConfig(llm_mode=llm_mode)  # type: ignore[arg-type]
+def _make_sse_lines(text: str) -> list[str]:
+    lines: list[str] = []
+    for char in text:
+        chunk = {
+            "id": "chatcmpl-1",
+            "object": "chat.completion.chunk",
+            "choices": [{"index": 0, "delta": {"content": char}, "finish_reason": None}],
+        }
+        lines.append(f"data: {json.dumps(chunk)}")
+    lines.append("data: [DONE]")
+    return lines
 
 
-def _make_streaming_response(response_text: str) -> list[bytes]:
-    """Build list of NDJSON byte chunks as Ollama streams them."""
-    chunks = []
-    for char in response_text:
-        chunk = json.dumps({"response": char, "done": False}) + "\n"
-        chunks.append(chunk.encode())
-    done_chunk = json.dumps({"response": "", "done": True}) + "\n"
-    chunks.append(done_chunk.encode())
-    return chunks
-
-
-def _mock_httpx_stream(response_text: str) -> MagicMock:
-    """Return an async context manager mock that yields NDJSON lines."""
-    chunks = _make_streaming_response(response_text)
+def _mock_httpx_stream(text: str) -> MagicMock:
+    sse_lines = _make_sse_lines(text)
 
     async def _aiter_lines() -> AsyncGenerator[str, None]:
-        for chunk in chunks:
-            yield chunk.decode()
+        for line in sse_lines:
+            yield line
 
     mock_response = MagicMock()
     mock_response.aiter_lines = _aiter_lines
@@ -49,9 +49,16 @@ def _mock_httpx_stream(response_text: str) -> MagicMock:
     return cm
 
 
-# ---------------------------------------------------------------------------
-# translate_async() — translation mode
-# ---------------------------------------------------------------------------
+def _mock_non_streaming_response(text: str) -> MagicMock:
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {
+        "id": "chatcmpl-1",
+        "object": "chat.completion",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": text}}],
+    }
+    return mock_resp
 
 
 async def test_translate_async_translation_mode_returns_translation() -> None:
@@ -84,6 +91,36 @@ async def test_translate_async_strips_whitespace() -> None:
     assert result == ("翻訳", None)
 
 
+async def test_translate_async_extracts_tr_tags() -> None:
+    client = AsyncOllamaClient(_make_config("translation"))
+    stream_cm = _mock_httpx_stream("Some preamble\n<tr>实际翻译</tr>\nExtra")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("实际翻译", None)
+
+
+async def test_translate_async_no_tr_tags_uses_raw_text() -> None:
+    client = AsyncOllamaClient(_make_config("translation"))
+    stream_cm = _mock_httpx_stream("直接翻译")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("直接翻译", None)
+
+
+async def test_translate_async_empty_response_returns_none() -> None:
+    client = AsyncOllamaClient(_make_config("translation"))
+    stream_cm = _mock_httpx_stream("   ")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == (None, None)
+
+
 async def test_translate_async_raises_llm_timeout_error() -> None:
     client = AsyncOllamaClient(_make_config())
 
@@ -108,14 +145,8 @@ async def test_translate_async_raises_llm_unavailable_error() -> None:
             await client.translate_async("テスト", "")
 
 
-# ---------------------------------------------------------------------------
-# LRU cache — same (text, context) input must not trigger duplicate HTTP calls
-# ---------------------------------------------------------------------------
-
-
 async def test_translate_async_lru_cache_prevents_duplicate_http_calls() -> None:
     client = AsyncOllamaClient(_make_config("translation"))
-    # Clear cache between tests
     client.translate_cached.cache_clear()
 
     stream_cm = _mock_httpx_stream("キャッシュ結果")
@@ -131,11 +162,10 @@ async def test_translate_async_lru_cache_prevents_duplicate_http_calls() -> None
         result2 = await client.translate_async("同じテキスト", "")
 
     assert result1 == result2
-    assert call_count == 1  # second call must hit cache
+    assert call_count == 1
 
 
 async def test_translate_async_cache_keyed_by_text_and_context() -> None:
-    """Different context strings must produce separate HTTP calls."""
     client = AsyncOllamaClient(_make_config("translation"))
     client.translate_cached.cache_clear()
 
@@ -151,11 +181,6 @@ async def test_translate_async_cache_keyed_by_text_and_context() -> None:
         await client.translate_async("テキスト", "context_b")
 
     assert call_count == 2
-
-
-# ---------------------------------------------------------------------------
-# sync translate() wrapper — backward compat
-# ---------------------------------------------------------------------------
 
 
 def test_translate_sync_wrapper_returns_tuple() -> None:
@@ -195,22 +220,11 @@ def test_translate_sync_wrapper_raises_on_connection_error() -> None:
             client.translate("テスト")
 
 
-# ---------------------------------------------------------------------------
-# async context manager lifecycle
-# ---------------------------------------------------------------------------
-
-
 async def test_async_context_manager_closes_client() -> None:
-    """__aexit__ must close the underlying httpx client."""
     config = _make_config()
     async with AsyncOllamaClient(config) as client:
         assert not client._http.is_closed
     assert client._http.is_closed
-
-
-# ---------------------------------------------------------------------------
-# _build_prompt() — prompt template rendering
-# ---------------------------------------------------------------------------
 
 
 def test_build_prompt_translation_mode_contains_text() -> None:
@@ -236,11 +250,6 @@ def test_build_prompt_custom_template() -> None:
     )
     client = AsyncOllamaClient(config)
     assert client._build_prompt("テスト") == "Translate: テスト"
-
-
-# ---------------------------------------------------------------------------
-# health_check()
-# ---------------------------------------------------------------------------
 
 
 async def test_health_check_true_when_reachable() -> None:
@@ -269,20 +278,14 @@ async def test_health_check_false_when_unreachable() -> None:
     assert result is False
 
 
-# ---------------------------------------------------------------------------
-# num_predict / timeout spec compliance
-# ---------------------------------------------------------------------------
-
-
-async def test_payload_uses_reduced_num_predict() -> None:
-    """Payload must use num_predict=200 (down from 512)."""
+async def test_payload_uses_openai_chat_completions_format() -> None:
     client = AsyncOllamaClient(_make_config("translation"))
     client.translate_cached.cache_clear()
     captured_payload: dict[str, object] = {}
 
     stream_cm = _mock_httpx_stream("ok")
 
-    def capture_stream(method: str, url: str, json: dict[str, object], **kwargs: object) -> object:  # noqa: A002
+    def capture_stream(method: str, url: str, json: dict[str, object], **kwargs: object) -> object:
         nonlocal captured_payload
         captured_payload = json
         return stream_cm
@@ -290,14 +293,16 @@ async def test_payload_uses_reduced_num_predict() -> None:
     with patch.object(client._http, "stream", side_effect=capture_stream):
         await client.translate_async("テスト", "")
 
-    options = captured_payload.get("options", {})
-    assert isinstance(options, dict)
-    assert options.get("num_predict") == 200
+    assert "messages" in captured_payload
+    assert "model" in captured_payload
+    assert captured_payload.get("max_tokens") == 200
+    assert captured_payload.get("temperature") == 0.3
+    assert captured_payload.get("top_p") == 0.9
+    assert captured_payload.get("stream") is True
 
 
-async def test_request_timeout_is_15_seconds() -> None:
-    """Timeout kwarg passed to httpx.stream must be 15.0."""
-    client = AsyncOllamaClient(_make_config("translation"))
+async def test_request_timeout_uses_config_value() -> None:
+    client = AsyncOllamaClient(_make_config("translation", ollama_timeout_sec=45.0))
     client.translate_cached.cache_clear()
     captured_kwargs: dict[str, object] = {}
 
@@ -311,4 +316,149 @@ async def test_request_timeout_is_15_seconds() -> None:
     with patch.object(client._http, "stream", side_effect=capture_stream):
         await client.translate_async("テスト", "")
 
-    assert captured_kwargs.get("timeout") == 15.0
+    assert captured_kwargs.get("timeout") == 45.0
+
+
+async def test_api_key_sent_in_authorization_header() -> None:
+    client = AsyncOllamaClient(_make_config("translation", ollama_api_key="sk-test-key"))
+    client.translate_cached.cache_clear()
+    captured_kwargs: dict[str, object] = {}
+
+    stream_cm = _mock_httpx_stream("ok")
+
+    def capture_stream(method: str, url: str, **kwargs: object) -> object:
+        nonlocal captured_kwargs
+        captured_kwargs = dict(kwargs)
+        return stream_cm
+
+    with patch.object(client._http, "stream", side_effect=capture_stream):
+        await client.translate_async("テスト", "")
+
+    headers = captured_kwargs.get("headers", {})
+    assert isinstance(headers, dict)
+    assert headers.get("Authorization") == "Bearer sk-test-key"
+
+
+async def test_no_api_key_omits_authorization_header() -> None:
+    client = AsyncOllamaClient(_make_config("translation", ollama_api_key=""))
+    headers = client._headers()
+    assert "Authorization" not in headers
+
+
+async def test_thinking_enabled_adds_reasoning_payload() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_thinking=True))
+    client.translate_cached.cache_clear()
+    captured_payload: dict[str, object] = {}
+
+    stream_cm = _mock_httpx_stream("ok")
+
+    def capture_stream(method: str, url: str, json: dict[str, object], **kwargs: object) -> object:
+        nonlocal captured_payload
+        captured_payload = json
+        return stream_cm
+
+    with patch.object(client._http, "stream", side_effect=capture_stream):
+        await client.translate_async("テスト", "")
+
+    assert captured_payload.get("reasoning") == {"effort": "low"}
+
+
+async def test_prefill_adds_assistant_message() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_prefill="<tr>"))
+    messages = client._build_messages("テスト")
+    assert len(messages) == 2
+    assert messages[1]["role"] == "assistant"
+    assert messages[1]["content"] == "<tr>"
+
+
+async def test_no_prefill_single_user_message() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_prefill=""))
+    messages = client._build_messages("テスト")
+    assert len(messages) == 1
+    assert messages[0]["role"] == "user"
+
+
+async def test_extra_args_merged_into_payload() -> None:
+    client = AsyncOllamaClient(
+        _make_config("translation", llm_extra_args='{"seed": 42, "stop": ["\\n"]}')
+    )
+    client.translate_cached.cache_clear()
+    captured_payload: dict[str, object] = {}
+
+    stream_cm = _mock_httpx_stream("ok")
+
+    def capture_stream(method: str, url: str, json: dict[str, object], **kwargs: object) -> object:
+        nonlocal captured_payload
+        captured_payload = json
+        return stream_cm
+
+    with patch.object(client._http, "stream", side_effect=capture_stream):
+        await client.translate_async("テスト", "")
+
+    assert captured_payload.get("seed") == 42
+    assert captured_payload.get("stop") == ["\n"]
+
+
+async def test_invalid_extra_args_ignored() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_extra_args="not valid json"))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("ok")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("ok", None)
+
+
+async def test_non_streaming_mode() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_streaming=False))
+    client.translate_cached.cache_clear()
+    mock_resp = _mock_non_streaming_response("非ストリーミング翻訳")
+
+    async def fake_post(url: str, **kwargs: object) -> MagicMock:
+        return mock_resp
+
+    with patch.object(client._http, "post", side_effect=fake_post):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("非ストリーミング翻訳", None)
+
+
+async def test_list_models_returns_sorted_list() -> None:
+    client = AsyncOllamaClient(_make_config())
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {
+        "object": "list",
+        "data": [
+            {"id": "qwen3.5:4b", "object": "model"},
+            {"id": "llama3:8b", "object": "model"},
+            {"id": "gemma2:2b", "object": "model"},
+        ],
+    }
+
+    async def fake_get(url: str, **kwargs: object) -> MagicMock:
+        return mock_resp
+
+    with patch.object(client._http, "get", side_effect=fake_get):
+        models = await client.list_models_async()
+
+    assert models == ["gemma2:2b", "llama3:8b", "qwen3.5:4b"]
+
+
+async def test_list_models_returns_empty_on_error() -> None:
+    client = AsyncOllamaClient(_make_config())
+
+    async def fake_get(url: str, **kwargs: object) -> None:
+        raise httpx.ConnectError("refused")
+
+    with patch.object(client._http, "get", side_effect=fake_get):
+        models = await client.list_models_async()
+
+    assert models == []
+
+
+async def test_url_trailing_slash_stripped() -> None:
+    client = AsyncOllamaClient(_make_config(ollama_url="http://localhost:11434/"))
+    assert client._url == "http://localhost:11434"

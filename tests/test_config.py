@@ -21,7 +21,18 @@ def test_appconfig_defaults() -> None:
     assert c.ollama_url == "http://localhost:11434"
     assert c.ollama_model == "qwen3.5:4b"
     assert c.ollama_timeout_sec == 30.0
+    assert c.ollama_api_key == ""
+    assert c.llm_temperature == 0.3
+    assert c.llm_top_p == 0.9
+    assert c.llm_max_tokens == 200
+    assert c.llm_streaming is True
+    assert c.llm_thinking is False
+    assert c.llm_prefill == ""
+    assert c.llm_extra_args == ""
     assert c.sample_rate == 16000
+    assert c.vad_threshold == 0.5
+    assert c.vad_min_silence_ms == 300
+    assert c.vad_min_speech_ms == 400
     assert c.db_path == "data/myasr.db"
 
 

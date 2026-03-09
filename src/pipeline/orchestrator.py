@@ -55,7 +55,12 @@ class PipelineOrchestrator:
         self._result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
 
         # ── Models (heavy GPU objects — created at construction time) ───────
-        vad_model = SileroVAD(sample_rate=config.get("sample_rate", 16000))
+        vad_model = SileroVAD(
+            threshold=config.get("vad_threshold", 0.5),
+            min_silence_ms=config.get("vad_min_silence_ms", 300),
+            min_speech_ms=config.get("vad_min_speech_ms", 400),
+            sample_rate=config.get("sample_rate", 16000),
+        )
 
         asr_model = QwenASR(model_path=config.get("model_path"))
 

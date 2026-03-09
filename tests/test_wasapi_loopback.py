@@ -160,12 +160,13 @@ def test_wasapi_list_devices(mock_pyaudiowpatch: dict[str, Any]) -> None:
 def test_create_audio_capture_factory_on_linux() -> None:
     """Test that factory returns AudioCapture on non-Windows platforms."""
     with patch("sys.platform", "linux"):
-        # Force re-import to pick up mocked platform
         import importlib
+        import sys
 
-        from src.audio import capture
+        import src.audio.capture as capture
 
-        importlib.reload(capture)
+        if "src.audio.capture" in sys.modules:
+            importlib.reload(capture)
 
         from src.config import AppConfig
 
@@ -181,10 +182,12 @@ def test_create_audio_capture_factory_on_windows() -> None:
     """Test that factory returns WasapiLoopbackCapture on Windows."""
     with patch("sys.platform", "win32"):
         import importlib
+        import sys
 
-        from src.audio import capture
+        import src.audio.capture as capture
 
-        importlib.reload(capture)
+        if "src.audio.capture" in sys.modules:
+            importlib.reload(capture)
 
         from src.config import AppConfig
 

@@ -2,15 +2,20 @@
 
 import gc
 import logging
+import os
 import time
 from typing import Any
 
-import fugashi
-import numpy as np
-import torch
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
-from src.exceptions import ASRError, ModelLoadError
-from src.pipeline.types import ASRResult, SpeechSegment
+import fugashi  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from src.exceptions import ASRError, ModelLoadError  # noqa: E402
+from src.pipeline.types import ASRResult, SpeechSegment  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

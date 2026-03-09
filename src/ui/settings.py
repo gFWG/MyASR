@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from PySide6.QtCore import Qt, Signal
@@ -89,6 +90,24 @@ class SettingsDialog(QDialog):
         self._llm_mode_combo.addItems(["translation", "explanation"])
         layout.addRow("LLM Mode", self._llm_mode_combo)
 
+        self._vad_threshold_spin = QDoubleSpinBox()
+        self._vad_threshold_spin.setRange(0.1, 0.95)
+        self._vad_threshold_spin.setSingleStep(0.05)
+        self._vad_threshold_spin.setDecimals(2)
+        layout.addRow("VAD Threshold", self._vad_threshold_spin)
+
+        self._vad_min_silence_spin = QSpinBox()
+        self._vad_min_silence_spin.setRange(100, 2000)
+        self._vad_min_silence_spin.setSingleStep(50)
+        self._vad_min_silence_spin.setSuffix(" ms")
+        layout.addRow("VAD Min Silence", self._vad_min_silence_spin)
+
+        self._vad_min_speech_spin = QSpinBox()
+        self._vad_min_speech_spin.setRange(100, 2000)
+        self._vad_min_speech_spin.setSingleStep(50)
+        self._vad_min_speech_spin.setSuffix(" ms")
+        layout.addRow("VAD Min Speech", self._vad_min_speech_spin)
+
         self._tabs.addTab(widget, "General")
 
     def _build_appearance_tab(self) -> None:
@@ -125,15 +144,60 @@ class SettingsDialog(QDialog):
         layout = QFormLayout(widget)
 
         self._ollama_url_edit = QLineEdit()
-        layout.addRow("Ollama URL", self._ollama_url_edit)
+        self._ollama_url_edit.setPlaceholderText("http://localhost:11434")
+        layout.addRow("Provider URL", self._ollama_url_edit)
 
-        self._ollama_model_edit = QLineEdit()
-        layout.addRow("Model name", self._ollama_model_edit)
+        self._ollama_api_key_edit = QLineEdit()
+        self._ollama_api_key_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self._ollama_api_key_edit.setPlaceholderText("Optional — required for LM Studio / remote")
+        layout.addRow("API Key", self._ollama_api_key_edit)
+
+        model_row = QHBoxLayout()
+        self._ollama_model_combo = QComboBox()
+        self._ollama_model_combo.setEditable(True)
+        self._ollama_model_combo.setMinimumWidth(200)
+        self._refresh_models_btn = QPushButton("⟳")
+        self._refresh_models_btn.setFixedWidth(32)
+        self._refresh_models_btn.setToolTip("Refresh model list from provider")
+        model_row.addWidget(self._ollama_model_combo)
+        model_row.addWidget(self._refresh_models_btn)
+        layout.addRow("Model", model_row)
 
         self._ollama_timeout_spin = QDoubleSpinBox()
         self._ollama_timeout_spin.setRange(5.0, 120.0)
         self._ollama_timeout_spin.setSingleStep(5.0)
         layout.addRow("Timeout (s)", self._ollama_timeout_spin)
+
+        self._llm_streaming_check = QCheckBox("Enable streaming")
+        layout.addRow("", self._llm_streaming_check)
+
+        self._llm_temperature_spin = QDoubleSpinBox()
+        self._llm_temperature_spin.setRange(0.0, 2.0)
+        self._llm_temperature_spin.setSingleStep(0.1)
+        self._llm_temperature_spin.setDecimals(2)
+        layout.addRow("Temperature", self._llm_temperature_spin)
+
+        self._llm_top_p_spin = QDoubleSpinBox()
+        self._llm_top_p_spin.setRange(0.0, 1.0)
+        self._llm_top_p_spin.setSingleStep(0.05)
+        self._llm_top_p_spin.setDecimals(2)
+        layout.addRow("Top P", self._llm_top_p_spin)
+
+        self._llm_max_tokens_spin = QSpinBox()
+        self._llm_max_tokens_spin.setRange(1, 4096)
+        self._llm_max_tokens_spin.setSingleStep(50)
+        layout.addRow("Max Tokens", self._llm_max_tokens_spin)
+
+        self._llm_thinking_check = QCheckBox("Enable thinking/reasoning")
+        layout.addRow("", self._llm_thinking_check)
+
+        self._llm_prefill_edit = QLineEdit()
+        self._llm_prefill_edit.setPlaceholderText("Assistant message prefix (optional)")
+        layout.addRow("Prefill", self._llm_prefill_edit)
+
+        self._llm_extra_args_edit = QLineEdit()
+        self._llm_extra_args_edit.setPlaceholderText('{"key": "value"}')
+        layout.addRow("Extra Args (JSON)", self._llm_extra_args_edit)
 
         test_row = QHBoxLayout()
         self._test_conn_btn = QPushButton("Test Connection")
@@ -144,6 +208,7 @@ class SettingsDialog(QDialog):
         layout.addRow("", test_row)
 
         self._test_conn_btn.clicked.connect(self._on_test_connection)
+        self._refresh_models_btn.clicked.connect(self._on_refresh_models)
 
         self._tabs.addTab(widget, "Model")
 
@@ -169,6 +234,10 @@ class SettingsDialog(QDialog):
         if idx >= 0:
             self._llm_mode_combo.setCurrentIndex(idx)
 
+        self._vad_threshold_spin.setValue(config.vad_threshold)
+        self._vad_min_silence_spin.setValue(config.vad_min_silence_ms)
+        self._vad_min_speech_spin.setValue(config.vad_min_speech_ms)
+
         opacity_pct = round(config.overlay_opacity * 100)
         self._opacity_slider.setValue(max(10, min(100, opacity_pct)))
         self._font_size_jp_spin.setValue(config.overlay_font_size_jp)
@@ -177,8 +246,16 @@ class SettingsDialog(QDialog):
         self._grammar_highlight_check.setChecked(config.enable_grammar_highlight)
 
         self._ollama_url_edit.setText(config.ollama_url)
-        self._ollama_model_edit.setText(config.ollama_model)
+        self._ollama_api_key_edit.setText(config.ollama_api_key)
+        self._ollama_model_combo.setCurrentText(config.ollama_model)
         self._ollama_timeout_spin.setValue(config.ollama_timeout_sec)
+        self._llm_streaming_check.setChecked(config.llm_streaming)
+        self._llm_temperature_spin.setValue(config.llm_temperature)
+        self._llm_top_p_spin.setValue(config.llm_top_p)
+        self._llm_max_tokens_spin.setValue(config.llm_max_tokens)
+        self._llm_thinking_check.setChecked(config.llm_thinking)
+        self._llm_prefill_edit.setText(config.llm_prefill)
+        self._llm_extra_args_edit.setText(config.llm_extra_args)
 
         self._translation_template_edit.setPlainText(config.translation_template)
         self._explanation_template_edit.setPlainText(config.explanation_template)
@@ -189,14 +266,25 @@ class SettingsDialog(QDialog):
         return AppConfig(
             user_jlpt_level=self._jlpt_level_spin.value(),
             llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]  # QComboBox returns str; AppConfig.llm_mode is a Literal — safe at runtime
+            vad_threshold=self._vad_threshold_spin.value(),
+            vad_min_silence_ms=self._vad_min_silence_spin.value(),
+            vad_min_speech_ms=self._vad_min_speech_spin.value(),
             overlay_opacity=self._opacity_slider.value() / 100.0,
             overlay_font_size_jp=self._font_size_jp_spin.value(),
             overlay_font_size_cn=self._font_size_cn_spin.value(),
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
             ollama_url=self._ollama_url_edit.text(),
-            ollama_model=self._ollama_model_edit.text(),
+            ollama_api_key=self._ollama_api_key_edit.text(),
+            ollama_model=self._ollama_model_combo.currentText(),
             ollama_timeout_sec=self._ollama_timeout_spin.value(),
+            llm_streaming=self._llm_streaming_check.isChecked(),
+            llm_temperature=self._llm_temperature_spin.value(),
+            llm_top_p=self._llm_top_p_spin.value(),
+            llm_max_tokens=self._llm_max_tokens_spin.value(),
+            llm_thinking=self._llm_thinking_check.isChecked(),
+            llm_prefill=self._llm_prefill_edit.text(),
+            llm_extra_args=self._llm_extra_args_edit.text(),
             translation_template=self._translation_template_edit.toPlainText(),
             explanation_template=self._explanation_template_edit.toPlainText(),
             sample_rate=self._config.sample_rate,
@@ -214,18 +302,40 @@ class SettingsDialog(QDialog):
         self.close()
 
     def _on_test_connection(self) -> None:
-        import asyncio
-
         test_config = AppConfig(
             ollama_url=self._ollama_url_edit.text(),
-            ollama_model=self._ollama_model_edit.text(),
+            ollama_model=self._ollama_model_combo.currentText(),
             ollama_timeout_sec=self._ollama_timeout_spin.value(),
+            ollama_api_key=self._ollama_api_key_edit.text(),
         )
         client = OllamaClient(test_config)
         ok = asyncio.run(client.health_check_async())
         if ok:
             self._test_conn_label.setText("Connected ✓")
-            logger.info("SettingsDialog: Ollama connection successful")
+            logger.info("SettingsDialog: LLM connection successful")
         else:
             self._test_conn_label.setText("Failed ✗")
-            logger.warning("SettingsDialog: Ollama connection failed")
+            logger.warning("SettingsDialog: LLM connection failed")
+
+    def _on_refresh_models(self) -> None:
+        test_config = AppConfig(
+            ollama_url=self._ollama_url_edit.text(),
+            ollama_api_key=self._ollama_api_key_edit.text(),
+        )
+        client = OllamaClient(test_config)
+        models = asyncio.run(client.list_models_async())
+        if models:
+            current = self._ollama_model_combo.currentText()
+            self._ollama_model_combo.clear()
+            self._ollama_model_combo.addItems(models)
+            if current:
+                idx = self._ollama_model_combo.findText(current)
+                if idx >= 0:
+                    self._ollama_model_combo.setCurrentIndex(idx)
+                else:
+                    self._ollama_model_combo.setCurrentText(current)
+            self._test_conn_label.setText(f"{len(models)} models loaded")
+            logger.info("SettingsDialog: loaded %d models", len(models))
+        else:
+            self._test_conn_label.setText("No models found")
+            logger.warning("SettingsDialog: model list empty or fetch failed")
