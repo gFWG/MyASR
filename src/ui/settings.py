@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 class SettingsDialog(QDialog):
     """Non-modal settings dialog for configuring MyASR application.
 
-    Presents configuration options across four tabs: General, Appearance,
-    Model, and Templates. Emits config_changed when the user saves.
+    Presents configuration options across five tabs: General, Appearance,
+    Model, Shortcuts, and Templates. Emits config_changed when the user saves.
 
     Args:
         config: Current application configuration to populate widgets from.
@@ -63,6 +63,7 @@ class SettingsDialog(QDialog):
         self._build_general_tab()
         self._build_appearance_tab()
         self._build_model_tab()
+        self._build_shortcuts_tab()
         self._build_templates_tab()
 
         button_bar = QHBoxLayout()
@@ -142,18 +143,6 @@ class SettingsDialog(QDialog):
         self._display_mode_combo = QComboBox()
         self._display_mode_combo.addItems(["both", "single"])
         layout.addRow("Display Mode", self._display_mode_combo)
-
-        self._shortcut_prev_edit = QLineEdit()
-        self._shortcut_prev_edit.setPlaceholderText("e.g. Ctrl+Left")
-        layout.addRow("Shortcut: Prev Sentence", self._shortcut_prev_edit)
-
-        self._shortcut_next_edit = QLineEdit()
-        self._shortcut_next_edit.setPlaceholderText("e.g. Ctrl+Right")
-        layout.addRow("Shortcut: Next Sentence", self._shortcut_next_edit)
-
-        self._shortcut_toggle_edit = QLineEdit()
-        self._shortcut_toggle_edit.setPlaceholderText("e.g. Ctrl+T")
-        layout.addRow("Shortcut: Toggle Display", self._shortcut_toggle_edit)
 
         self._tabs.addTab(widget, "Appearance")
 
@@ -235,6 +224,24 @@ class SettingsDialog(QDialog):
         self._refresh_models_btn.clicked.connect(self._on_refresh_models)
 
         self._tabs.addTab(widget, "Model")
+
+    def _build_shortcuts_tab(self) -> None:
+        widget = QWidget()
+        layout = QFormLayout(widget)
+
+        self._shortcut_prev_edit = QLineEdit()
+        self._shortcut_prev_edit.setPlaceholderText("e.g. Ctrl+Left")
+        layout.addRow("Shortcut: Prev Sentence", self._shortcut_prev_edit)
+
+        self._shortcut_next_edit = QLineEdit()
+        self._shortcut_next_edit.setPlaceholderText("e.g. Ctrl+Right")
+        layout.addRow("Shortcut: Next Sentence", self._shortcut_next_edit)
+
+        self._shortcut_toggle_edit = QLineEdit()
+        self._shortcut_toggle_edit.setPlaceholderText("e.g. Ctrl+T")
+        layout.addRow("Shortcut: Toggle Display", self._shortcut_toggle_edit)
+
+        self._tabs.addTab(widget, "Shortcuts")
 
     def _build_templates_tab(self) -> None:
         widget = QWidget()

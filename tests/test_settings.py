@@ -21,8 +21,8 @@ def dialog(qapp: QApplication, default_config: AppConfig) -> SettingsDialog:
     return SettingsDialog(default_config)
 
 
-def test_settings_dialog_has_four_tabs(dialog: SettingsDialog) -> None:
-    assert dialog._tabs.count() == 4
+def test_settings_dialog_has_five_tabs(dialog: SettingsDialog) -> None:
+    assert dialog._tabs.count() == 5
 
 
 def test_widgets_populate_from_config(qapp: QApplication) -> None:
