@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -89,9 +90,22 @@ class SettingsDialog(QDialog):
         self._jlpt_level_spin.setRange(1, 5)
         layout.addRow("JLPT Level", self._jlpt_level_spin)
 
-        self._llm_mode_combo = QComboBox()
-        self._llm_mode_combo.addItems(["translation", "explanation"])
-        layout.addRow("LLM Mode", self._llm_mode_combo)
+        self._llm_mode_value: str = "translation"
+        llm_mode_row = QHBoxLayout()
+        self._llm_mode_btn_translation = QPushButton("translation")
+        self._llm_mode_btn_translation.setCheckable(True)
+        self._llm_mode_btn_explanation = QPushButton("explanation")
+        self._llm_mode_btn_explanation.setCheckable(True)
+        llm_mode_row.addWidget(self._llm_mode_btn_translation)
+        llm_mode_row.addWidget(self._llm_mode_btn_explanation)
+        llm_mode_row.addStretch()
+        self._llm_mode_btn_translation.clicked.connect(
+            lambda: self._select_llm_mode("translation")
+        )
+        self._llm_mode_btn_explanation.clicked.connect(
+            lambda: self._select_llm_mode("explanation")
+        )
+        layout.addRow("LLM Mode", llm_mode_row)
 
         self._vad_threshold_spin = QDoubleSpinBox()
         self._vad_threshold_spin.setRange(0.1, 0.95)
@@ -140,9 +154,18 @@ class SettingsDialog(QDialog):
         self._grammar_highlight_check = QCheckBox("Show grammar highlights")
         layout.addRow("", self._grammar_highlight_check)
 
-        self._display_mode_combo = QComboBox()
-        self._display_mode_combo.addItems(["both", "single"])
-        layout.addRow("Display Mode", self._display_mode_combo)
+        self._display_mode_value: str = "both"
+        display_mode_row = QHBoxLayout()
+        self._display_mode_btn_both = QPushButton("both")
+        self._display_mode_btn_both.setCheckable(True)
+        self._display_mode_btn_single = QPushButton("single")
+        self._display_mode_btn_single.setCheckable(True)
+        display_mode_row.addWidget(self._display_mode_btn_both)
+        display_mode_row.addWidget(self._display_mode_btn_single)
+        display_mode_row.addStretch()
+        self._display_mode_btn_both.clicked.connect(lambda: self._select_display_mode("both"))
+        self._display_mode_btn_single.clicked.connect(lambda: self._select_display_mode("single"))
+        layout.addRow("Display Mode", display_mode_row)
 
         self._tabs.addTab(widget, "Appearance")
 
@@ -212,6 +235,10 @@ class SettingsDialog(QDialog):
         )
         layout.addRow("Parse Format (regex)", self._llm_parse_format_edit)
 
+        self._regex_error_label = QLabel("")
+        self._regex_error_label.setStyleSheet("color: red;")
+        layout.addRow("", self._regex_error_label)
+
         test_row = QHBoxLayout()
         self._test_conn_btn = QPushButton("Test Connection")
         self._test_conn_label = QLabel("")
@@ -259,11 +286,19 @@ class SettingsDialog(QDialog):
 
         self._tabs.addTab(widget, "Templates")
 
+    def _select_llm_mode(self, mode: str) -> None:
+        self._llm_mode_value = mode
+        self._llm_mode_btn_translation.setChecked(mode == "translation")
+        self._llm_mode_btn_explanation.setChecked(mode == "explanation")
+
+    def _select_display_mode(self, mode: str) -> None:
+        self._display_mode_value = mode
+        self._display_mode_btn_both.setChecked(mode == "both")
+        self._display_mode_btn_single.setChecked(mode == "single")
+
     def _populate_from_config(self, config: AppConfig) -> None:
         self._jlpt_level_spin.setValue(config.user_jlpt_level)
-        idx = self._llm_mode_combo.findText(config.llm_mode)
-        if idx >= 0:
-            self._llm_mode_combo.setCurrentIndex(idx)
+        self._select_llm_mode(config.llm_mode)
 
         self._vad_threshold_spin.setValue(config.vad_threshold)
         self._vad_min_silence_spin.setValue(config.vad_min_silence_ms)
@@ -289,9 +324,7 @@ class SettingsDialog(QDialog):
         self._llm_extra_args_edit.setText(config.llm_extra_args)
         self._llm_parse_format_edit.setText(config.llm_parse_format)
 
-        dm_idx = self._display_mode_combo.findText(config.overlay_display_mode)
-        if dm_idx >= 0:
-            self._display_mode_combo.setCurrentIndex(dm_idx)
+        self._select_display_mode(config.overlay_display_mode)
         self._shortcut_prev_edit.setText(config.shortcut_prev_sentence)
         self._shortcut_next_edit.setText(config.shortcut_next_sentence)
         self._shortcut_toggle_edit.setText(config.shortcut_toggle_display)
@@ -304,7 +337,7 @@ class SettingsDialog(QDialog):
     def _collect_config(self) -> AppConfig:
         return AppConfig(
             user_jlpt_level=self._jlpt_level_spin.value(),
-            llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]  # QComboBox returns str; AppConfig.llm_mode is a Literal — safe at runtime
+            llm_mode=self._llm_mode_value,  # type: ignore[arg-type]
             vad_threshold=self._vad_threshold_spin.value(),
             vad_min_silence_ms=self._vad_min_silence_spin.value(),
             vad_min_speech_ms=self._vad_min_speech_spin.value(),
@@ -332,18 +365,25 @@ class SettingsDialog(QDialog):
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
             audio_device_id=self._config.audio_device_id,
-            overlay_display_mode=self._display_mode_combo.currentText(),  # type: ignore[arg-type]
+            overlay_display_mode=self._display_mode_value,  # type: ignore[arg-type]
             shortcut_prev_sentence=self._shortcut_prev_edit.text(),
             shortcut_next_sentence=self._shortcut_next_edit.text(),
             shortcut_toggle_display=self._shortcut_toggle_edit.text(),
         )
 
     def _on_save(self) -> None:
+        parse_format = self._llm_parse_format_edit.text()
+        if parse_format:
+            try:
+                re.compile(parse_format)
+            except re.error as e:
+                self._regex_error_label.setText(f"Invalid regex: {e}")
+                return
+        self._regex_error_label.setText("")
         new_config = self._collect_config()
         save_config(new_config)
         self.config_changed.emit(new_config)
         logger.info("SettingsDialog: config saved and signal emitted")
-        self.close()
 
     def _on_test_connection(self) -> None:
         test_config = AppConfig(
