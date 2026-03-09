@@ -179,7 +179,7 @@ Max Concurrent: 3 (Wave 1)
 > Implementation + Test = ONE Task. Never separate.
 > EVERY task MUST have: Recommended Agent Profile + Parallelization info + QA Scenarios.
 
-- [ ] 1. Bug 1 — Fix asyncio task destruction and resource cleanup on shutdown
+- [x] 1. Bug 1 — Fix asyncio task destruction and resource cleanup on shutdown
 
   **What to do**:
   - Add `async def close(self)` method to `AsyncOllamaClient` in `src/llm/ollama_client.py` that calls `await self._http.aclose()`. This is needed because the client is never used as an async context manager (`__aexit__` is never called).
@@ -287,7 +287,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/llm/ollama_client.py`, `src/pipeline/llm_worker.py`, `src/pipeline/asr_worker.py`, `src/pipeline/orchestrator.py`, `tests/test_llm_worker.py`, `tests/test_asr_worker.py`, `tests/test_orchestrator.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 2. Bug 3 — Fix WAL/SHM file persistence by closing all SQLite connections
+- [x] 2. Bug 3 — Fix WAL/SHM file persistence by closing all SQLite connections
 
   **What to do**:
   - In `src/ui/learning_panel.py`, override `closeEvent(self, event: QCloseEvent)` to call `self._conn.close()` before `super().closeEvent(event)`.
@@ -370,7 +370,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/learning_panel.py`, `src/main.py`, `tests/test_learning_panel.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 3. Create GlobalShortcutManager with pynput + add pynput dependency
+- [x] 3. Create GlobalShortcutManager with pynput + add pynput dependency
 
   **What to do**:
   - Add `pynput` to `requirements.txt`.
@@ -476,7 +476,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `requirements.txt`, `src/ui/shortcuts.py`, `tests/test_shortcuts.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 4. Improvement 4 — Move shortcuts to dedicated Shortcuts tab in settings
+- [x] 4. Improvement 4 — Move shortcuts to dedicated Shortcuts tab in settings
 
   **What to do**:
   - In `src/ui/settings.py`, create a new method `_build_shortcuts_tab(self) -> QWidget` that returns the shortcuts form layout.
@@ -565,7 +565,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/settings.py`, `tests/test_settings.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 5. Improvement 6 — Replace dropdowns with segmented controls for binary settings
+- [x] 5. Improvement 6 — Replace dropdowns with segmented controls for binary settings
 
   **What to do**:
   - In `src/ui/settings.py`, replace `QComboBox` for LLM Mode and Display Mode with segmented controls:
@@ -656,7 +656,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/settings.py`, `tests/test_settings.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 6. Improvement 7 — Remove auto-close on save + Improvement 8 — Add regex validation
+- [x] 6. Improvement 7 — Remove auto-close on save + Improvement 8 — Add regex validation
 
   **What to do**:
   - **Remove auto-close**: In `src/ui/settings.py` `_on_save()` method, remove the `self.close()` call at the end. The dialog should remain open after saving.
@@ -759,7 +759,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/settings.py`, `tests/test_settings.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 7. Improvement 5 + Bug 2 — Key capture widget in settings + wire pynput to overlay
+- [x] 7. Improvement 5 + Bug 2 — Key capture widget in settings + wire pynput to overlay
 
   **What to do**:
   - **Key capture widget in Shortcuts tab**: In `src/ui/settings.py`, replace the 3 shortcut `QLineEdit` widgets (now in the Shortcuts tab from Task 4) with `QKeySequenceEdit` widgets:
@@ -878,7 +878,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/overlay.py`, `src/ui/settings.py`, `tests/test_overlay.py`, `tests/test_settings.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 8. Improvement 9 — Display toggle shortcut only cycles jp/cn in "single" mode
+- [x] 8. Improvement 9 — Display toggle shortcut only cycles jp/cn in "single" mode
 
   **What to do**:
   - In `src/ui/overlay.py` `_toggle_mode()` method:
@@ -967,7 +967,7 @@ Max Concurrent: 3 (Wave 1)
   - Files: `src/ui/overlay.py`, `tests/test_overlay.py`
   - Pre-commit: `pytest -x --tb=short`
 
-- [ ] 9. Full integration verification — lint, type check, full test suite
+- [x] 9. Full integration verification — lint, type check, full test suite
 
   **What to do**:
   - Run `ruff check .` — fix any lint errors introduced by Tasks 1-9.
@@ -1052,19 +1052,19 @@ Max Concurrent: 3 (Wave 1)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+ - [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+ - [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check .` + `ruff format --check .` + `mypy .` + `pytest -x --tb=short`. Review all changed files for: `as any`/type ignores, empty catches, print statements in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names.
   Output: `Lint [PASS/FAIL] | Format [PASS/FAIL] | Types [PASS/FAIL] | Tests [N pass/N fail] | VERDICT`
 
-- [ ] F3. **Automated Integration QA** — `unspecified-high`
+ - [x] F3. **Automated Integration QA** — `unspecified-high`
   Start from clean state. Re-run ALL QA scenarios from EVERY task by executing the exact pytest commands listed in each task's QA section. Capture evidence output via `pytest ... | tee .sisyphus/evidence/final-qa/<task-slug>.txt`. Test cross-task integration: import all modified modules, verify no circular imports, run `python -c "from src.ui.shortcuts import GlobalShortcutManager; from src.ui.overlay import OverlayWindow; from src.ui.settings import SettingsDialog"`. Save all evidence to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+ - [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built, nothing beyond spec was built. Check "Must NOT do" compliance. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Unaccounted [CLEAN/N files] | VERDICT`
 
