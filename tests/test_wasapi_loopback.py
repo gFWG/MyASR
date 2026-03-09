@@ -110,7 +110,7 @@ def test_wasapi_callback_downmixes_and_resamples(mock_pyaudiowpatch: dict[str, A
     stereo_data = np.random.rand(2048).astype(np.float32)
     in_data = stereo_data.tobytes()
 
-    with patch("src.audio.backends.soxr.resample") as mock_resample:
+    with patch("src.audio.backends._soxr.resample") as mock_resample:
         mock_resample.return_value = np.zeros(341, dtype=np.float32)
 
         result = capture._pa_callback(in_data, 1024, {}, 0)

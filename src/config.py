@@ -4,7 +4,9 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
+
+from src.profiling.config import ProfilingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,7 @@ class AppConfig:
     shortcut_prev_sentence: str = "Ctrl+Left"
     shortcut_next_sentence: str = "Ctrl+Right"
     shortcut_toggle_display: str = "Ctrl+T"
+    profiling: ProfilingConfig = dataclasses.field(default_factory=ProfilingConfig)
 
 
 def load_config(path: str = "data/config.json") -> AppConfig:
@@ -76,15 +79,37 @@ def load_config(path: str = "data/config.json") -> AppConfig:
         return AppConfig()
     try:
         with config_path.open(encoding="utf-8") as f:
-            loaded: dict[str, object] = json.load(f)
+            loaded: dict[str, Any] = json.load(f)
     except (json.JSONDecodeError, OSError):
         logger.warning("Failed to parse config file %s, using defaults", path)
         return AppConfig()
-    defaults = dataclasses.asdict(AppConfig())
-    defaults.update(loaded)
+    defaults: dict[str, Any] = dataclasses.asdict(AppConfig())
+    defaults = _deep_update(defaults, loaded)
     known = {f.name for f in dataclasses.fields(AppConfig)}
-    filtered = {k: v for k, v in defaults.items() if k in known}
+    filtered: dict[str, Any] = {k: v for k, v in defaults.items() if k in known}
+    # Handle nested ProfilingConfig
+    if "profiling" in filtered and isinstance(filtered["profiling"], dict):
+        filtered["profiling"] = ProfilingConfig(**filtered["profiling"])
     return AppConfig(**filtered)
+
+
+def _deep_update(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Recursively update a dictionary, preserving nested structures.
+
+    Args:
+        base: Base dictionary to update.
+        override: Dictionary with override values.
+
+    Returns:
+        Updated dictionary with nested merging.
+    """
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_update(result[key], value)
+        else:
+            result[key] = value
+    return result
 
 
 def save_config(config: AppConfig, path: str = "data/config.json") -> None:
