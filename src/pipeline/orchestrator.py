@@ -200,6 +200,14 @@ class PipelineOrchestrator:
             self._llm_worker.error_occurred,
         ]
 
+    # ── Config hot-reload ───────────────────────────────────────────────────
+
+    def on_config_changed(self, config: AppConfig) -> None:
+        """Apply updated configuration to the LLM worker at runtime."""
+        new_client = AsyncOllamaClient(config)
+        self._llm_worker.update_client(new_client)
+        logger.info("PipelineOrchestrator: LLM client replaced with new config")
+
     # ── Internal helpers ─────────────────────────────────────────────────────
 
     @staticmethod

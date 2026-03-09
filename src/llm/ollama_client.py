@@ -18,7 +18,6 @@ from src.exceptions import LLMTimeoutError, LLMUnavailableError
 logger = logging.getLogger(__name__)
 
 _LRU_MAXSIZE = 256
-_TR_TAG_RE = re.compile(r"<tr>(.*?)</tr>", re.DOTALL)
 _HEALTH_TIMEOUT = 5.0
 
 
@@ -47,6 +46,7 @@ class AsyncOllamaClient:
         self._thinking = config.llm_thinking
         self._prefill = config.llm_prefill
         self._extra_args = config.llm_extra_args
+        self._parse_format = config.llm_parse_format
         self._http = httpx.AsyncClient()
         self._result_cache: dict[tuple[str, str], tuple[str | None, str | None]] = {}
 
@@ -224,18 +224,26 @@ class AsyncOllamaClient:
         return self._explanation_template.format(japanese_text=japanese_text)
 
     def _parse_response(self, response_text: str) -> tuple[str | None, str | None]:
-        if self._mode == "translation":
-            stripped = response_text.strip()
-            # <tr>...</tr> tags from the translation template
-            match = _TR_TAG_RE.search(stripped)
-            if match:
-                stripped = match.group(1).strip()
-            return (stripped or None, None)
-
         stripped = response_text.strip()
         if not stripped:
             return (None, None)
-        return (None, stripped)
+
+        # Apply custom parse format regex if configured
+        if self._parse_format:
+            try:
+                custom_re = re.compile(self._parse_format, re.DOTALL)
+                match = custom_re.search(stripped)
+                if match:
+                    # Use first capture group if present, else full match
+                    stripped = (match.group(1) if match.lastindex else match.group(0)).strip()
+            except re.error:
+                logger.warning(
+                    "Invalid llm_parse_format regex, using full output: %s", self._parse_format
+                )
+
+        if self._mode == "translation":
+            return (stripped or None, None)
+        return (None, stripped or None)
 
     async def health_check_async(self) -> bool:
         """Check if the LLM provider is reachable.

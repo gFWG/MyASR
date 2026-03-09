@@ -57,8 +57,8 @@ def test_overlay_initial_size(overlay: OverlayWindow) -> None:
     assert overlay.height() == 120
 
 
-def test_overlay_initial_mode_is_zero(overlay: OverlayWindow) -> None:
-    assert overlay._mode == 0
+def test_overlay_initial_mode_is_both(overlay: OverlayWindow) -> None:
+    assert overlay._display_mode == "both"
 
 
 def test_overlay_highlight_hovered_signal_exists() -> None:
@@ -107,28 +107,41 @@ def test_on_sentence_ready_explanation_fallback(overlay: OverlayWindow) -> None:
     assert "Grammar explanation" in overlay._cn_browser.toPlainText()
 
 
-def test_toggle_mode_changes_from_zero_to_one(overlay: OverlayWindow) -> None:
-    overlay._mode = 0
+def test_toggle_mode_changes_from_both_to_single_jp(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "both"
     overlay._toggle_mode()
-    assert overlay._mode == 1
+    assert overlay._display_mode == "single"
+    assert overlay._single_sub_mode == "jp"
 
 
-def test_toggle_mode_changes_from_one_to_zero(overlay: OverlayWindow) -> None:
-    overlay._mode = 1
+def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "jp"
     overlay._toggle_mode()
-    assert overlay._mode == 0
+    assert overlay._display_mode == "single"
+    assert overlay._single_sub_mode == "cn"
 
 
-def test_toggle_mode_hides_cn_browser_in_mode_one(overlay: OverlayWindow) -> None:
-    overlay._mode = 0
+def test_toggle_mode_changes_from_single_cn_to_both(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "cn"
+    overlay._toggle_mode()
+    assert overlay._display_mode == "both"
+
+
+def test_toggle_mode_hides_cn_browser_in_single_jp(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "both"
     overlay._toggle_mode()
     assert overlay._cn_browser.isHidden()
+    assert not overlay._jp_browser.isHidden()
 
 
-def test_toggle_mode_shows_cn_browser_in_mode_zero(overlay: OverlayWindow) -> None:
-    overlay._mode = 1
+def test_toggle_mode_shows_both_browsers_in_both(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "cn"
     overlay._toggle_mode()
     assert not overlay._cn_browser.isHidden()
+    assert not overlay._jp_browser.isHidden()
 
 
 def test_set_status_updates_jp_browser(overlay: OverlayWindow) -> None:
@@ -404,3 +417,131 @@ def test_on_translation_ready_handles_none(overlay: OverlayWindow) -> None:
     overlay.on_translation_ready(result)
 
     assert "Translation unavailable" in overlay._cn_browser.toPlainText()
+
+
+# ── Sentence history + navigation tests ──
+
+
+def test_on_sentence_ready_adds_to_history(overlay: OverlayWindow) -> None:
+    result = _make_result()
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>テスト</b>",
+    ):
+        overlay.on_sentence_ready(result)
+    assert len(overlay._history) == 1
+    assert overlay._history[0] is result
+    assert overlay._history_index == 0
+
+
+def test_history_max_size(overlay: OverlayWindow) -> None:
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>test</b>",
+    ):
+        for i in range(105):
+            overlay.on_sentence_ready(_make_result(japanese_text=f"sentence {i}"))
+    assert len(overlay._history) == 100
+    assert overlay._history_index == 99
+
+
+def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
+    r1 = _make_result(japanese_text="first")
+    r2 = _make_result(japanese_text="second")
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>test</b>",
+    ):
+        overlay.on_sentence_ready(r1)
+        overlay.on_sentence_ready(r2)
+        overlay._prev_sentence()
+    assert overlay._history_index == 0
+    assert overlay._current_result is r1
+
+
+def test_prev_sentence_noop_at_start(overlay: OverlayWindow) -> None:
+    r1 = _make_result()
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>test</b>",
+    ):
+        overlay.on_sentence_ready(r1)
+    overlay._prev_sentence()
+    assert overlay._history_index == 0
+
+
+def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
+    r1 = _make_result(japanese_text="first")
+    r2 = _make_result(japanese_text="second")
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>test</b>",
+    ):
+        overlay.on_sentence_ready(r1)
+        overlay.on_sentence_ready(r2)
+        overlay._prev_sentence()
+        overlay._next_sentence()
+    assert overlay._history_index == 1
+    assert overlay._current_result is r2
+
+
+def test_next_sentence_noop_at_end(overlay: OverlayWindow) -> None:
+    r1 = _make_result()
+    with patch(
+        "src.ui.overlay.HighlightRenderer.build_rich_text",
+        return_value="<b>test</b>",
+    ):
+        overlay.on_sentence_ready(r1)
+    overlay._next_sentence()
+    assert overlay._history_index == 0
+
+
+def test_prev_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
+    overlay._prev_sentence()
+    assert overlay._history_index == -1
+
+
+def test_next_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
+    overlay._next_sentence()
+    assert overlay._history_index == -1
+
+
+# ── Display mode config change tests ──
+
+
+def test_on_config_changed_updates_display_mode(overlay: OverlayWindow) -> None:
+    config = AppConfig(overlay_display_mode="single")
+    overlay.on_config_changed(config)
+    assert overlay._display_mode == "single"
+
+
+def test_on_config_changed_rebinds_shortcuts(overlay: OverlayWindow) -> None:
+    old_shortcuts = list(overlay._shortcuts)
+    config = AppConfig(shortcut_toggle_display="Ctrl+X")
+    overlay.on_config_changed(config)
+    for sc in old_shortcuts:
+        assert not sc.isEnabled()
+    assert len(overlay._shortcuts) == 3
+
+
+def test_apply_display_mode_single_jp_hides_cn(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "jp"
+    overlay._apply_display_mode()
+    assert not overlay._jp_browser.isHidden()
+    assert overlay._cn_browser.isHidden()
+
+
+def test_apply_display_mode_single_cn_hides_jp(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "cn"
+    overlay._apply_display_mode()
+    assert overlay._jp_browser.isHidden()
+    assert not overlay._cn_browser.isHidden()
+
+
+def test_apply_display_mode_both_shows_all(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "both"
+    overlay._apply_display_mode()
+    assert not overlay._jp_browser.isHidden()
+    assert not overlay._cn_browser.isHidden()

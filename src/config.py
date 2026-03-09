@@ -54,6 +54,11 @@ class AppConfig:
     enable_vocab_highlight: bool = True
     enable_grammar_highlight: bool = True
     audio_device_id: int | None = None
+    llm_parse_format: str = ""
+    overlay_display_mode: Literal["both", "single"] = "both"
+    shortcut_prev_sentence: str = "Ctrl+Left"
+    shortcut_next_sentence: str = "Ctrl+Right"
+    shortcut_toggle_display: str = "Ctrl+T"
 
 
 def load_config(path: str = "data/config.json") -> AppConfig:

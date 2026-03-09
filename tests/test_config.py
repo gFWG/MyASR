@@ -119,3 +119,30 @@ def test_config_backward_compat_unknown_keys_filtered(tmp_path: Path) -> None:
     c = load_config(str(config_file))
     assert c.user_jlpt_level == 4
     assert not hasattr(c, "unknown_future_key")
+
+
+def test_defaults_new_config_fields() -> None:
+    c = AppConfig()
+    assert c.llm_parse_format == ""
+    assert c.overlay_display_mode == "both"
+    assert c.shortcut_prev_sentence == "Ctrl+Left"
+    assert c.shortcut_next_sentence == "Ctrl+Right"
+    assert c.shortcut_toggle_display == "Ctrl+T"
+
+
+def test_save_load_roundtrip_new_fields(tmp_path: Path) -> None:
+    config = AppConfig(
+        llm_parse_format="<tr>(.*?)</tr>",
+        overlay_display_mode="single",
+        shortcut_prev_sentence="Alt+Left",
+        shortcut_next_sentence="Alt+Right",
+        shortcut_toggle_display="Ctrl+D",
+    )
+    path = str(tmp_path / "config.json")
+    save_config(config, path)
+    loaded = load_config(path)
+    assert loaded.llm_parse_format == "<tr>(.*?)</tr>"
+    assert loaded.overlay_display_mode == "single"
+    assert loaded.shortcut_prev_sentence == "Alt+Left"
+    assert loaded.shortcut_next_sentence == "Alt+Right"
+    assert loaded.shortcut_toggle_display == "Ctrl+D"

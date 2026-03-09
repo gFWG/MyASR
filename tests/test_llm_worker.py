@@ -597,3 +597,27 @@ def test_llm_worker_no_deadlock_on_full_result_queue(
     elapsed = time.monotonic() - t0
 
     assert elapsed < 2.0, f"stop() took {elapsed:.2f}s — potential deadlock on full result_queue"
+
+
+def test_llm_worker_update_client(
+    qt_app: Any,
+    config: dict[str, Any],
+) -> None:
+    LlmWorker = _import_llm_worker()
+    old_client = make_mock_llm_client(return_value=("old", None))
+    new_client = make_mock_llm_client(return_value=("new", None))
+
+    text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
+    result_q: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
+
+    w = LlmWorker(
+        text_queue=text_q,
+        result_queue=result_q,
+        llm_client=old_client,
+        db_path=None,
+        config=config,
+    )
+
+    assert w._llm_client is old_client
+    w.update_client(new_client)
+    assert w._llm_client is new_client

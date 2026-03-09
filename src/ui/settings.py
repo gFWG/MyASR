@@ -24,6 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from PySide6.QtGui import QKeySequence
+
 from src.config import AppConfig, save_config
 from src.llm.ollama_client import OllamaClient
 
@@ -137,6 +139,22 @@ class SettingsDialog(QDialog):
         self._grammar_highlight_check = QCheckBox("Show grammar highlights")
         layout.addRow("", self._grammar_highlight_check)
 
+        self._display_mode_combo = QComboBox()
+        self._display_mode_combo.addItems(["both", "single"])
+        layout.addRow("Display Mode", self._display_mode_combo)
+
+        self._shortcut_prev_edit = QLineEdit()
+        self._shortcut_prev_edit.setPlaceholderText("e.g. Ctrl+Left")
+        layout.addRow("Shortcut: Prev Sentence", self._shortcut_prev_edit)
+
+        self._shortcut_next_edit = QLineEdit()
+        self._shortcut_next_edit.setPlaceholderText("e.g. Ctrl+Right")
+        layout.addRow("Shortcut: Next Sentence", self._shortcut_next_edit)
+
+        self._shortcut_toggle_edit = QLineEdit()
+        self._shortcut_toggle_edit.setPlaceholderText("e.g. Ctrl+T")
+        layout.addRow("Shortcut: Toggle Display", self._shortcut_toggle_edit)
+
         self._tabs.addTab(widget, "Appearance")
 
     def _build_model_tab(self) -> None:
@@ -199,6 +217,12 @@ class SettingsDialog(QDialog):
         self._llm_extra_args_edit.setPlaceholderText('{"key": "value"}')
         layout.addRow("Extra Args (JSON)", self._llm_extra_args_edit)
 
+        self._llm_parse_format_edit = QLineEdit()
+        self._llm_parse_format_edit.setPlaceholderText(
+            "e.g. <tr>(.*?)</tr>  — empty = full output"
+        )
+        layout.addRow("Parse Format (regex)", self._llm_parse_format_edit)
+
         test_row = QHBoxLayout()
         self._test_conn_btn = QPushButton("Test Connection")
         self._test_conn_label = QLabel("")
@@ -256,6 +280,14 @@ class SettingsDialog(QDialog):
         self._llm_thinking_check.setChecked(config.llm_thinking)
         self._llm_prefill_edit.setText(config.llm_prefill)
         self._llm_extra_args_edit.setText(config.llm_extra_args)
+        self._llm_parse_format_edit.setText(config.llm_parse_format)
+
+        dm_idx = self._display_mode_combo.findText(config.overlay_display_mode)
+        if dm_idx >= 0:
+            self._display_mode_combo.setCurrentIndex(dm_idx)
+        self._shortcut_prev_edit.setText(config.shortcut_prev_sentence)
+        self._shortcut_next_edit.setText(config.shortcut_next_sentence)
+        self._shortcut_toggle_edit.setText(config.shortcut_toggle_display)
 
         self._translation_template_edit.setPlainText(config.translation_template)
         self._explanation_template_edit.setPlainText(config.explanation_template)
@@ -285,6 +317,7 @@ class SettingsDialog(QDialog):
             llm_thinking=self._llm_thinking_check.isChecked(),
             llm_prefill=self._llm_prefill_edit.text(),
             llm_extra_args=self._llm_extra_args_edit.text(),
+            llm_parse_format=self._llm_parse_format_edit.text(),
             translation_template=self._translation_template_edit.toPlainText(),
             explanation_template=self._explanation_template_edit.toPlainText(),
             sample_rate=self._config.sample_rate,
@@ -292,6 +325,10 @@ class SettingsDialog(QDialog):
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
             audio_device_id=self._config.audio_device_id,
+            overlay_display_mode=self._display_mode_combo.currentText(),  # type: ignore[arg-type]
+            shortcut_prev_sentence=self._shortcut_prev_edit.text(),
+            shortcut_next_sentence=self._shortcut_next_edit.text(),
+            shortcut_toggle_display=self._shortcut_toggle_edit.text(),
         )
 
     def _on_save(self) -> None:

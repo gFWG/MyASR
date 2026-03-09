@@ -91,8 +91,9 @@ async def test_translate_async_strips_whitespace() -> None:
     assert result == ("翻訳", None)
 
 
-async def test_translate_async_extracts_tr_tags() -> None:
-    client = AsyncOllamaClient(_make_config("translation"))
+async def test_translate_async_extracts_tr_tags_with_parse_format() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_parse_format="<tr>(.*?)</tr>"))
+    client.translate_cached.cache_clear()
     stream_cm = _mock_httpx_stream("Some preamble\n<tr>实际翻译</tr>\nExtra")
 
     with patch.object(client._http, "stream", return_value=stream_cm):
@@ -101,14 +102,15 @@ async def test_translate_async_extracts_tr_tags() -> None:
     assert result == ("实际翻译", None)
 
 
-async def test_translate_async_no_tr_tags_uses_raw_text() -> None:
-    client = AsyncOllamaClient(_make_config("translation"))
-    stream_cm = _mock_httpx_stream("直接翻译")
+async def test_translate_async_no_parse_format_returns_full_text() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_parse_format=""))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("Some preamble\n<tr>实际翻译</tr>\nExtra")
 
     with patch.object(client._http, "stream", return_value=stream_cm):
         result = await client.translate_async("テスト", "")
 
-    assert result == ("直接翻译", None)
+    assert result == ("Some preamble\n<tr>实际翻译</tr>\nExtra", None)
 
 
 async def test_translate_async_empty_response_returns_none() -> None:
@@ -462,3 +464,60 @@ async def test_list_models_returns_empty_on_error() -> None:
 async def test_url_trailing_slash_stripped() -> None:
     client = AsyncOllamaClient(_make_config(ollama_url="http://localhost:11434/"))
     assert client._url == "http://localhost:11434"
+
+
+async def test_parse_format_with_custom_regex() -> None:
+    client = AsyncOllamaClient(
+        _make_config("translation", llm_parse_format=r"\[result\](.*?)\[/result\]")
+    )
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("blah [result]翻訳内容[/result] blah")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("翻訳内容", None)
+
+
+async def test_parse_format_with_capture_group_extracts_inner() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_parse_format=r"<<(.+?)>>"))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("preamble <<actual result>> postamble")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("actual result", None)
+
+
+async def test_parse_format_invalid_regex_uses_full_output() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_parse_format="[invalid"))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("full output text")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("full output text", None)
+
+
+async def test_parse_format_no_match_uses_full_output() -> None:
+    client = AsyncOllamaClient(_make_config("translation", llm_parse_format="<tag>(.*?)</tag>"))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("no tags here")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == ("no tags here", None)
+
+
+async def test_parse_format_explanation_mode() -> None:
+    client = AsyncOllamaClient(_make_config("explanation", llm_parse_format="<ex>(.*?)</ex>"))
+    client.translate_cached.cache_clear()
+    stream_cm = _mock_httpx_stream("preamble <ex>解説内容</ex> extra")
+
+    with patch.object(client._http, "stream", return_value=stream_cm):
+        result = await client.translate_async("テスト", "")
+
+    assert result == (None, "解説内容")

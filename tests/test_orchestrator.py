@@ -356,3 +356,17 @@ def test_error_occurred_property_accessible(
     # error_occurred is a list of signals from all three workers
     assert isinstance(err, list)
     assert len(err) == 3
+
+
+def test_on_config_changed_replaces_llm_client(
+    orchestrator: PipelineOrchestrator,
+    mock_workers: dict[str, MagicMock],
+) -> None:
+    from src.config import AppConfig
+
+    new_config = AppConfig(ollama_model="new-model")
+    orchestrator.on_config_changed(new_config)
+    mock_workers["llm"].update_client.assert_called_once()
+    call_args = mock_workers["llm"].update_client.call_args
+    new_client = call_args[0][0]
+    assert new_client._model == "new-model"

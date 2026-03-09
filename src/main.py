@@ -122,6 +122,13 @@ def main() -> None:
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
 
         _settings_dialog: SettingsDialog | None = None
+        current_config: AppConfig = config
+
+        def _on_config_changed(new_config: AppConfig) -> None:
+            nonlocal current_config
+            current_config = new_config
+            overlay.on_config_changed(new_config)
+            pipeline.on_config_changed(new_config)
 
         def _open_settings() -> None:
             nonlocal _settings_dialog
@@ -129,8 +136,8 @@ def main() -> None:
                 _settings_dialog.raise_()
                 _settings_dialog.activateWindow()
                 return
-            _settings_dialog = SettingsDialog(config)
-            _settings_dialog.config_changed.connect(overlay.on_config_changed)
+            _settings_dialog = SettingsDialog(current_config)
+            _settings_dialog.config_changed.connect(_on_config_changed)
             _settings_dialog.show()
 
         tray.quit_requested.connect(app.quit)

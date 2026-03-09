@@ -147,6 +147,10 @@ class LlmWorker(QThread):
                 result.segment_id,
             )
 
+    def update_client(self, client: AsyncOllamaClient) -> None:
+        """Replace the LLM client with a new one (hot-reload on config change)."""
+        self._llm_client = client
+
     def stop(self) -> None:
         """Signal the LLM worker to stop and wait up to 2 seconds for it to finish."""
         self._running = False

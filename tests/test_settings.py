@@ -167,3 +167,49 @@ def test_api_key_field_uses_password_mode(dialog: SettingsDialog) -> None:
     from PySide6.QtWidgets import QLineEdit
 
     assert dialog._ollama_api_key_edit.echoMode() == QLineEdit.EchoMode.Password
+
+
+def test_parse_format_field_populated(qapp: QApplication) -> None:
+    config = AppConfig(llm_parse_format="<tr>(.*?)</tr>")
+    d = SettingsDialog(config)
+    assert d._llm_parse_format_edit.text() == "<tr>(.*?)</tr>"
+
+
+def test_display_mode_combo_populated(qapp: QApplication) -> None:
+    config = AppConfig(overlay_display_mode="single")
+    d = SettingsDialog(config)
+    assert d._display_mode_combo.currentText() == "single"
+
+
+def test_shortcut_fields_populated(qapp: QApplication) -> None:
+    config = AppConfig(
+        shortcut_prev_sentence="Alt+Left",
+        shortcut_next_sentence="Alt+Right",
+        shortcut_toggle_display="Ctrl+D",
+    )
+    d = SettingsDialog(config)
+    assert d._shortcut_prev_edit.text() == "Alt+Left"
+    assert d._shortcut_next_edit.text() == "Alt+Right"
+    assert d._shortcut_toggle_edit.text() == "Ctrl+D"
+
+
+def test_collect_config_includes_parse_format(dialog: SettingsDialog) -> None:
+    dialog._llm_parse_format_edit.setText("<output>(.*?)</output>")
+    collected = dialog._collect_config()
+    assert collected.llm_parse_format == "<output>(.*?)</output>"
+
+
+def test_collect_config_includes_display_mode(dialog: SettingsDialog) -> None:
+    dialog._display_mode_combo.setCurrentText("single")
+    collected = dialog._collect_config()
+    assert collected.overlay_display_mode == "single"
+
+
+def test_collect_config_includes_shortcuts(dialog: SettingsDialog) -> None:
+    dialog._shortcut_prev_edit.setText("Ctrl+Up")
+    dialog._shortcut_next_edit.setText("Ctrl+Down")
+    dialog._shortcut_toggle_edit.setText("Ctrl+M")
+    collected = dialog._collect_config()
+    assert collected.shortcut_prev_sentence == "Ctrl+Up"
+    assert collected.shortcut_next_sentence == "Ctrl+Down"
+    assert collected.shortcut_toggle_display == "Ctrl+M"
