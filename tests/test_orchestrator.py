@@ -13,7 +13,7 @@ Tests cover:
 """
 
 from typing import Any
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import numpy as np
 import pytest
@@ -64,6 +64,7 @@ def orchestrator(
     mock_vad_model = MagicMock()
     mock_asr_model = MagicMock()
     mock_llm_client = MagicMock()
+    mock_llm_client.close = AsyncMock()
     mock_capture = MagicMock()
 
     with (
@@ -364,9 +365,25 @@ def test_on_config_changed_replaces_llm_client(
 ) -> None:
     from src.config import AppConfig
 
+    mock_workers["llm"]._llm_client = MagicMock()
+    mock_workers["llm"]._llm_client.close = AsyncMock()
     new_config = AppConfig(ollama_model="new-model")
     orchestrator.on_config_changed(new_config)
     mock_workers["llm"].update_client.assert_called_once()
     call_args = mock_workers["llm"].update_client.call_args
     new_client = call_args[0][0]
     assert new_client._model == "new-model"
+
+
+def test_config_change_closes_old_client(
+    orchestrator: PipelineOrchestrator,
+    mock_workers: dict[str, MagicMock],
+) -> None:
+    from src.config import AppConfig
+
+    old_client = MagicMock()
+    old_client.close = AsyncMock()
+    mock_workers["llm"]._llm_client = old_client
+    new_config = AppConfig(ollama_model="changed-model")
+    orchestrator.on_config_changed(new_config)
+    old_client.close.assert_awaited_once()

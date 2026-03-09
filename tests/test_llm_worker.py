@@ -621,3 +621,33 @@ def test_llm_worker_update_client(
     assert w._llm_client is old_client
     w.update_client(new_client)
     assert w._llm_client is new_client
+
+
+def test_cleanup_closes_db_repo_and_llm_client(
+    qt_app: Any,
+    config: dict[str, Any],
+) -> None:
+    from unittest.mock import AsyncMock, patch as _patch
+
+    LlmWorker = _import_llm_worker()
+    mock_client = make_mock_llm_client(return_value=("翻訳", None))
+    mock_client.close = AsyncMock()
+    mock_repo = make_mock_db_repo()
+
+    text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
+    result_q: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
+
+    with _patch("src.pipeline.llm_worker.LearningRepository", return_value=mock_repo):
+        w = LlmWorker(
+            text_queue=text_q,
+            result_queue=result_q,
+            llm_client=mock_client,
+            db_path=":memory:",
+            config=config,
+        )
+        w.start()
+        time.sleep(0.1)
+        w.stop()
+
+    mock_repo.close.assert_called_once()
+    mock_client.close.assert_awaited_once()

@@ -82,6 +82,9 @@ class AsyncOllamaClient:
     ) -> None:
         await self._http.aclose()
 
+    async def close(self) -> None:
+        await self._http.aclose()
+
     async def translate_async(self, text: str, context: str) -> tuple[str | None, str | None]:
         """Translate or explain Japanese text, with LRU caching on (text, context).
 

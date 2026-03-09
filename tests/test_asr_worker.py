@@ -638,3 +638,31 @@ def test_asr_worker_without_db_repo_leaves_db_row_id_none(
 
     assert result is not None, "Expected an ASRResult in text_queue"
     assert result.db_row_id is None, "Expected db_row_id=None when no db_repo is set"
+
+
+def test_cleanup_closes_db_repo(
+    qt_app: Any,
+    text_queue: queue.Queue[ASRResult],
+    config: dict[str, Any],
+) -> None:
+    AsrWorker = _import_asr_worker()
+
+    mock_asr = make_mock_asr([])
+    mock_db_repo = MagicMock()
+
+    seg_q: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
+
+    with patch("src.pipeline.asr_worker.LearningRepository") as MockLearningRepository:
+        MockLearningRepository.return_value = mock_db_repo
+        w = AsrWorker(
+            segment_queue=seg_q,
+            text_queue=text_queue,
+            asr=mock_asr,
+            config=config,
+            db_path=":memory:",
+        )
+        w.start()
+        time.sleep(0.1)
+        w.stop()
+
+    mock_db_repo.close.assert_called_once()

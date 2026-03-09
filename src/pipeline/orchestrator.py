@@ -204,8 +204,14 @@ class PipelineOrchestrator:
 
     def on_config_changed(self, config: AppConfig) -> None:
         """Apply updated configuration to the LLM worker at runtime."""
+        import asyncio as _asyncio
+
+        old_client = self._llm_worker._llm_client
         new_client = AsyncOllamaClient(config)
         self._llm_worker.update_client(new_client)
+        _loop = _asyncio.new_event_loop()
+        _loop.run_until_complete(old_client.close())
+        _loop.close()
         logger.info("PipelineOrchestrator: LLM client replaced with new config")
 
     # ── Internal helpers ─────────────────────────────────────────────────────
