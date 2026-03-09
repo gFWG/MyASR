@@ -32,22 +32,6 @@ DEV_DIR = Path(__file__).resolve().parent.parent / "dev"
 
 
 # ---------------------------------------------------------------------------
-# Qt app fixture shared by fast integration tests
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="module")
-def qt_app() -> Any:
-    """Create a QCoreApplication for QThread-based worker tests."""
-    from PySide6.QtCore import QCoreApplication
-
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication(sys.argv)
-    return app
-
-
-# ---------------------------------------------------------------------------
 # Helper: build minimal pipeline config
 # ---------------------------------------------------------------------------
 

@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QCoreApplication, Qt
+from PySide6.QtCore import Qt
 
 from src.pipeline.types import ASRResult, SpeechSegment
 
@@ -56,17 +56,6 @@ def make_mock_asr(results: list[str]) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def qt_app() -> QCoreApplication:
-    """QCoreApplication singleton for QThread tests."""
-    import sys
-
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication(sys.argv)
-    return app
-
-
 @pytest.fixture()
 def segment_queue() -> queue.Queue[SpeechSegment]:
     return queue.Queue(maxsize=20)
@@ -101,7 +90,7 @@ def _import_asr_worker() -> type:
 
 
 def test_asr_worker_init_stores_attributes(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     segment_queue: queue.Queue[SpeechSegment],
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
@@ -125,7 +114,7 @@ def test_asr_worker_init_stores_attributes(
 
 
 def test_asr_worker_has_signals(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     segment_queue: queue.Queue[SpeechSegment],
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
@@ -151,7 +140,7 @@ def test_asr_worker_has_signals(
 
 
 def test_asr_worker_batch_of_4_produces_4_results(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -192,7 +181,7 @@ def test_asr_worker_batch_of_4_produces_4_results(
 
 
 def test_asr_worker_flush_on_timeout_partial_batch(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -230,7 +219,7 @@ def test_asr_worker_flush_on_timeout_partial_batch(
 
 
 def test_asr_worker_filters_blank_transcriptions(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -293,7 +282,7 @@ def test_asr_worker_filters_blank_transcriptions(
 
 
 def test_asr_worker_stop_completes_within_2s(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     segment_queue: queue.Queue[SpeechSegment],
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
@@ -321,7 +310,7 @@ def test_asr_worker_stop_completes_within_2s(
 
 
 def test_asr_worker_running_flag_false_after_stop(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     segment_queue: queue.Queue[SpeechSegment],
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
@@ -350,7 +339,7 @@ def test_asr_worker_running_flag_false_after_stop(
 
 
 def test_asr_worker_emits_error_on_asr_exception(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -386,7 +375,7 @@ def test_asr_worker_emits_error_on_asr_exception(
 
 
 def test_asr_worker_continues_after_exception(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -442,7 +431,7 @@ def test_asr_worker_continues_after_exception(
 
 
 def test_asr_worker_emits_asr_ready_per_result(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -483,7 +472,7 @@ def test_asr_worker_emits_asr_ready_per_result(
 
 
 def test_asr_worker_drops_result_when_text_queue_full(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     segment_queue: queue.Queue[SpeechSegment],
     config: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
@@ -528,7 +517,7 @@ def test_asr_worker_drops_result_when_text_queue_full(
 
 
 def test_asr_worker_no_deadlock_on_full_text_queue(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     config: dict[str, Any],
 ) -> None:
     """Worker must not deadlock when text_queue is full — stop() finishes in <2s."""
@@ -571,7 +560,7 @@ def test_asr_worker_no_deadlock_on_full_text_queue(
 
 
 def test_asr_worker_calls_insert_partial_and_sets_db_row_id(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:
@@ -615,7 +604,7 @@ def test_asr_worker_calls_insert_partial_and_sets_db_row_id(
 
 
 def test_asr_worker_without_db_repo_leaves_db_row_id_none(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     config: dict[str, Any],
 ) -> None:

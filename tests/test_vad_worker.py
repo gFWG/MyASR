@@ -15,22 +15,10 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QCoreApplication
 
 from src.db.models import AudioSegment
 from src.pipeline.types import SpeechSegment
 from src.pipeline.vad_worker import VadWorker
-
-
-@pytest.fixture(scope="module")
-def qt_app() -> QCoreApplication:
-    """Create a QCoreApplication for QThread tests."""
-    import sys
-
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication(sys.argv)
-    return app  # QCoreApplication.instance() returns QCoreApplication|None
 
 
 @pytest.fixture()
@@ -61,7 +49,7 @@ def config() -> dict[str, Any]:
 
 @pytest.fixture()
 def worker(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     mock_vad: MagicMock,
@@ -82,7 +70,7 @@ def worker(
 
 
 def test_vad_worker_init_sets_attributes(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     mock_vad: MagicMock,
@@ -123,7 +111,7 @@ def test_vad_worker_has_segment_ready_signal(worker: VadWorker) -> None:
 
 
 def test_vad_worker_processes_chunk_and_emits_segment(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     config: dict[str, Any],
@@ -171,7 +159,7 @@ def test_vad_worker_processes_chunk_and_emits_segment(
 
 
 def test_vad_worker_skips_none_vad_result(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     mock_vad: MagicMock,
@@ -198,7 +186,7 @@ def test_vad_worker_skips_none_vad_result(
 
 
 def test_vad_worker_processes_multiple_segments_per_chunk(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     config: dict[str, Any],
@@ -244,7 +232,7 @@ def test_vad_worker_processes_multiple_segments_per_chunk(
 
 
 def test_vad_worker_stop_completes_within_2s(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     mock_vad: MagicMock,
@@ -272,7 +260,7 @@ def test_vad_worker_stop_completes_within_2s(
 
 
 def test_vad_worker_running_flag_false_after_stop(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     worker: VadWorker,
 ) -> None:
     """_running should be False after stop() is called."""
@@ -288,7 +276,7 @@ def test_vad_worker_running_flag_false_after_stop(
 
 
 def test_vad_worker_emits_error_on_vad_exception(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     config: dict[str, Any],
@@ -324,7 +312,7 @@ def test_vad_worker_emits_error_on_vad_exception(
 
 
 def test_vad_worker_continues_after_exception(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     segment_queue: queue.Queue[SpeechSegment],
     config: dict[str, Any],
@@ -379,7 +367,7 @@ def test_vad_worker_continues_after_exception(
 
 
 def test_vad_worker_drops_segment_when_queue_full(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     config: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
@@ -432,7 +420,7 @@ def test_vad_worker_drops_segment_when_queue_full(
 
 
 def test_vad_worker_no_deadlock_on_full_queue(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     audio_queue: queue.Queue[np.ndarray],
     config: dict[str, Any],
 ) -> None:

@@ -12,29 +12,13 @@ Tests cover:
 - _running flag updated on start/stop
 """
 
-import sys
 from typing import Any
 from unittest.mock import MagicMock, call, patch
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QCoreApplication
 
 from src.pipeline.orchestrator import PipelineOrchestrator
-
-# ---------------------------------------------------------------------------
-# Qt app fixture (required for QThread subclass workers)
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="module")
-def qt_app() -> QCoreApplication:
-    """Create a QCoreApplication for tests that need it."""
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication(sys.argv)
-    return app
-
 
 # ---------------------------------------------------------------------------
 # Helper: build config dict
@@ -73,22 +57,19 @@ def mock_workers() -> dict[str, MagicMock]:
 
 @pytest.fixture()
 def orchestrator(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     mock_workers: dict[str, MagicMock],
 ) -> PipelineOrchestrator:
     """PipelineOrchestrator with all GPU models and workers replaced by mocks."""
     mock_vad_model = MagicMock()
     mock_asr_model = MagicMock()
     mock_llm_client = MagicMock()
-    mock_db_repo = MagicMock()
-
     mock_capture = MagicMock()
 
     with (
         patch("src.pipeline.orchestrator.SileroVAD", return_value=mock_vad_model),
         patch("src.pipeline.orchestrator.QwenASR", return_value=mock_asr_model),
         patch("src.pipeline.orchestrator.AsyncOllamaClient", return_value=mock_llm_client),
-        patch("src.pipeline.orchestrator.LearningRepository", return_value=mock_db_repo),
         patch(
             "src.pipeline.orchestrator.WasapiLoopbackCapture",
             return_value=mock_capture,
@@ -149,14 +130,13 @@ def test_orchestrator_creates_result_queue_with_maxsize_50(
 
 
 def test_orchestrator_instantiates_workers(
-    qt_app: QCoreApplication,
+    qt_app: Any,
 ) -> None:
     """Constructor calls VadWorker, AsrWorker, LlmWorker with expected queues."""
     with (
         patch("src.pipeline.orchestrator.SileroVAD"),
         patch("src.pipeline.orchestrator.QwenASR"),
         patch("src.pipeline.orchestrator.AsyncOllamaClient"),
-        patch("src.pipeline.orchestrator.LearningRepository"),
         patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
         patch(
             "src.pipeline.orchestrator.VadWorker",

@@ -2,23 +2,12 @@
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
 
 from src.db.models import GrammarHit, VocabHit
 from src.ui.tooltip import TooltipPopup
-
-
-@pytest.fixture(scope="session")
-def qapp() -> QApplication:
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    assert isinstance(app, QApplication)
-    return app
 
 
 @pytest.fixture

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from unittest.mock import patch
 
 import pytest
@@ -12,15 +11,6 @@ from PySide6.QtWidgets import QApplication
 from src.config import AppConfig
 from src.db.models import AnalysisResult, SentenceResult, VocabHit
 from src.ui.overlay import OverlayWindow
-
-
-@pytest.fixture(scope="session")
-def qapp() -> QApplication:
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    assert isinstance(app, QApplication)
-    return app
 
 
 @pytest.fixture

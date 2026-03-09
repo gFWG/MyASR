@@ -17,7 +17,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from PySide6.QtCore import QCoreApplication, Qt
+from PySide6.QtCore import Qt
 
 from src.exceptions import LLMTimeoutError, LLMUnavailableError
 from src.pipeline.types import ASRResult, TranslationResult
@@ -62,17 +62,6 @@ def make_mock_db_repo() -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def qt_app() -> QCoreApplication:
-    """QCoreApplication singleton for QThread tests."""
-    import sys
-
-    app = QCoreApplication.instance()
-    if app is None:
-        app = QCoreApplication(sys.argv)
-    return app
-
-
 @pytest.fixture()
 def text_queue() -> queue.Queue[ASRResult]:
     return queue.Queue(maxsize=50)
@@ -106,7 +95,7 @@ def _import_llm_worker() -> type:
 
 
 def test_llm_worker_init_stores_attributes(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
@@ -133,7 +122,7 @@ def test_llm_worker_init_stores_attributes(
 
 
 def test_llm_worker_has_signals(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
@@ -160,7 +149,7 @@ def test_llm_worker_has_signals(
 
 
 def test_llm_worker_full_translate_flow_produces_result(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -200,7 +189,7 @@ def test_llm_worker_full_translate_flow_produces_result(
 
 
 def test_llm_worker_translate_flow_emits_signal(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -236,7 +225,7 @@ def test_llm_worker_translate_flow_emits_signal(
 
 
 def test_llm_worker_calls_db_update_translation(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -283,7 +272,7 @@ def test_llm_worker_calls_db_update_translation(
 
 
 def test_llm_worker_timeout_error_emits_with_none_translation(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -319,7 +308,7 @@ def test_llm_worker_timeout_error_emits_with_none_translation(
 
 
 def test_llm_worker_timeout_error_continues_processing(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -373,7 +362,7 @@ def test_llm_worker_timeout_error_continues_processing(
 
 
 def test_llm_worker_unavailable_error_emits_with_none_translation(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -410,7 +399,7 @@ def test_llm_worker_unavailable_error_emits_with_none_translation(
 
 
 def test_llm_worker_unavailable_error_continues_processing(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
 ) -> None:
@@ -463,7 +452,7 @@ def test_llm_worker_unavailable_error_continues_processing(
 
 
 def test_llm_worker_stop_completes_within_2s(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
@@ -492,7 +481,7 @@ def test_llm_worker_stop_completes_within_2s(
 
 
 def test_llm_worker_running_flag_false_after_stop(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     text_queue: queue.Queue[ASRResult],
     result_queue: queue.Queue[TranslationResult],
     config: dict[str, Any],
@@ -522,7 +511,7 @@ def test_llm_worker_running_flag_false_after_stop(
 
 
 def test_llm_worker_drops_result_when_result_queue_full(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     config: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -569,7 +558,7 @@ def test_llm_worker_drops_result_when_result_queue_full(
 
 
 def test_llm_worker_no_deadlock_on_full_result_queue(
-    qt_app: QCoreApplication,
+    qt_app: Any,
     config: dict[str, Any],
 ) -> None:
     """Worker must not deadlock when result_queue is full — stop() finishes in <2s."""
