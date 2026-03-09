@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import unittest.mock as mock
+
 import pytest
 from PySide6.QtWidgets import QApplication
 
@@ -11,13 +13,11 @@ from src.ui.settings import SettingsDialog
 
 @pytest.fixture()
 def default_config() -> AppConfig:
-    """Default AppConfig for dialog construction."""
     return AppConfig()
 
 
 @pytest.fixture()
 def dialog(qapp: QApplication, default_config: AppConfig) -> SettingsDialog:
-    """SettingsDialog constructed with default config, not shown."""
     return SettingsDialog(default_config)
 
 
@@ -36,6 +36,17 @@ def test_widgets_populate_from_config(qapp: QApplication) -> None:
         ollama_url="http://remote:11434",
         ollama_model="mymodel:7b",
         ollama_timeout_sec=60.0,
+        ollama_api_key="sk-test",
+        llm_temperature=0.7,
+        llm_top_p=0.8,
+        llm_max_tokens=500,
+        llm_streaming=False,
+        llm_thinking=True,
+        llm_prefill="Sure,",
+        llm_extra_args='{"seed": 42}',
+        vad_threshold=0.6,
+        vad_min_silence_ms=400,
+        vad_min_speech_ms=500,
         translation_template="trans: {japanese_text}",
         explanation_template="expl: {japanese_text}",
     )
@@ -47,15 +58,24 @@ def test_widgets_populate_from_config(qapp: QApplication) -> None:
     assert d._vocab_highlight_check.isChecked() is False
     assert d._grammar_highlight_check.isChecked() is False
     assert d._ollama_url_edit.text() == "http://remote:11434"
-    assert d._ollama_model_edit.text() == "mymodel:7b"
+    assert d._ollama_model_combo.currentText() == "mymodel:7b"
     assert d._ollama_timeout_spin.value() == 60.0
+    assert d._ollama_api_key_edit.text() == "sk-test"
+    assert d._llm_temperature_spin.value() == 0.7
+    assert d._llm_top_p_spin.value() == 0.8
+    assert d._llm_max_tokens_spin.value() == 500
+    assert d._llm_streaming_check.isChecked() is False
+    assert d._llm_thinking_check.isChecked() is True
+    assert d._llm_prefill_edit.text() == "Sure,"
+    assert d._llm_extra_args_edit.text() == '{"seed": 42}'
+    assert d._vad_threshold_spin.value() == 0.6
+    assert d._vad_min_silence_spin.value() == 400
+    assert d._vad_min_speech_spin.value() == 500
     assert d._translation_template_edit.toPlainText() == "trans: {japanese_text}"
     assert d._explanation_template_edit.toPlainText() == "expl: {japanese_text}"
 
 
 def test_save_emits_config_changed(qapp: QApplication, tmp_path: object) -> None:
-    import unittest.mock as mock
-
     config = AppConfig()
     d = SettingsDialog(config)
     received: list[AppConfig] = []
@@ -92,3 +112,58 @@ def test_ollama_url_populated(dialog: SettingsDialog) -> None:
 def test_template_fields_populated(dialog: SettingsDialog) -> None:
     assert dialog._translation_template_edit.toPlainText() == DEFAULT_TRANSLATION_TEMPLATE
     assert dialog._explanation_template_edit.toPlainText() == DEFAULT_EXPLANATION_TEMPLATE
+
+
+def test_model_combo_is_editable(dialog: SettingsDialog) -> None:
+    assert dialog._ollama_model_combo.isEditable() is True
+
+
+def test_vad_threshold_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_threshold_spin.minimum() == 0.1
+    assert dialog._vad_threshold_spin.maximum() == 0.95
+
+
+def test_vad_min_silence_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_min_silence_spin.minimum() == 100
+    assert dialog._vad_min_silence_spin.maximum() == 2000
+
+
+def test_vad_min_speech_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_min_speech_spin.minimum() == 100
+    assert dialog._vad_min_speech_spin.maximum() == 2000
+
+
+def test_llm_temperature_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._llm_temperature_spin.minimum() == 0.0
+    assert dialog._llm_temperature_spin.maximum() == 2.0
+
+
+def test_llm_top_p_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._llm_top_p_spin.minimum() == 0.0
+    assert dialog._llm_top_p_spin.maximum() == 1.0
+
+
+def test_llm_max_tokens_spinbox_range(dialog: SettingsDialog) -> None:
+    assert dialog._llm_max_tokens_spin.minimum() == 1
+    assert dialog._llm_max_tokens_spin.maximum() == 4096
+
+
+def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
+    config = dialog._collect_config()
+    assert isinstance(config, AppConfig)
+    assert config.ollama_url == "http://localhost:11434"
+    assert config.llm_streaming is True
+
+
+def test_collect_config_preserves_non_ui_fields(qapp: QApplication) -> None:
+    config = AppConfig(db_path="/custom/path.db", audio_device_id=5)
+    d = SettingsDialog(config)
+    collected = d._collect_config()
+    assert collected.db_path == "/custom/path.db"
+    assert collected.audio_device_id == 5
+
+
+def test_api_key_field_uses_password_mode(dialog: SettingsDialog) -> None:
+    from PySide6.QtWidgets import QLineEdit
+
+    assert dialog._ollama_api_key_edit.echoMode() == QLineEdit.EchoMode.Password

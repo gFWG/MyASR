@@ -1,60 +1,21 @@
-The existing code running in Windows 11 encounters following bug/error:
+The existing code running in Windows 11 encounters following bug/error/warning:
 
-1. 
+1. The overlay shows "Translation unavailable" all the time, while test connection in Settings shows "Connected".
+
+2. Sentence segmentation is incorrect, sometimes only fragments of sentences are present, and sometimes multiple sentences are joined together.
+
+3. Terminal shows following error/warning:
 '''
-2026-03-07 21:28:37,809 src.pipeline WARNING Audio queue full — dropping chunk (ASR may be falling behind)
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /Qwen/Qwen3-ASR-0.6B/resolve/main/config.json (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)')))"), '(Request ID: 3cbd652b-39f6-4077-bd19-934682689edb)')' thrown while requesting HEAD https://huggingface.co/Qwen/Qwen3-ASR-0.6B/resolve/main/config.json
+2026-03-09 15:12:33,069 huggingface_hub.utils._http WARNING '(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /Qwen/Qwen3-ASR-0.6B/resolve/main/config.json (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)')))"), '(Request ID: 3cbd652b-39f6-4077-bd19-934682689edb)')' thrown while requesting HEAD https://huggingface.co/Qwen/Qwen3-ASR-0.6B/resolve/main/config.json
+Retrying in 1s [Retry 1/5].
+2026-03-09 15:12:33,070 huggingface_hub.utils._http WARNING Retrying in 1s [Retry 1/5].
 '''
 
-2. 
-'''
-2026-03-07 21:28:37,816 src.pipeline ERROR Failed to write sentence to database
-Traceback (most recent call last):
-  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
-    cursor = self._conn.execute(
-             ^^^^^^^^^^^^^^^^^^^
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+The following improvements are proposed:
 
-During handling of the above exception, another exception occurred:
+1. “Settings-Model” should support to retrieve the model list and allow users to select the model, instead of typing the model name manually.
 
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
-    self._conn.rollback()
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
-    self._conn.rollback()
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
-Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
-2026-03-07 21:28:49,421 src.pipeline ERROR Failed to write sentence to database
-Traceback (most recent call last):
-  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
-    cursor = self._conn.execute(
-             ^^^^^^^^^^^^^^^^^^^
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
+2. "Settings-Model" should support more common settings, such as "Streaming", "Max Tokens", "Temperature", "Thinking", "Top P", "prefill".., and allow users to edit custom arguments by themselves.
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "D:\github\MyASR\src\pipeline.py", line 137, in run
-    sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
-    self._conn.rollback()
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
-Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
-2026-03-07 21:36:07,311 src.pipeline ERROR Failed to write sentence to database
-Traceback (most recent call last):
-  File "D:\github\MyASR\src\db\repository.py", line 42, in insert_sentence
-    cursor = self._conn.execute(
-             ^^^^^^^^^^^^^^^^^^^
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "D:\github\MyASR\src\pipeline.py", line 137, in run
-    sentence_id, vocab_ids, grammar_ids = self._repo.insert_sentence(
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\github\MyASR\src\db\repository.py", line 115, in insert_sentence
-    self._conn.rollback()
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 34652 and this is thread id 17984.
-'''
+3. Find an elegant way to support more local LLM providers, such as LM Studio. User can select them by entering URL and API key (if needed) in "Settings-Model".
