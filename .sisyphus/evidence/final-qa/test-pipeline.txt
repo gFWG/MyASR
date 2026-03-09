@@ -1,0 +1,60 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-bugfix-improvements
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 49 items
+
+tests/test_llm_worker.py::test_llm_worker_init_stores_attributes PASSED  [  2%]
+tests/test_llm_worker.py::test_llm_worker_has_signals PASSED             [  4%]
+tests/test_llm_worker.py::test_llm_worker_full_translate_flow_produces_result PASSED [  6%]
+tests/test_llm_worker.py::test_llm_worker_translate_flow_emits_signal PASSED [  8%]
+tests/test_llm_worker.py::test_llm_worker_calls_db_update_translation PASSED [ 10%]
+tests/test_llm_worker.py::test_llm_worker_timeout_error_emits_with_none_translation PASSED [ 12%]
+tests/test_llm_worker.py::test_llm_worker_timeout_error_continues_processing PASSED [ 14%]
+tests/test_llm_worker.py::test_llm_worker_unavailable_error_emits_with_none_translation PASSED [ 16%]
+tests/test_llm_worker.py::test_llm_worker_unavailable_error_continues_processing PASSED [ 18%]
+tests/test_llm_worker.py::test_llm_worker_stop_completes_within_2s PASSED [ 20%]
+tests/test_llm_worker.py::test_llm_worker_running_flag_false_after_stop PASSED [ 22%]
+tests/test_llm_worker.py::test_llm_worker_drops_result_when_result_queue_full PASSED [ 24%]
+tests/test_llm_worker.py::test_llm_worker_no_deadlock_on_full_result_queue PASSED [ 26%]
+tests/test_llm_worker.py::test_llm_worker_update_client PASSED           [ 28%]
+tests/test_llm_worker.py::test_cleanup_closes_db_repo_and_llm_client PASSED [ 30%]
+tests/test_asr_worker.py::test_asr_worker_init_stores_attributes PASSED  [ 32%]
+tests/test_asr_worker.py::test_asr_worker_has_signals PASSED             [ 34%]
+tests/test_asr_worker.py::test_asr_worker_batch_of_4_produces_4_results PASSED [ 36%]
+tests/test_asr_worker.py::test_asr_worker_flush_on_timeout_partial_batch PASSED [ 38%]
+tests/test_asr_worker.py::test_asr_worker_filters_blank_transcriptions PASSED [ 40%]
+tests/test_asr_worker.py::test_asr_worker_stop_completes_within_2s PASSED [ 42%]
+tests/test_asr_worker.py::test_asr_worker_running_flag_false_after_stop PASSED [ 44%]
+tests/test_asr_worker.py::test_asr_worker_emits_error_on_asr_exception PASSED [ 46%]
+tests/test_asr_worker.py::test_asr_worker_continues_after_exception PASSED [ 48%]
+tests/test_asr_worker.py::test_asr_worker_emits_asr_ready_per_result PASSED [ 51%]
+tests/test_asr_worker.py::test_asr_worker_drops_result_when_text_queue_full PASSED [ 53%]
+tests/test_asr_worker.py::test_asr_worker_no_deadlock_on_full_text_queue PASSED [ 55%]
+tests/test_asr_worker.py::test_asr_worker_calls_insert_partial_and_sets_db_row_id PASSED [ 57%]
+tests/test_asr_worker.py::test_asr_worker_without_db_repo_leaves_db_row_id_none PASSED [ 59%]
+tests/test_asr_worker.py::test_cleanup_closes_db_repo PASSED             [ 61%]
+tests/test_orchestrator.py::test_orchestrator_creates_audio_queue_with_maxsize_1000 PASSED [ 63%]
+tests/test_orchestrator.py::test_orchestrator_creates_segment_queue_with_maxsize_20 PASSED [ 65%]
+tests/test_orchestrator.py::test_orchestrator_creates_text_queue_with_maxsize_50 PASSED [ 67%]
+tests/test_orchestrator.py::test_orchestrator_creates_result_queue_with_maxsize_50 PASSED [ 69%]
+tests/test_orchestrator.py::test_orchestrator_instantiates_workers PASSED [ 71%]
+tests/test_orchestrator.py::test_start_calls_workers_in_order PASSED     [ 73%]
+tests/test_orchestrator.py::test_start_sets_running_flag PASSED          [ 75%]
+tests/test_orchestrator.py::test_stop_calls_workers_in_reverse_order PASSED [ 77%]
+tests/test_orchestrator.py::test_stop_calls_wait_on_each_worker PASSED   [ 79%]
+tests/test_orchestrator.py::test_stop_clears_running_flag PASSED         [ 81%]
+tests/test_orchestrator.py::test_put_audio_routes_chunk_to_audio_queue PASSED [ 83%]
+tests/test_orchestrator.py::test_put_audio_drops_chunk_when_queue_full PASSED [ 85%]
+tests/test_orchestrator.py::test_connect_signals_connects_asr_ready PASSED [ 87%]
+tests/test_orchestrator.py::test_connect_signals_connects_translation_ready PASSED [ 89%]
+tests/test_orchestrator.py::test_asr_ready_property_returns_worker_signal PASSED [ 91%]
+tests/test_orchestrator.py::test_translation_ready_property_returns_worker_signal PASSED [ 93%]
+tests/test_orchestrator.py::test_error_occurred_property_accessible PASSED [ 95%]
+tests/test_orchestrator.py::test_on_config_changed_replaces_llm_client PASSED [ 97%]
+tests/test_orchestrator.py::test_config_change_closes_old_client PASSED  [100%]
+
+============================== 49 passed in 9.55s ==============================
