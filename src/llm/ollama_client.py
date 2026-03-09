@@ -82,6 +82,9 @@ class AsyncOllamaClient:
     ) -> None:
         await self._http.aclose()
 
+    async def close(self) -> None:
+        await self._http.aclose()
+
     async def translate_async(self, text: str, context: str) -> tuple[str | None, str | None]:
         """Translate or explain Japanese text, with LRU caching on (text, context).
 
@@ -196,7 +199,7 @@ class AsyncOllamaClient:
                 choices = data.get("choices", [])
                 if not isinstance(choices, list) or not choices:
                     continue
-                delta = choices[0].get("delta", {})  # type: ignore[union-attr]
+                delta = choices[0].get("delta", {})
                 if isinstance(delta, dict):
                     content = delta.get("content", "")
                     if isinstance(content, str):

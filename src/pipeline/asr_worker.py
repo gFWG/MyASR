@@ -78,26 +78,30 @@ class AsrWorker(QThread):
         batch: list[SpeechSegment] = []
         last_flush = time.monotonic()
 
-        while self._running:
-            elapsed_since_flush = time.monotonic() - last_flush
-            should_flush = len(batch) >= batch_size or (
-                batch and elapsed_since_flush >= flush_timeout_s
-            )
+        try:
+            while self._running:
+                elapsed_since_flush = time.monotonic() - last_flush
+                should_flush = len(batch) >= batch_size or (
+                    batch and elapsed_since_flush >= flush_timeout_s
+                )
 
-            if should_flush:
+                if should_flush:
+                    self._flush_batch(batch)
+                    batch = []
+                    last_flush = time.monotonic()
+                    continue
+
+                try:
+                    seg = self._segment_queue.get(timeout=0.05)
+                    batch.append(seg)
+                except queue.Empty:
+                    pass  # expected: no segment yet, will flush on timeout if batch is non-empty
+
+            if batch:
                 self._flush_batch(batch)
-                batch = []
-                last_flush = time.monotonic()
-                continue
-
-            try:
-                seg = self._segment_queue.get(timeout=0.05)
-                batch.append(seg)
-            except queue.Empty:
-                pass  # expected: no segment yet, will flush on timeout if batch is non-empty
-
-        if batch:
-            self._flush_batch(batch)
+        finally:
+            if self._db_repo is not None:
+                self._db_repo.close()
 
     def _flush_batch(self, batch: list[SpeechSegment]) -> None:
         """Run a batch through ASR and dispatch each result."""

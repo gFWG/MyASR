@@ -163,9 +163,7 @@ class PipelineProfiler:
             ProfilingStats with current aggregate metrics.
         """
         stages_copy = {
-            k: StageMetrics(
-                count=v.count, total_ms=v.total_ms, min_ms=v.min_ms, max_ms=v.max_ms
-            )
+            k: StageMetrics(count=v.count, total_ms=v.total_ms, min_ms=v.min_ms, max_ms=v.max_ms)
             for k, v in self._stats.stages.items()
         }
         return ProfilingStats(

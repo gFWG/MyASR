@@ -1,0 +1,41 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-bugfix-improvements
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 30 items
+
+tests/test_settings.py::test_settings_dialog_has_five_tabs PASSED        [  3%]
+tests/test_settings.py::test_widgets_populate_from_config PASSED         [  6%]
+tests/test_settings.py::test_save_emits_config_changed PASSED            [ 10%]
+tests/test_settings.py::test_cancel_does_not_emit_signal PASSED          [ 13%]
+tests/test_settings.py::test_jlpt_level_spinbox_range PASSED             [ 16%]
+tests/test_settings.py::test_opacity_slider_range PASSED                 [ 20%]
+tests/test_settings.py::test_ollama_url_populated PASSED                 [ 23%]
+tests/test_settings.py::test_template_fields_populated PASSED            [ 26%]
+tests/test_settings.py::test_model_combo_is_editable PASSED              [ 30%]
+tests/test_settings.py::test_vad_threshold_spinbox_range PASSED          [ 33%]
+tests/test_settings.py::test_vad_min_silence_spinbox_range PASSED        [ 36%]
+tests/test_settings.py::test_vad_min_speech_spinbox_range PASSED         [ 40%]
+tests/test_settings.py::test_llm_temperature_spinbox_range PASSED        [ 43%]
+tests/test_settings.py::test_llm_top_p_spinbox_range PASSED              [ 46%]
+tests/test_settings.py::test_llm_max_tokens_spinbox_range PASSED         [ 50%]
+tests/test_settings.py::test_collect_config_returns_appconfig PASSED     [ 53%]
+tests/test_settings.py::test_collect_config_preserves_non_ui_fields PASSED [ 56%]
+tests/test_settings.py::test_api_key_field_uses_password_mode PASSED     [ 60%]
+tests/test_settings.py::test_parse_format_field_populated PASSED         [ 63%]
+tests/test_settings.py::test_display_mode_segmented_populated PASSED     [ 66%]
+tests/test_settings.py::test_shortcut_fields_populated PASSED            [ 70%]
+tests/test_settings.py::test_collect_config_includes_parse_format PASSED [ 73%]
+tests/test_settings.py::test_collect_config_includes_display_mode PASSED [ 76%]
+tests/test_settings.py::test_collect_config_includes_shortcuts PASSED    [ 80%]
+tests/test_settings.py::test_llm_mode_segmented_populated PASSED         [ 83%]
+tests/test_settings.py::test_llm_mode_segmented_default_is_translation PASSED [ 86%]
+tests/test_settings.py::test_collect_config_includes_llm_mode PASSED     [ 90%]
+tests/test_settings.py::test_on_save_does_not_close_dialog PASSED        [ 93%]
+tests/test_settings.py::test_on_save_invalid_regex_blocks_save PASSED    [ 96%]
+tests/test_settings.py::test_on_save_valid_regex_clears_error PASSED     [100%]
+
+============================== 30 passed in 0.24s ==============================

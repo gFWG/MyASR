@@ -21,8 +21,8 @@ def dialog(qapp: QApplication, default_config: AppConfig) -> SettingsDialog:
     return SettingsDialog(default_config)
 
 
-def test_settings_dialog_has_four_tabs(dialog: SettingsDialog) -> None:
-    assert dialog._tabs.count() == 4
+def test_settings_dialog_has_five_tabs(dialog: SettingsDialog) -> None:
+    assert dialog._tabs.count() == 5
 
 
 def test_widgets_populate_from_config(qapp: QApplication) -> None:
@@ -175,10 +175,12 @@ def test_parse_format_field_populated(qapp: QApplication) -> None:
     assert d._llm_parse_format_edit.text() == "<tr>(.*?)</tr>"
 
 
-def test_display_mode_combo_populated(qapp: QApplication) -> None:
+def test_display_mode_segmented_populated(qapp: QApplication) -> None:
     config = AppConfig(overlay_display_mode="single")
     d = SettingsDialog(config)
-    assert d._display_mode_combo.currentText() == "single"
+    assert d._display_mode_value == "single"
+    assert d._display_mode_btn_single.isChecked() is True
+    assert d._display_mode_btn_both.isChecked() is False
 
 
 def test_shortcut_fields_populated(qapp: QApplication) -> None:
@@ -188,9 +190,9 @@ def test_shortcut_fields_populated(qapp: QApplication) -> None:
         shortcut_toggle_display="Ctrl+D",
     )
     d = SettingsDialog(config)
-    assert d._shortcut_prev_edit.text() == "Alt+Left"
-    assert d._shortcut_next_edit.text() == "Alt+Right"
-    assert d._shortcut_toggle_edit.text() == "Ctrl+D"
+    assert d._shortcut_prev_edit.keySequence().toString() == "Alt+Left"
+    assert d._shortcut_next_edit.keySequence().toString() == "Alt+Right"
+    assert d._shortcut_toggle_edit.keySequence().toString() == "Ctrl+D"
 
 
 def test_collect_config_includes_parse_format(dialog: SettingsDialog) -> None:
@@ -200,16 +202,70 @@ def test_collect_config_includes_parse_format(dialog: SettingsDialog) -> None:
 
 
 def test_collect_config_includes_display_mode(dialog: SettingsDialog) -> None:
-    dialog._display_mode_combo.setCurrentText("single")
+    dialog._select_display_mode("single")
     collected = dialog._collect_config()
     assert collected.overlay_display_mode == "single"
 
 
 def test_collect_config_includes_shortcuts(dialog: SettingsDialog) -> None:
-    dialog._shortcut_prev_edit.setText("Ctrl+Up")
-    dialog._shortcut_next_edit.setText("Ctrl+Down")
-    dialog._shortcut_toggle_edit.setText("Ctrl+M")
+    from PySide6.QtGui import QKeySequence
+
+    dialog._shortcut_prev_edit.setKeySequence(QKeySequence("Ctrl+Up"))
+    dialog._shortcut_next_edit.setKeySequence(QKeySequence("Ctrl+Down"))
+    dialog._shortcut_toggle_edit.setKeySequence(QKeySequence("Ctrl+M"))
     collected = dialog._collect_config()
     assert collected.shortcut_prev_sentence == "Ctrl+Up"
     assert collected.shortcut_next_sentence == "Ctrl+Down"
     assert collected.shortcut_toggle_display == "Ctrl+M"
+
+
+def test_llm_mode_segmented_populated(qapp: QApplication) -> None:
+    config = AppConfig(llm_mode="explanation")
+    d = SettingsDialog(config)
+    assert d._llm_mode_value == "explanation"
+    assert d._llm_mode_btn_explanation.isChecked() is True
+    assert d._llm_mode_btn_translation.isChecked() is False
+
+
+def test_llm_mode_segmented_default_is_translation(dialog: SettingsDialog) -> None:
+    assert dialog._llm_mode_value == "translation"
+    assert dialog._llm_mode_btn_translation.isChecked() is True
+    assert dialog._llm_mode_btn_explanation.isChecked() is False
+
+
+def test_collect_config_includes_llm_mode(dialog: SettingsDialog) -> None:
+    dialog._select_llm_mode("explanation")
+    collected = dialog._collect_config()
+    assert collected.llm_mode == "explanation"
+
+
+def test_on_save_does_not_close_dialog(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d.show()
+    with mock.patch("src.ui.settings.save_config"):
+        d._on_save()
+    assert d.isVisible()
+
+
+def test_on_save_invalid_regex_blocks_save(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    received: list[AppConfig] = []
+    d.config_changed.connect(received.append)
+    d._llm_parse_format_edit.setText("[invalid")
+    with mock.patch("src.ui.settings.save_config") as mock_save:
+        d._on_save()
+    assert d._regex_error_label.text() != ""
+    assert len(received) == 0
+    mock_save.assert_not_called()
+
+
+def test_on_save_valid_regex_clears_error(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d._regex_error_label.setText("Invalid regex: some error")
+    d._llm_parse_format_edit.setText("<tr>(.*?)</tr>")
+    with mock.patch("src.ui.settings.save_config"):
+        d._on_save()
+    assert d._regex_error_label.text() == ""

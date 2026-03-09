@@ -73,6 +73,11 @@ class LlmWorker(QThread):
         try:
             loop.run_until_complete(self._process_loop())
         finally:
+            tasks = [t for t in asyncio.all_tasks(loop) if not t.done()]
+            loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+            loop.run_until_complete(self._llm_client.close())
+            if self._db_repo is not None:
+                self._db_repo.close()
             loop.close()
 
     async def _process_loop(self) -> None:
