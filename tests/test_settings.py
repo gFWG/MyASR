@@ -2,23 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PySide6.QtWidgets import QApplication
 
 from src.config import DEFAULT_EXPLANATION_TEMPLATE, DEFAULT_TRANSLATION_TEMPLATE, AppConfig
 from src.ui.settings import SettingsDialog
-
-
-@pytest.fixture(scope="session")
-def qapp() -> QApplication:
-    """Session-scoped QApplication for all Qt widget tests."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    assert isinstance(app, QApplication)
-    return app
 
 
 @pytest.fixture()

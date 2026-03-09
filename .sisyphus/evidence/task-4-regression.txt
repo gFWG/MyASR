@@ -1,0 +1,52 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-pipeline-perf
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1
+collecting ... collected 42 items
+
+tests/test_db_repository.py::test_insert_returns_positive_id PASSED      [  2%]
+tests/test_db_repository.py::test_insert_and_retrieve_roundtrip PASSED   [  4%]
+tests/test_db_repository.py::test_insert_with_empty_vocab_grammar PASSED [  7%]
+tests/test_db_repository.py::test_insert_with_vocab_and_grammar PASSED   [  9%]
+tests/test_db_repository.py::test_insert_returns_correct_id_counts_for_multiple_highlights PASSED [ 11%]
+tests/test_db_repository.py::test_get_sentences_ordering PASSED          [ 14%]
+tests/test_db_repository.py::test_get_sentences_limit_offset PASSED      [ 16%]
+tests/test_db_repository.py::test_search_finds_matching_records PASSED   [ 19%]
+tests/test_db_repository.py::test_search_returns_empty_for_no_match PASSED [ 21%]
+tests/test_db_repository.py::test_search_matches_chinese_translation PASSED [ 23%]
+tests/test_db_repository.py::test_mark_tooltip_shown_vocab PASSED        [ 26%]
+tests/test_db_repository.py::test_mark_tooltip_shown_grammar PASSED      [ 28%]
+tests/test_db_repository.py::test_mark_tooltip_shown_invalid_type_raises PASSED [ 30%]
+tests/test_db_repository.py::test_export_records_json PASSED             [ 33%]
+tests/test_db_repository.py::test_export_records_csv PASSED              [ 35%]
+tests/test_db_repository.py::test_export_records_json_empty PASSED       [ 38%]
+tests/test_db_repository.py::test_export_records_invalid_format_raises PASSED [ 40%]
+tests/test_db_repository.py::test_delete_before_removes_old_records PASSED [ 42%]
+tests/test_db_repository.py::test_delete_before_returns_zero_when_nothing_deleted PASSED [ 45%]
+tests/test_db_repository.py::test_delete_before_cascades_to_highlights PASSED [ 47%]
+tests/test_db_repository.py::test_export_records_backward_compat PASSED  [ 50%]
+tests/test_db_repository.py::test_export_records_json_with_highlights PASSED [ 52%]
+tests/test_db_repository.py::test_export_records_csv_with_highlights PASSED [ 54%]
+tests/test_db_repository.py::test_export_records_date_filtering PASSED   [ 57%]
+tests/test_db_repository.py::test_export_records_without_highlights PASSED [ 59%]
+tests/test_db_repository.py::test_get_sentences_filtered_pagination PASSED [ 61%]
+tests/test_db_repository.py::test_get_sentences_filtered_query_filter PASSED [ 64%]
+tests/test_db_repository.py::test_get_sentences_filtered_date_range PASSED [ 66%]
+tests/test_db_repository.py::test_get_sentences_filtered_invalid_sort_raises PASSED [ 69%]
+tests/test_db_repository.py::test_get_sentence_count_matches_filtered PASSED [ 71%]
+tests/test_db_repository.py::test_get_sentence_with_highlights_found PASSED [ 73%]
+tests/test_db_repository.py::test_get_sentence_with_highlights_not_found PASSED [ 76%]
+tests/test_db_repository.py::test_constructor_requires_db_path_or_conn PASSED [ 78%]
+tests/test_db_repository.py::test_constructor_rejects_both_db_path_and_conn PASSED [ 80%]
+tests/test_db_repository.py::test_constructor_with_db_path PASSED        [ 83%]
+tests/test_db_repository.py::test_close_only_closes_owned_connection PASSED [ 85%]
+tests/test_db_repository.py::test_close_closes_owned_connection PASSED   [ 88%]
+tests/test_db_repository.py::test_separate_repos_same_db_file PASSED     [ 90%]
+tests/test_db_repository.py::test_insert_partial_creates_row_with_null_translation PASSED [ 92%]
+tests/test_db_repository.py::test_update_translation_fills_null_fields PASSED [ 95%]
+tests/test_db_repository.py::test_two_phase_write_produces_complete_record PASSED [ 97%]
+tests/test_db_repository.py::test_update_translation_nonexistent_row PASSED [100%]
+
+============================== 42 passed in 0.21s ==============================

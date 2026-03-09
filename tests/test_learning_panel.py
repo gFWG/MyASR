@@ -3,25 +3,14 @@
 from __future__ import annotations
 
 import math
-import sys
 from pathlib import Path
 
-import pytest
 from PySide6.QtWidgets import QApplication, QLineEdit, QPushButton
 
 from src.db.models import SentenceRecord
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.ui.learning_panel import LearningPanel
-
-
-@pytest.fixture(scope="session")
-def qapp() -> QApplication:
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    assert isinstance(app, QApplication)
-    return app
 
 
 def _make_record(

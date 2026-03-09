@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/yuheng/MyASR-pipeline-perf
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.12.1, mock-3.15.1
+collected 278 items
+
+tests/test_analysis_pipeline.py .....                                    [  1%]
+tests/test_audio_capture.py .......                                      [  4%]
+tests/test_config.py ..........                                          [  7%]
+tests/test_db_repository.py ......................................       [ 21%]
+tests/test_db_schema.py ........                                         [ 24%]
+tests/test_grammar.py ...............                                    [ 29%]
+tests/test_highlight.py ........................                         [ 38%]
+tests/test_integration.py ssssssss                                       [ 41%]
+tests/test_jlpt_vocab.py ............                                    [ 45%]
+tests/test_learning_panel.py ........                                    [ 48%]
+tests/test_ollama_client.py ..............                               [ 53%]
+tests/test_overlay.py ........................................           [ 67%]
+tests/test_pipeline.py ................                                  [ 73%]
+tests/test_pipeline_migration.py ..                                      [ 74%]
+tests/test_qwen_asr.py ........                                          [ 77%]
+tests/test_settings.py ........                                          [ 80%]
+tests/test_silero_vad.py .............                                   [ 84%]
+tests/test_tokenizer.py ......                                           [ 87%]
+tests/test_tooltip.py .....................                              [ 94%]
+tests/test_tray.py .......                                               [ 97%]
+tests/test_wasapi_loopback.py ssssss..                                   [100%]
+
+======================= 264 passed, 14 skipped in 3.63s ========================

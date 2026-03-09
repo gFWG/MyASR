@@ -61,7 +61,13 @@ class SileroVAD:
         self._speech_start_sample: int = 0
         self._total_samples: int = 0
 
-        # Accumulation buffer for sub-512-sample incoming chunks
+        # Ring buffer: accumulate incoming chunks without per-call np.concatenate.
+        # _intake holds raw float32 arrays; _pending_size tracks total samples.
+        # np.concatenate is deferred until we have a full _CHUNK_SAMPLES block to process.
+        self._intake: deque[np.ndarray] = deque()
+        self._pending_size: int = 0
+
+        # _pending exposes the leftover tail after block extraction (may be empty view).
         self._pending: np.ndarray = np.empty(0, dtype=np.float32)
 
         pre_buffer_samples = int(pre_buffer_ms * sample_rate / 1000)
@@ -83,7 +89,7 @@ class SileroVAD:
     def process_chunk(self, audio: np.ndarray) -> list[AudioSegment] | None:
         """Process a single audio chunk and return completed speech segments.
 
-        Incoming audio is first accumulated in ``_pending`` until at least
+        Incoming audio is first accumulated in a deque ring buffer until at least
         ``_CHUNK_SAMPLES`` (512) samples are available, then fed to the
         VADIterator in exact 512-sample blocks.  This prevents the
         "Input audio chunk is too short" error that occurs when backends
@@ -102,22 +108,33 @@ class SileroVAD:
         """
         self._total_samples += len(audio)
 
-        # Accumulate incoming audio with any leftover from the previous call.
-        if len(self._pending) > 0:
-            self._pending = np.concatenate([self._pending, audio])
-        else:
-            self._pending = audio.copy()
+        self._intake.append(audio)
+        self._pending_size += len(audio)
 
         results: list[AudioSegment] = []
         cs = self._CHUNK_SAMPLES
 
-        # Process as many full 512-sample blocks as available.
-        while len(self._pending) >= cs:
-            block = self._pending[:cs]
-            self._pending = self._pending[cs:]
+        while self._pending_size >= cs:
+            # Build contiguous array from deque, then extract exactly cs samples.
+            flat = np.concatenate(list(self._intake))
+            block = flat[:cs]
+            remainder = flat[cs:]
+
+            self._intake.clear()
+            self._pending_size = len(remainder)
+            if self._pending_size > 0:
+                self._intake.append(remainder)
+
+            # Keep _pending in sync for callers that inspect it (tests).
+            self._pending = remainder
+
             segment = self._process_vad_block(block)
             if segment is not None:
                 results.extend(segment)
+
+        # Expose pending for tests/inspection.
+        if self._pending_size == 0:
+            self._pending = np.empty(0, dtype=np.float32)
 
         return results if results else None
 
@@ -131,7 +148,7 @@ class SileroVAD:
             A list of completed ``AudioSegment`` objects, or ``None``.
         """
         results: list[AudioSegment] = []
-        chunk_tensor = torch.from_numpy(audio).float()
+        chunk_tensor = torch.from_numpy(audio)
 
         try:
             speech_dict = self._vad_iterator(chunk_tensor, return_seconds=False)
@@ -141,13 +158,13 @@ class SileroVAD:
         if speech_dict is not None:
             if "start" in speech_dict:
                 self._is_speech = True
-                self._speech_start_sample = speech_dict["start"]
+                self._speech_start_sample = int(speech_dict["start"])
                 self._audio_buffer = list(self._pre_buffer)
                 self._pre_buffer.clear()
                 logger.debug("Speech start detected at sample %d", self._speech_start_sample)
 
             if "end" in speech_dict and self._is_speech:
-                self._audio_buffer.append(audio.copy())
+                self._audio_buffer.append(audio)
                 speech_samples = np.concatenate(self._audio_buffer)
                 duration = len(speech_samples) / self._sample_rate
                 if len(speech_samples) >= self._min_speech_samples:
@@ -168,7 +185,7 @@ class SileroVAD:
                 return results if results else None
 
         if self._is_speech:
-            self._audio_buffer.append(audio.copy())
+            self._audio_buffer.append(audio)
             buffered_samples = sum(len(x) for x in self._audio_buffer)
             if buffered_samples >= self._max_speech_samples:
                 speech_samples = np.concatenate(self._audio_buffer)
@@ -179,7 +196,7 @@ class SileroVAD:
                 self._is_speech = False
                 self._vad_iterator.reset_states()
         else:
-            self._pre_buffer.append(audio.copy())
+            self._pre_buffer.append(audio)
 
         return results if results else None
 
@@ -191,6 +208,8 @@ class SileroVAD:
         self._vad_iterator.reset_states()
         self._audio_buffer = []
         self._pre_buffer.clear()
+        self._intake.clear()
+        self._pending_size = 0
         self._pending = np.empty(0, dtype=np.float32)
         self._is_speech = False
         self._total_samples = 0

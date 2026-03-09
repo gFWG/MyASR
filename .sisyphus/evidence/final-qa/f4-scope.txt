@@ -1,0 +1,65 @@
+F4 — Scope Fidelity Check (UPDATED AFTER FIXES)
+=================================================
+Branch: pipeline-perf
+Date: 2026-03-09
+Auditor: F4 deep agent (original) + Sisyphus-Junior fix verification (2026-03-09)
+
+Commits audited (HEAD~10..HEAD, 10 commits):
+  de2a28b test(pipeline): add integration test for multi-stage pipeline
+  a09fbbc feat(ui): progressive display — ASR text immediate, translation async
+  4f3e5d7 test(pipeline): add integration test for multi-stage pipeline
+  513d62b feat(ui): progressive display — ASR text immediate, translation async
+  d5fc3bd feat(pipeline): add orchestrator connecting all workers
+  2f29eb0 feat(pipeline): add LLM worker thread
+  9e3ef34 perf(audio): optimize WASAPI resampling with soxr
+  85c71f9 feat(asr): add batch transcription and ASR worker
+  dcf2258 feat(llm): async httpx client with streaming and cache
+  605bfdd feat(pipeline): add VAD worker thread
+
+Note: Tasks 0-4 committed before HEAD~10; verified by final-tree file inspection.
+
+Changed files (HEAD~10..HEAD):
+  dev/demo.py, pyproject.toml, src/asr/qwen_asr.py, src/audio/backends.py,
+  src/llm/ollama_client.py, src/main.py, src/pipeline/asr_worker.py,
+  src/pipeline/llm_worker.py, src/pipeline/orchestrator.py,
+  src/pipeline/vad_worker.py, src/ui/overlay.py, src/ui/settings.py,
+  tests/test_asr_worker.py, tests/test_backends.py, tests/test_integration.py,
+  tests/test_llm_worker.py, tests/test_ollama_client.py, tests/test_orchestrator.py,
+  tests/test_overlay.py, tests/test_perf.py, tests/test_vad_worker.py,
+  tests/test_wasapi_loopback.py
+
+TASK 0: COMPLIANT — pipeline.py gone, pipeline_legacy.py present, imports updated
+TASK 1: COMPLIANT — SpeechSegment, ASRResult, TranslationResult, PipelineStageMetrics all present as frozen dataclasses with slots
+TASK 2: COMPLIANT — StageTimer, PipelineMetrics, @timed_stage present; no global state, no file I/O, no third-party libs
+TASK 3: COMPLIANT — deque ring buffer eliminates concatenate hotspot; .float() removed; ONNX=False is allowed fallback per spec
+TASK 4: COMPLIANT — insert_partial(), update_translation(), WAL mode added; insert_sentence() unchanged; no ORM
+TASK 5: COMPLIANT — VadWorker injects SileroVAD; put_nowait; error_occurred signal; no blocking
+TASK 6: COMPLIANT — transcribe_batch() with inference_mode; original transcribe() preserved; AsrWorker batch+flush
+TASK 7: COMPLIANT — AsyncOllamaClient with httpx, lru_cache(256), timeout 15s, num_predict 200; no retry; sync wrapper kept
+TASK 8: COMPLIANT — LlmWorker own asyncio loop; graceful degradation; not shared
+TASK 9: COMPLIANT (FIXED) — src/audio/backends.py: soxr now wrapped in try/except ImportError;
+        _HAVE_SOXR flag controls runtime path; scipy.signal.resample_poly fallback
+        implemented with gcd-based rational resampling. Spec requirement satisfied:
+        "optional optimization, fall back to scipy".
+TASK 10: COMPLIANT — PipelineOrchestrator; correct bounded queues; reverse shutdown; no watchdog
+TASK 11: COMPLIANT — on_asr_ready/on_translation_ready slots; "Translating..." and "Translation unavailable" text; no animations
+TASK 12: COMPLIANT — mock-based integration tests; no Ollama required; no UI rendering
+
+CONTAMINATION: CLEAN
+  dev/demo.py: ruff E501 whitespace fix only
+  pyproject.toml: asyncio_mode added for Task 7 tests (in-scope)
+  src/ui/settings.py: health_check -> health_check_async mypy fix forced by Task 7 API change
+  tests/test_wasapi_loopback.py: scipy mock -> soxr mock update (Task 9 required)
+
+VIOLATIONS SUMMARY:
+  None — all 13 tasks compliant after fix.
+
+FIX APPLIED (commit 54227d5):
+  src/audio/backends.py: wrapped `import soxr` in try/except ImportError
+  - _soxr = None on ImportError, _HAVE_SOXR = False
+  - resample_audio() uses scipy.signal.resample_poly when _HAVE_SOXR is False
+  - mypy: no issues (guarded by _HAVE_SOXR bool)
+  - ruff: no issues
+  - tests: test_backends.py 110 passed
+
+Tasks [13/13 compliant] | Contamination [CLEAN] | Unaccounted [CLEAN] | VERDICT: APPROVE

@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR-pipeline-perf
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1
+collecting ... collected 9 items
+
+tests/test_pipeline_types.py::TestSpeechSegment::test_construct_with_valid_data PASSED [ 11%]
+tests/test_pipeline_types.py::TestSpeechSegment::test_fields_are_immutable PASSED [ 22%]
+tests/test_pipeline_types.py::TestASRResult::test_construct_with_valid_data PASSED [ 33%]
+tests/test_pipeline_types.py::TestASRResult::test_fields_are_immutable PASSED [ 44%]
+tests/test_pipeline_types.py::TestTranslationResult::test_construct_with_valid_data PASSED [ 55%]
+tests/test_pipeline_types.py::TestTranslationResult::test_construct_with_none_values PASSED [ 66%]
+tests/test_pipeline_types.py::TestTranslationResult::test_fields_are_immutable PASSED [ 77%]
+tests/test_pipeline_types.py::TestPipelineStageMetrics::test_construct_with_valid_data PASSED [ 88%]
+tests/test_pipeline_types.py::TestPipelineStageMetrics::test_fields_are_immutable PASSED [100%]
+
+============================== 9 passed in 0.03s ===============================

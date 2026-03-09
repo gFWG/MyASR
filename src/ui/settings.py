@@ -188,7 +188,7 @@ class SettingsDialog(QDialog):
     def _collect_config(self) -> AppConfig:
         return AppConfig(
             user_jlpt_level=self._jlpt_level_spin.value(),
-            llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]
+            llm_mode=self._llm_mode_combo.currentText(),  # type: ignore[arg-type]  # QComboBox returns str; AppConfig.llm_mode is a Literal — safe at runtime
             overlay_opacity=self._opacity_slider.value() / 100.0,
             overlay_font_size_jp=self._font_size_jp_spin.value(),
             overlay_font_size_cn=self._font_size_cn_spin.value(),
@@ -214,13 +214,15 @@ class SettingsDialog(QDialog):
         self.close()
 
     def _on_test_connection(self) -> None:
+        import asyncio
+
         test_config = AppConfig(
             ollama_url=self._ollama_url_edit.text(),
             ollama_model=self._ollama_model_edit.text(),
             ollama_timeout_sec=self._ollama_timeout_spin.value(),
         )
         client = OllamaClient(test_config)
-        ok = client.health_check()
+        ok = asyncio.run(client.health_check_async())
         if ok:
             self._test_conn_label.setText("Connected ✓")
             logger.info("SettingsDialog: Ollama connection successful")

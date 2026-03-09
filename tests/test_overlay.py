@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from unittest.mock import patch
 
 import pytest
@@ -12,15 +11,6 @@ from PySide6.QtWidgets import QApplication
 from src.config import AppConfig
 from src.db.models import AnalysisResult, SentenceResult, VocabHit
 from src.ui.overlay import OverlayWindow
-
-
-@pytest.fixture(scope="session")
-def qapp() -> QApplication:
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    assert isinstance(app, QApplication)
-    return app
 
 
 @pytest.fixture
@@ -374,3 +364,43 @@ def test_jp_browser_viewport_has_mouse_tracking(overlay: OverlayWindow) -> None:
 
 def test_drag_pos_initially_none(overlay: OverlayWindow) -> None:
     assert overlay._drag_pos is None
+
+
+def test_on_asr_ready_updates_browsers(overlay: OverlayWindow) -> None:
+    from src.pipeline.types import ASRResult
+
+    result = ASRResult(text="テスト", segment_id="seg-1", elapsed_ms=10.0)
+    overlay.on_asr_ready(result)
+
+    assert "テスト" in overlay._jp_browser.toPlainText()
+    assert "Translating…" in overlay._cn_browser.toPlainText()
+
+
+def test_on_translation_ready_updates_cn_browser(overlay: OverlayWindow) -> None:
+    from src.pipeline.types import TranslationResult
+
+    result = TranslationResult(
+        translation="测试",
+        explanation="grammar exp",
+        segment_id="seg-1",
+        elapsed_ms=20.0,
+    )
+    overlay.on_translation_ready(result)
+
+    html = overlay._cn_browser.toHtml()
+    assert "测试" in html
+    assert "grammar exp" in html
+
+
+def test_on_translation_ready_handles_none(overlay: OverlayWindow) -> None:
+    from src.pipeline.types import TranslationResult
+
+    result = TranslationResult(
+        translation=None,
+        explanation=None,
+        segment_id="seg-2",
+        elapsed_ms=20.0,
+    )
+    overlay.on_translation_ready(result)
+
+    assert "Translation unavailable" in overlay._cn_browser.toPlainText()

@@ -12,6 +12,9 @@ numpy
 scipy
 qwen-asr
 PyAudioWPatch; platform_system == "Windows"
+httpx>=0.28.1
+soundfile>=0.13.1
+soxr>=1.0.0
 
 # dev dependencies
 ruff
