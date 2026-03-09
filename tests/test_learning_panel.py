@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import math
+import sqlite3
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QApplication, QLineEdit, QPushButton
 
 from src.db.models import SentenceRecord
@@ -111,3 +114,27 @@ def test_quick_export_signal_triggers_handler(qapp: QApplication) -> None:
     tray.quick_export_requested.emit()
 
     assert received == [True]
+
+
+def test_close_event_closes_db_connection(qapp: QApplication, tmp_path: Path) -> None:
+    mock_conn = MagicMock(spec=sqlite3.Connection)
+    mock_conn.execute.return_value = MagicMock()
+
+    with patch("src.ui.learning_panel.init_db", return_value=mock_conn):
+        panel = LearningPanel(tmp_path / "test.db")
+
+    panel.closeEvent(QCloseEvent())
+
+    mock_conn.close.assert_called_once()
+
+
+def test_wal_checkpoint_on_cleanup() -> None:
+    from src.main import _cleanup
+
+    mock_pipeline = MagicMock()
+    mock_conn = MagicMock(spec=sqlite3.Connection)
+
+    _cleanup(mock_pipeline, mock_conn)
+
+    mock_conn.execute.assert_called_once_with("PRAGMA wal_checkpoint(TRUNCATE)")
+    mock_conn.close.assert_called_once()

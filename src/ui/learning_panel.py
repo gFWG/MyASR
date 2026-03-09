@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QDateEdit,
@@ -425,3 +426,8 @@ class LearningPanel(QWidget):
         """Reset to page 1 and reload the table from the database."""
         self._current_page = 1
         self._refresh_table()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Close the database connection before the widget is destroyed."""
+        self._conn.close()
+        super().closeEvent(event)

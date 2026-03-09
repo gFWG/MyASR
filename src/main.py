@@ -27,19 +27,31 @@ from src.ui.tray import SystemTrayManager
 logger = logging.getLogger(__name__)
 
 
-def _cleanup(pipeline: PipelineOrchestrator, conn: sqlite3.Connection) -> None:
+def _cleanup(
+    pipeline: PipelineOrchestrator,
+    conn: sqlite3.Connection,
+    learning_panel: LearningPanel | None = None,
+) -> None:
     """Stop the pipeline and close the database connection.
 
     Args:
         pipeline: The running PipelineOrchestrator to stop.
         conn: The SQLite connection to close.
+        learning_panel: Optional learning panel to close before the DB.
     """
     try:
         pipeline.stop()
     except Exception:
         logger.exception("Error stopping pipeline during cleanup")
 
+    if learning_panel is not None:
+        try:
+            learning_panel.close()
+        except Exception:
+            logger.exception("Error closing learning panel during cleanup")
+
     try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         conn.close()
     except Exception:
         logger.exception("Error closing database connection during cleanup")
@@ -176,7 +188,7 @@ def main() -> None:
         tray.quick_export_requested.connect(_quick_export)
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
-        app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn))
+        app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn, _learning_panel))
 
         pipeline.connect_signals(overlay.on_asr_ready, overlay.on_translation_ready)
         pipeline.start()
