@@ -103,7 +103,7 @@ class GlobalShortcutManager(QObject):
         """Return a pynput callback that safely invokes a Qt slot on the main thread."""
 
         def _callback() -> None:
-            QMetaObject.invokeMethod(self, slot_name, Qt.ConnectionType.QueuedConnection)
+            QMetaObject.invokeMethod(self, slot_name.encode(), Qt.ConnectionType.QueuedConnection)
 
         return _callback
 

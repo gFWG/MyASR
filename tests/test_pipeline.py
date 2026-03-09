@@ -23,6 +23,7 @@ from src.db.models import (
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
 from src.exceptions import ASRError, AudioCaptureError
+from src.profiling.config import ProfilingConfig
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
@@ -42,6 +43,7 @@ def _make_config() -> MagicMock:
     cfg.ollama_timeout_sec = 30.0
     cfg.db_path = ":memory:"
     cfg.user_jlpt_level = 3
+    cfg.profiling = ProfilingConfig()
     return cfg
 
 

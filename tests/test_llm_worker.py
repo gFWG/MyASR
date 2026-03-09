@@ -627,7 +627,8 @@ def test_cleanup_closes_db_repo_and_llm_client(
     qt_app: Any,
     config: dict[str, Any],
 ) -> None:
-    from unittest.mock import AsyncMock, patch as _patch
+    from unittest.mock import AsyncMock
+    from unittest.mock import patch as _patch
 
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("翻訳", None))

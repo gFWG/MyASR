@@ -199,7 +199,7 @@ class AsyncOllamaClient:
                 choices = data.get("choices", [])
                 if not isinstance(choices, list) or not choices:
                     continue
-                delta = choices[0].get("delta", {})  # type: ignore[union-attr]
+                delta = choices[0].get("delta", {})
                 if isinstance(delta, dict):
                     content = delta.get("content", "")
                     if isinstance(content, str):

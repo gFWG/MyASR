@@ -7,6 +7,7 @@ import logging
 import re
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -25,8 +26,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from PySide6.QtGui import QKeySequence
 
 from src.config import AppConfig, save_config
 from src.llm.ollama_client import OllamaClient
