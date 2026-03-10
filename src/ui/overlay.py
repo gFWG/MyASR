@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QCloseEvent,
     QColor,
+    QCursor,
     QFont,
     QMouseEvent,
     QPainter,
@@ -21,13 +22,12 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QSizeGrip,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
-from src.config import AppConfig, save_config
+from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult, TranslationResult
 from src.ui.highlight import HighlightRenderer
@@ -40,6 +40,8 @@ _CN_FONT_SIZE = 14
 _BG_COLOR = QColor(30, 30, 30, 200)
 _CORNER_RADIUS = 12
 _MAX_HISTORY = 10
+_RESIZE_MARGIN = 8
+_SINGLE_MODE_HEIGHT_RATIO = 0.6
 
 _FONT_FAMILIES = ["Segoe UI", "Yu Gothic UI", "Noto Sans CJK JP", "sans-serif"]
 
@@ -118,7 +120,7 @@ class OverlayWindow(QWidget):
         self._single_sub_mode: str = "jp"
         self._drag_pos: QPoint | None = None
         self._current_result: SentenceResult | None = None
-        self._renderer = HighlightRenderer()
+        self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
         self._history: list[SentenceResult] = []
         self._history_index: int = -1
 
@@ -140,8 +142,11 @@ class OverlayWindow(QWidget):
         self._cn_browser.viewport().setMouseTracking(True)
         self._cn_browser.viewport().installEventFilter(self)
 
-        self._size_grip = QSizeGrip(self)
-        self._size_grip.setFixedSize(16, 16)
+        self.setMouseTracking(True)
+        self._resize_edge: str = ""
+        self._resize_origin: QPoint | None = None
+        self._resize_geo: QRect | None = None
+        self._both_mode_height: int = config.overlay_height
 
         self._shortcut_mgr = GlobalShortcutManager(config, self)
         self._shortcut_mgr.toggle_display_triggered.connect(self._toggle_mode)
@@ -157,9 +162,15 @@ class OverlayWindow(QWidget):
         if self._display_mode == "both":
             self._jp_browser.setVisible(True)
             self._cn_browser.setVisible(True)
+            self.resize(self.width(), self._both_mode_height)
         else:
             self._jp_browser.setVisible(self._single_sub_mode == "jp")
             self._cn_browser.setVisible(self._single_sub_mode == "cn")
+            shrunk = max(
+                self.minimumHeight(),
+                int(self._both_mode_height * _SINGLE_MODE_HEIGHT_RATIO),
+            )
+            self.resize(self.width(), shrunk)
 
     def _center_on_screen(self) -> None:
         screen_geo = QApplication.primaryScreen().geometry()
@@ -239,12 +250,17 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab = config.enable_vocab_highlight
         self._enable_grammar = config.enable_grammar_highlight
+        old_mode = self._display_mode
         self._display_mode = config.overlay_display_mode
 
         self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
         self._cn_browser.setFont(_make_font(config.overlay_font_size_cn))
 
+        if old_mode == "both" and config.overlay_display_mode == "single":
+            self._both_mode_height = self.height()
+
         self._shortcut_mgr.update_shortcuts(config)
+        self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
         self._apply_display_mode()
 
         if self._current_result is not None:
@@ -322,7 +338,85 @@ class OverlayWindow(QWidget):
     def _save_size(self) -> None:
         self._config.overlay_width = self.width()
         self._config.overlay_height = self.height()
+        if self._display_mode == "both":
+            self._both_mode_height = self.height()
         save_config(self._config)
+
+    def _edge_at(self, pos: QPoint) -> str:
+        """Return a string indicating which resize edge/corner the position is in.
+
+        Returns one of: "tl", "tr", "bl", "br", "t", "b", "l", "r", or "".
+        """
+        x, y = pos.x(), pos.y()
+        w, h = self.width(), self.height()
+        m = _RESIZE_MARGIN
+
+        on_left = x < m
+        on_right = x > w - m
+        on_top = y < m
+        on_bottom = y > h - m
+
+        if on_top and on_left:
+            return "tl"
+        if on_top and on_right:
+            return "tr"
+        if on_bottom and on_left:
+            return "bl"
+        if on_bottom and on_right:
+            return "br"
+        if on_top:
+            return "t"
+        if on_bottom:
+            return "b"
+        if on_left:
+            return "l"
+        if on_right:
+            return "r"
+        return ""
+
+    def _update_cursor_for_edge(self, edge: str) -> None:
+        """Set cursor shape to match the resize edge."""
+        cursor_map: dict[str, Qt.CursorShape] = {
+            "tl": Qt.CursorShape.SizeFDiagCursor,
+            "br": Qt.CursorShape.SizeFDiagCursor,
+            "tr": Qt.CursorShape.SizeBDiagCursor,
+            "bl": Qt.CursorShape.SizeBDiagCursor,
+            "t": Qt.CursorShape.SizeVerCursor,
+            "b": Qt.CursorShape.SizeVerCursor,
+            "l": Qt.CursorShape.SizeHorCursor,
+            "r": Qt.CursorShape.SizeHorCursor,
+        }
+        if edge in cursor_map:
+            self.setCursor(QCursor(cursor_map[edge]))
+        else:
+            self.unsetCursor()
+
+    def _apply_resize(self, global_pos: QPoint) -> None:
+        """Resize the window based on the active edge and mouse position."""
+        if not self._resize_edge or self._resize_origin is None or self._resize_geo is None:
+            return
+
+        dx = global_pos.x() - self._resize_origin.x()
+        dy = global_pos.y() - self._resize_origin.y()
+        geo = QRect(self._resize_geo)
+        edge = self._resize_edge
+        min_w, min_h = self.minimumWidth(), self.minimumHeight()
+        max_w, max_h = self.maximumWidth(), self.maximumHeight()
+
+        if "r" in edge:
+            new_w = max(min_w, min(max_w, geo.width() + dx))
+            geo.setWidth(new_w)
+        if "b" in edge:
+            new_h = max(min_h, min(max_h, geo.height() + dy))
+            geo.setHeight(new_h)
+        if "l" in edge:
+            new_w = max(min_w, min(max_w, geo.width() - dx))
+            geo.setLeft(geo.right() - new_w + 1)
+        if "t" in edge:
+            new_h = max(min_h, min(max_h, geo.height() - dy))
+            geo.setTop(geo.bottom() - new_h + 1)
+
+        self.setGeometry(geo)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
@@ -333,25 +427,37 @@ class OverlayWindow(QWidget):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
-        if hasattr(self, "_size_grip"):
-            self._size_grip.move(self.width() - 16, self.height() - 16)
         QTimer.singleShot(500, self._save_size)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            if hasattr(self, "_size_grip") and self._size_grip.geometry().contains(event.pos()):
+            edge = self._edge_at(event.pos())
+            if edge:
+                self._resize_edge = edge
+                self._resize_origin = event.globalPosition().toPoint()
+                self._resize_geo = QRect(self.geometry())
                 return
             self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if event.buttons() & Qt.MouseButton.LeftButton and self._drag_pos is not None:
-            self.move(event.globalPosition().toPoint() - self._drag_pos)
+        if event.buttons() & Qt.MouseButton.LeftButton:
+            if self._resize_edge:
+                self._apply_resize(event.globalPosition().toPoint())
+                return
+            if self._drag_pos is not None:
+                self.move(event.globalPosition().toPoint() - self._drag_pos)
+                return
+        else:
+            self._update_cursor_for_edge(self._edge_at(event.pos()))
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_pos = None
+            self._resize_edge = ""
+            self._resize_origin = None
+            self._resize_geo = None
         super().mouseReleaseEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:

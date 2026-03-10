@@ -7,7 +7,12 @@ import unittest.mock as mock
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from src.config import DEFAULT_EXPLANATION_TEMPLATE, DEFAULT_TRANSLATION_TEMPLATE, AppConfig
+from src.config import (
+    DEFAULT_EXPLANATION_TEMPLATE,
+    DEFAULT_JLPT_COLORS,
+    DEFAULT_TRANSLATION_TEMPLATE,
+    AppConfig,
+)
 from src.ui.settings import SettingsDialog
 
 
@@ -269,3 +274,103 @@ def test_on_save_valid_regex_clears_error(qapp: QApplication) -> None:
     with mock.patch("src.ui.settings.save_config"):
         d._on_save()
     assert d._regex_error_label.text() == ""
+
+
+# ── Regex error visibility tests ──
+
+
+def test_on_save_invalid_regex_shows_error_label(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d._llm_parse_format_edit.setText("[invalid")
+    with mock.patch("src.ui.settings.save_config"):
+        d._on_save()
+    assert not d._regex_error_label.isHidden()
+    assert "Invalid regex" in d._regex_error_label.text()
+
+
+def test_on_save_valid_regex_hides_error_label(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d._regex_error_label.setText("Invalid regex: error")
+    d._regex_error_label.setVisible(True)
+    d._llm_parse_format_edit.setText("<tr>(.*?)</tr>")
+    with mock.patch("src.ui.settings.save_config"):
+        d._on_save()
+    assert d._regex_error_label.isHidden()
+
+
+# ── Reset shortcuts to defaults tests ──
+
+
+def test_reset_shortcuts_to_defaults(qapp: QApplication) -> None:
+
+    config = AppConfig(
+        shortcut_prev_sentence="Alt+Left",
+        shortcut_next_sentence="Alt+Right",
+        shortcut_toggle_display="Ctrl+D",
+    )
+    d = SettingsDialog(config)
+    assert d._shortcut_prev_edit.keySequence().toString() == "Alt+Left"
+
+    d._reset_shortcuts_to_defaults()
+
+    defaults = AppConfig()
+    assert d._shortcut_prev_edit.keySequence().toString() == defaults.shortcut_prev_sentence
+    assert d._shortcut_next_edit.keySequence().toString() == defaults.shortcut_next_sentence
+    assert d._shortcut_toggle_edit.keySequence().toString() == defaults.shortcut_toggle_display
+
+
+def test_shortcuts_tab_has_reset_button(dialog: SettingsDialog) -> None:
+    from PySide6.QtWidgets import QPushButton
+
+    # Find the Shortcuts tab by name
+    shortcuts_idx = -1
+    for i in range(dialog._tabs.count()):
+        if dialog._tabs.tabText(i) == "Shortcuts":
+            shortcuts_idx = i
+            break
+    assert shortcuts_idx >= 0, "Shortcuts tab not found"
+    shortcuts_tab = dialog._tabs.widget(shortcuts_idx)
+    assert shortcuts_tab is not None
+    buttons = shortcuts_tab.findChildren(QPushButton)
+    labels = [btn.text() for btn in buttons]
+    assert "Reset to Defaults" in labels
+
+
+# ── JLPT color picker tests ──
+
+
+def test_jlpt_color_buttons_exist(dialog: SettingsDialog) -> None:
+    assert len(dialog._jlpt_color_buttons) == 8
+    expected_keys = {
+        "n4_vocab",
+        "n4_grammar",
+        "n3_vocab",
+        "n3_grammar",
+        "n2_vocab",
+        "n2_grammar",
+        "n1_vocab",
+        "n1_grammar",
+    }
+    assert set(dialog._jlpt_color_buttons.keys()) == expected_keys
+
+
+def test_jlpt_color_buttons_populated_from_config(qapp: QApplication) -> None:
+    custom_colors = dict(DEFAULT_JLPT_COLORS)
+    custom_colors["n4_vocab"] = "#FF0000"
+    config = AppConfig(jlpt_colors=custom_colors)
+    d = SettingsDialog(config)
+    assert d._jlpt_color_buttons["n4_vocab"].property("hex_color") == "#FF0000"
+
+
+def test_jlpt_color_buttons_default_colors(dialog: SettingsDialog) -> None:
+    for key, expected_color in DEFAULT_JLPT_COLORS.items():
+        btn = dialog._jlpt_color_buttons[key]
+        assert btn.property("hex_color") == expected_color
+
+
+def test_collect_config_includes_jlpt_colors(dialog: SettingsDialog) -> None:
+    dialog._jlpt_color_buttons["n4_vocab"].setProperty("hex_color", "#123456")
+    collected = dialog._collect_config()
+    assert collected.jlpt_colors["n4_vocab"] == "#123456"

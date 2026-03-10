@@ -5,11 +5,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from collections.abc import Callable
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeySequence
+from PySide6.QtGui import QColor, QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
+    QColorDialog,
     QComboBox,
     QDialog,
     QDoubleSpinBox,
@@ -27,7 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.config import AppConfig, save_config
+from src.config import DEFAULT_JLPT_COLORS, AppConfig, save_config
 from src.llm.ollama_client import OllamaClient
 
 logger = logging.getLogger(__name__)
@@ -167,6 +169,24 @@ class SettingsDialog(QDialog):
         self._display_mode_btn_single.clicked.connect(lambda: self._select_display_mode("single"))
         layout.addRow("Display Mode", display_mode_row)
 
+        self._jlpt_color_buttons: dict[str, QPushButton] = {}
+        jlpt_labels = {
+            "n4_vocab": "N4 Vocab",
+            "n4_grammar": "N4 Grammar",
+            "n3_vocab": "N3 Vocab",
+            "n3_grammar": "N3 Grammar",
+            "n2_vocab": "N2 Vocab",
+            "n2_grammar": "N2 Grammar",
+            "n1_vocab": "N1 Vocab",
+            "n1_grammar": "N1 Grammar",
+        }
+        for key, label in jlpt_labels.items():
+            btn = QPushButton()
+            btn.setFixedSize(60, 24)
+            btn.clicked.connect(self._make_color_callback(key))
+            self._jlpt_color_buttons[key] = btn
+            layout.addRow(label, btn)
+
         self._tabs.addTab(widget, "Appearance")
 
     def _build_model_tab(self) -> None:
@@ -266,6 +286,10 @@ class SettingsDialog(QDialog):
         self._shortcut_toggle_edit = QKeySequenceEdit()
         layout.addRow("Shortcut: Toggle Display", self._shortcut_toggle_edit)
 
+        reset_btn = QPushButton("Reset to Defaults")
+        reset_btn.clicked.connect(self._reset_shortcuts_to_defaults)
+        layout.addRow("", reset_btn)
+
         self._tabs.addTab(widget, "Shortcuts")
 
     def _build_templates_tab(self) -> None:
@@ -293,6 +317,33 @@ class SettingsDialog(QDialog):
         self._display_mode_value = mode
         self._display_mode_btn_both.setChecked(mode == "both")
         self._display_mode_btn_single.setChecked(mode == "single")
+
+    def _reset_shortcuts_to_defaults(self) -> None:
+        """Reset all shortcut key sequence editors to the default AppConfig values."""
+        defaults = AppConfig()
+        self._shortcut_prev_edit.setKeySequence(QKeySequence(defaults.shortcut_prev_sentence))
+        self._shortcut_next_edit.setKeySequence(QKeySequence(defaults.shortcut_next_sentence))
+        self._shortcut_toggle_edit.setKeySequence(QKeySequence(defaults.shortcut_toggle_display))
+
+    def _make_color_callback(self, key: str) -> Callable[[], None]:
+        """Create a callback that opens a color dialog for the given JLPT color key."""
+
+        def _pick_color() -> None:
+            btn = self._jlpt_color_buttons[key]
+            current = btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
+            color = QColorDialog.getColor(QColor(current), self, f"Pick color for {key}")
+            if color.isValid():
+                hex_color = color.name()
+                btn.setProperty("hex_color", hex_color)
+                self._update_color_button_style(btn, hex_color)
+
+        return _pick_color
+
+    def _update_color_button_style(self, btn: QPushButton, hex_color: str) -> None:
+        """Set the button background to the given hex color."""
+        btn.setStyleSheet(
+            f"background-color: {hex_color}; border: 1px solid #888; border-radius: 3px;"
+        )
 
     def _populate_from_config(self, config: AppConfig) -> None:
         self._jlpt_level_spin.setValue(config.user_jlpt_level)
@@ -329,6 +380,11 @@ class SettingsDialog(QDialog):
 
         self._translation_template_edit.setPlainText(config.translation_template)
         self._explanation_template_edit.setPlainText(config.explanation_template)
+
+        for key, btn in self._jlpt_color_buttons.items():
+            hex_color = config.jlpt_colors.get(key, DEFAULT_JLPT_COLORS.get(key, "#FFFFFF"))
+            btn.setProperty("hex_color", hex_color)
+            self._update_color_button_style(btn, hex_color)
 
         logger.debug("SettingsDialog: widgets populated from config")
 
@@ -367,6 +423,10 @@ class SettingsDialog(QDialog):
             shortcut_prev_sentence=self._shortcut_prev_edit.keySequence().toString(),
             shortcut_next_sentence=self._shortcut_next_edit.keySequence().toString(),
             shortcut_toggle_display=self._shortcut_toggle_edit.keySequence().toString(),
+            jlpt_colors={
+                key: btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
+                for key, btn in self._jlpt_color_buttons.items()
+            },
         )
 
     def _on_save(self) -> None:
@@ -376,8 +436,10 @@ class SettingsDialog(QDialog):
                 re.compile(parse_format)
             except re.error as e:
                 self._regex_error_label.setText(f"Invalid regex: {e}")
+                self._regex_error_label.setVisible(True)
                 return
         self._regex_error_label.setText("")
+        self._regex_error_label.setVisible(False)
         new_config = self._collect_config()
         save_config(new_config)
         self.config_changed.emit(new_config)

@@ -24,6 +24,18 @@ DEFAULT_EXPLANATION_TEMPLATE = (
 )
 
 
+DEFAULT_JLPT_COLORS: dict[str, str] = {
+    "n4_vocab": "#C8E6C9",
+    "n4_grammar": "#4CAF50",
+    "n3_vocab": "#BBDEFB",
+    "n3_grammar": "#1976D2",
+    "n2_vocab": "#FFF9C4",
+    "n2_grammar": "#F9A825",
+    "n1_vocab": "#FFCDD2",
+    "n1_grammar": "#D32F2F",
+}
+
+
 @dataclasses.dataclass
 class AppConfig:
     """Application configuration with sensible defaults."""
@@ -61,6 +73,9 @@ class AppConfig:
     shortcut_prev_sentence: str = "Ctrl+Left"
     shortcut_next_sentence: str = "Ctrl+Right"
     shortcut_toggle_display: str = "Ctrl+T"
+    jlpt_colors: dict[str, str] = dataclasses.field(
+        default_factory=lambda: dict(DEFAULT_JLPT_COLORS)
+    )
     profiling: ProfilingConfig = dataclasses.field(default_factory=ProfilingConfig)
 
 
@@ -109,6 +124,33 @@ def _deep_update(base: dict[str, Any], override: dict[str, Any]) -> dict[str, An
             result[key] = _deep_update(result[key], value)
         else:
             result[key] = value
+    return result
+
+
+def jlpt_colors_to_renderer_format(flat: dict[str, str]) -> dict[int, dict[str, str]]:
+    """Convert flat JLPT color config to HighlightRenderer format.
+
+    Args:
+        flat: Keys like "n4_vocab", "n3_grammar", etc. with hex color values.
+
+    Returns:
+        Nested dict keyed by level (1–4) with "vocab"/"grammar" sub-keys.
+    """
+    result: dict[int, dict[str, str]] = {}
+    for key, color in flat.items():
+        parts = key.split("_", 1)
+        if len(parts) != 2:
+            continue
+        level_str, kind = parts
+        if not level_str.startswith("n") or kind not in ("vocab", "grammar"):
+            continue
+        try:
+            level = int(level_str[1:])
+        except ValueError:
+            continue
+        if level not in result:
+            result[level] = {}
+        result[level][kind] = color
     return result
 
 

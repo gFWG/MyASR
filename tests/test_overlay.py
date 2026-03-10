@@ -575,3 +575,97 @@ def test_apply_display_mode_both_shows_all(overlay: OverlayWindow) -> None:
     overlay._apply_display_mode()
     assert not overlay._jp_browser.isHidden()
     assert not overlay._cn_browser.isHidden()
+
+
+# ── Four-corner resize tests ──
+
+
+def test_edge_at_returns_empty_for_center(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    center = QPoint(overlay.width() // 2, overlay.height() // 2)
+    assert overlay._edge_at(center) == ""
+
+
+def test_edge_at_detects_top_left_corner(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(2, 2)) == "tl"
+
+
+def test_edge_at_detects_top_right_corner(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(overlay.width() - 2, 2)) == "tr"
+
+
+def test_edge_at_detects_bottom_left_corner(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(2, overlay.height() - 2)) == "bl"
+
+
+def test_edge_at_detects_bottom_right_corner(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(overlay.width() - 2, overlay.height() - 2)) == "br"
+
+
+def test_edge_at_detects_top_edge(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(overlay.width() // 2, 2)) == "t"
+
+
+def test_edge_at_detects_bottom_edge(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(overlay.width() // 2, overlay.height() - 2)) == "b"
+
+
+def test_edge_at_detects_left_edge(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(2, overlay.height() // 2)) == "l"
+
+
+def test_edge_at_detects_right_edge(overlay: OverlayWindow) -> None:
+    from PySide6.QtCore import QPoint
+
+    assert overlay._edge_at(QPoint(overlay.width() - 2, overlay.height() // 2)) == "r"
+
+
+def test_resize_state_initially_empty(overlay: OverlayWindow) -> None:
+    assert overlay._resize_edge == ""
+    assert overlay._resize_origin is None
+    assert overlay._resize_geo is None
+
+
+# ── Single mode height shrink tests ──
+
+
+def test_single_mode_shrinks_height(overlay: OverlayWindow) -> None:
+    original_height = overlay.height()
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "jp"
+    overlay._apply_display_mode()
+    assert overlay.height() < original_height
+
+
+def test_both_mode_restores_height(overlay: OverlayWindow) -> None:
+    original_height = overlay.height()
+    overlay._both_mode_height = original_height
+    overlay._display_mode = "single"
+    overlay._apply_display_mode()
+    overlay._display_mode = "both"
+    overlay._apply_display_mode()
+    assert overlay.height() == original_height
+
+
+def test_on_config_changed_stores_both_height_on_switch_to_single(
+    overlay: OverlayWindow,
+) -> None:
+    original_height = overlay.height()
+    config = AppConfig(overlay_display_mode="single")
+    overlay.on_config_changed(config)
+    assert overlay._both_mode_height == original_height

@@ -4,7 +4,7 @@ import logging
 from typing import Callable
 
 from pynput import keyboard
-from PySide6.QtCore import QMetaObject, QObject, Qt, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 from src.config import AppConfig
 
@@ -71,8 +71,8 @@ def _qt_key_to_pynput(key_string: str) -> str:
 class GlobalShortcutManager(QObject):
     """System-wide hotkey manager using pynput.
 
-    Callbacks are dispatched to the Qt main thread via QMetaObject.invokeMethod
-    (QueuedConnection) — no direct Qt calls from the pynput listener thread.
+    Callbacks are dispatched to the Qt main thread via QTimer.singleShot
+    — no direct Qt calls from the pynput listener thread.
     Hotkeys pass through to other applications (suppress=False).
     """
 
@@ -101,9 +101,10 @@ class GlobalShortcutManager(QObject):
 
     def _make_callback(self, slot_name: str) -> Callable[[], None]:
         """Return a pynput callback that safely invokes a Qt slot on the main thread."""
+        slot_method = getattr(self, slot_name)
 
         def _callback() -> None:
-            QMetaObject.invokeMethod(self, slot_name.encode(), Qt.ConnectionType.QueuedConnection)
+            QTimer.singleShot(0, slot_method)
 
         return _callback
 

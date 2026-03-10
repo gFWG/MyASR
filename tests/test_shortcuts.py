@@ -93,3 +93,15 @@ def test_update_shortcuts_restarts_listener(qapp: QApplication, mocker: MagicMoc
     mock_instance_1.join.assert_called_once()
     assert mock_cls.call_count == 2
     mock_instance_2.start.assert_called_once()
+
+
+def test_make_callback_uses_qtimer(qapp: QApplication, mocker: MagicMock) -> None:
+    """The _make_callback method should use QTimer.singleShot for thread-safe dispatch."""
+    mock_timer = mocker.patch("src.ui.shortcuts.QTimer")
+    config = AppConfig()
+    manager = GlobalShortcutManager(config)
+
+    cb = manager._make_callback("_emit_toggle_display")
+    cb()
+
+    mock_timer.singleShot.assert_called_once_with(0, manager._emit_toggle_display)

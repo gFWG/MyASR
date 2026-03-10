@@ -71,10 +71,10 @@ The following improvements are proposed:
 
 Checklist:
 
-1. [ ] Fix the fatal bug causing shortcuts to not work in Windows 11.
-2. [ ] Investigate and fix the issue with regex validation in the "Parse Format" component.
-3. [ ] Implement the proposed improvements to the overlay and settings interface.
-4. [ ] Test the application thoroughly to ensure all bugs are fixed and improvements are working as intended.
-5. [ ] No mypy/ruff errors should be present in the codebase after the changes.
-6. [ ] Update documentation to reflect any changes made to the application.
+1. [x] Fix the fatal bug causing shortcuts to not work in Windows 11.
+2. [x] Investigate and fix the issue with regex validation in the "Parse Format" component.
+3. [x] Implement the proposed improvements to the overlay and settings interface.
+4. [x] Test the application thoroughly to ensure all bugs are fixed and improvements are working as intended.
+5. [x] No mypy/ruff errors should be present in the codebase after the changes.
+6. [x] Update documentation to reflect any changes made to the application.
 

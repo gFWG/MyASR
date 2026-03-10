@@ -332,3 +332,44 @@ def test_build_rich_text_no_inline_block(
 ) -> None:
     result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
     assert "inline-block" not in result
+
+
+# ------------------------------------------------------------------ #
+# Custom colors via constructor and update_colors                     #
+# ------------------------------------------------------------------ #
+
+
+def test_renderer_accepts_custom_colors() -> None:
+    custom_colors = {
+        4: {"vocab": "#FF0000", "grammar": "#00FF00"},
+        3: {"vocab": "#0000FF", "grammar": "#FFFF00"},
+    }
+    renderer = HighlightRenderer(jlpt_colors=custom_colors)
+    vocab = [_make_vocab("猫", 0, 1, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
+    result = renderer.build_rich_text("猫", analysis, user_level=4)
+    assert "#FF0000" in result
+
+
+def test_update_colors_changes_rendering() -> None:
+    renderer = HighlightRenderer()
+    new_colors = {
+        4: {"vocab": "#AABBCC", "grammar": "#DDEEFF"},
+        3: {"vocab": "#112233", "grammar": "#445566"},
+        2: {"vocab": "#778899", "grammar": "#AABBDD"},
+        1: {"vocab": "#CCDDEE", "grammar": "#FFEEDD"},
+    }
+    renderer.update_colors(new_colors)
+    vocab = [_make_vocab("猫", 0, 1, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
+    result = renderer.build_rich_text("猫", analysis, user_level=4)
+    assert "#AABBCC" in result
+    assert "#C8E6C9" not in result  # default N4 vocab color should NOT be present
+
+
+def test_default_renderer_uses_jlpt_colors() -> None:
+    renderer = HighlightRenderer()
+    vocab = [_make_vocab("猫", 0, 1, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
+    result = renderer.build_rich_text("猫", analysis, user_level=4)
+    assert "#C8E6C9" in result  # default N4 vocab color

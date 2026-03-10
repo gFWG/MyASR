@@ -25,7 +25,7 @@ class HighlightRenderer:
     All text is HTML-escaped to prevent XSS.
 
     Attributes:
-        JLPT_COLORS: Mapping from JLPT level (1–4) to vocab/grammar hex colors.
+        JLPT_COLORS: Default mapping from JLPT level (1–4) to vocab/grammar hex colors.
     """
 
     JLPT_COLORS: dict[int, dict[str, str]] = {
@@ -34,6 +34,17 @@ class HighlightRenderer:
         2: {"vocab": "#FFF9C4", "grammar": "#F9A825"},
         1: {"vocab": "#FFCDD2", "grammar": "#D32F2F"},
     }
+
+    def __init__(self, jlpt_colors: dict[int, dict[str, str]] | None = None) -> None:
+        self._colors: dict[int, dict[str, str]] = jlpt_colors or dict(self.JLPT_COLORS)
+
+    def update_colors(self, jlpt_colors: dict[int, dict[str, str]]) -> None:
+        """Update the JLPT color mapping at runtime.
+
+        Args:
+            jlpt_colors: Mapping from JLPT level (1–4) to vocab/grammar hex colors.
+        """
+        self._colors = jlpt_colors
 
     # ------------------------------------------------------------------ #
     # Public API                                                           #
@@ -131,11 +142,11 @@ class HighlightRenderer:
 
     def _grammar_color(self, jlpt_level: int) -> str:
         """Return the grammar hex color for a JLPT level, defaulting to N4."""
-        return self.JLPT_COLORS.get(jlpt_level, self.JLPT_COLORS[4])["grammar"]
+        return self._colors.get(jlpt_level, self._colors.get(4, self.JLPT_COLORS[4]))["grammar"]
 
     def _vocab_color(self, jlpt_level: int) -> str:
         """Return the vocab hex color for a JLPT level, defaulting to N4."""
-        return self.JLPT_COLORS.get(jlpt_level, self.JLPT_COLORS[4])["vocab"]
+        return self._colors.get(jlpt_level, self._colors.get(4, self.JLPT_COLORS[4]))["vocab"]
 
     @staticmethod
     def _is_fully_covered(
