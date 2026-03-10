@@ -19,7 +19,7 @@ from src.config import AppConfig
 from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.llm_worker import LlmWorker
-from src.pipeline.types import ASRResult, SpeechSegment, TranslationResult
+from src.pipeline.types import ASRResult, SpeechSegment, LLMResult
 from src.pipeline.vad_worker import VadWorker
 from src.vad.silero import SileroVAD
 
@@ -52,7 +52,7 @@ class PipelineOrchestrator:
         self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1000)
         self._segment_queue: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
         self._text_queue: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
-        self._result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
+        self._result_queue: queue.Queue[LLMResult] = queue.Queue(maxsize=50)
 
         # ── Models (heavy GPU objects — created at construction time) ───────
         vad_model = SileroVAD(
@@ -157,7 +157,7 @@ class PipelineOrchestrator:
     def connect_signals(
         self,
         on_asr_ready: Callable[[ASRResult], None],
-        on_translation_ready: Callable[[TranslationResult], None],
+        on_translation_ready: Callable[[LLMResult], None],
     ) -> None:
         """Connect worker output signals to caller-provided callbacks.
 

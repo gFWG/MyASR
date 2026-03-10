@@ -20,7 +20,7 @@ import pytest
 from PySide6.QtCore import Qt
 
 from src.exceptions import LLMTimeoutError, LLMUnavailableError
-from src.pipeline.types import ASRResult, TranslationResult
+from src.pipeline.types import ASRResult, LLMResult
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -68,7 +68,7 @@ def text_queue() -> queue.Queue[ASRResult]:
 
 
 @pytest.fixture()
-def result_queue() -> queue.Queue[TranslationResult]:
+def result_queue() -> queue.Queue[LLMResult]:
     return queue.Queue(maxsize=50)
 
 
@@ -97,7 +97,7 @@ def _import_llm_worker() -> type:
 def test_llm_worker_init_stores_attributes(
     qt_app: Any,
     text_queue: queue.Queue[ASRResult],
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """LlmWorker stores queues, llm_client, db_path, and config on construction."""
@@ -124,7 +124,7 @@ def test_llm_worker_init_stores_attributes(
 def test_llm_worker_has_signals(
     qt_app: Any,
     text_queue: queue.Queue[ASRResult],
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """LlmWorker must expose error_occurred and translation_ready signals."""
@@ -150,7 +150,7 @@ def test_llm_worker_has_signals(
 
 def test_llm_worker_full_translate_flow_produces_result(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """A single ASRResult → TranslationResult with translation in result_queue."""
@@ -171,7 +171,7 @@ def test_llm_worker_full_translate_flow_produces_result(
 
     w.start()
     deadline = time.monotonic() + 3.0
-    result: TranslationResult | None = None
+    result: LLMResult | None = None
     while time.monotonic() < deadline:
         try:
             result = result_queue.get(timeout=0.1)
@@ -182,7 +182,7 @@ def test_llm_worker_full_translate_flow_produces_result(
     w.stop()
 
     assert result is not None, "Expected a TranslationResult in result_queue"
-    assert isinstance(result, TranslationResult)
+    assert isinstance(result, LLMResult)
     assert result.translation == "これは翻訳です"
     assert result.segment_id == asr_result.segment_id
     assert result.elapsed_ms >= 0.0
@@ -190,7 +190,7 @@ def test_llm_worker_full_translate_flow_produces_result(
 
 def test_llm_worker_translate_flow_emits_signal(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """translation_ready signal emitted with correct TranslationResult."""
@@ -209,7 +209,7 @@ def test_llm_worker_translate_flow_emits_signal(
         config=config,
     )
 
-    emitted: list[TranslationResult] = []
+    emitted: list[LLMResult] = []
     w.translation_ready.connect(emitted.append, Qt.ConnectionType.DirectConnection)
 
     w.start()
@@ -226,7 +226,7 @@ def test_llm_worker_translate_flow_emits_signal(
 
 def test_llm_worker_calls_db_update_translation(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """db_repo.update_translation is called with db_row_id after successful translation."""
@@ -273,7 +273,7 @@ def test_llm_worker_calls_db_update_translation(
 
 def test_llm_worker_timeout_error_emits_with_none_translation(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """LLMTimeoutError → translation_ready emitted with translation=None."""
@@ -292,7 +292,7 @@ def test_llm_worker_timeout_error_emits_with_none_translation(
         config=config,
     )
 
-    emitted: list[TranslationResult] = []
+    emitted: list[LLMResult] = []
     w.translation_ready.connect(emitted.append, Qt.ConnectionType.DirectConnection)
 
     w.start()
@@ -309,7 +309,7 @@ def test_llm_worker_timeout_error_emits_with_none_translation(
 
 def test_llm_worker_timeout_error_continues_processing(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """After LLMTimeoutError, worker continues to process subsequent ASRResults."""
@@ -341,7 +341,7 @@ def test_llm_worker_timeout_error_continues_processing(
 
     w.start()
     deadline = time.monotonic() + 4.0
-    collected: list[TranslationResult] = []
+    collected: list[LLMResult] = []
     while time.monotonic() < deadline and len(collected) < 2:
         try:
             collected.append(result_queue.get(timeout=0.1))
@@ -363,7 +363,7 @@ def test_llm_worker_timeout_error_continues_processing(
 
 def test_llm_worker_unavailable_error_emits_with_none_translation(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """LLMUnavailableError → translation_ready emitted with translation=None."""
@@ -382,7 +382,7 @@ def test_llm_worker_unavailable_error_emits_with_none_translation(
         config=config,
     )
 
-    emitted: list[TranslationResult] = []
+    emitted: list[LLMResult] = []
     w.translation_ready.connect(emitted.append, Qt.ConnectionType.DirectConnection)
 
     w.start()
@@ -400,7 +400,7 @@ def test_llm_worker_unavailable_error_emits_with_none_translation(
 
 def test_llm_worker_unavailable_error_continues_processing(
     qt_app: Any,
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """After LLMUnavailableError, worker continues to process subsequent items."""
@@ -432,7 +432,7 @@ def test_llm_worker_unavailable_error_continues_processing(
 
     w.start()
     deadline = time.monotonic() + 4.0
-    collected: list[TranslationResult] = []
+    collected: list[LLMResult] = []
     while time.monotonic() < deadline and len(collected) < 2:
         try:
             collected.append(result_queue.get(timeout=0.1))
@@ -454,7 +454,7 @@ def test_llm_worker_unavailable_error_continues_processing(
 def test_llm_worker_stop_completes_within_2s(
     qt_app: Any,
     text_queue: queue.Queue[ASRResult],
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """stop() must complete within 2 seconds."""
@@ -483,7 +483,7 @@ def test_llm_worker_stop_completes_within_2s(
 def test_llm_worker_running_flag_false_after_stop(
     qt_app: Any,
     text_queue: queue.Queue[ASRResult],
-    result_queue: queue.Queue[TranslationResult],
+    result_queue: queue.Queue[LLMResult],
     config: dict[str, Any],
 ) -> None:
     """_running should be False after stop() is called."""
@@ -520,8 +520,8 @@ def test_llm_worker_drops_result_when_result_queue_full(
     mock_client = make_mock_llm_client(return_value=("テスト", None))
 
     # Full result queue (maxsize=1, already filled)
-    full_result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=1)
-    dummy = TranslationResult(
+    full_result_queue: queue.Queue[LLMResult] = queue.Queue(maxsize=1)
+    dummy = LLMResult(
         translation="dummy",
         explanation=None,
         segment_id=str(uuid.uuid4()),
@@ -565,8 +565,8 @@ def test_llm_worker_no_deadlock_on_full_result_queue(
     LlmWorker = _import_llm_worker()
     mock_client = make_mock_llm_client(return_value=("テスト", None))
 
-    full_result_queue: queue.Queue[TranslationResult] = queue.Queue(maxsize=1)
-    dummy = TranslationResult(
+    full_result_queue: queue.Queue[LLMResult] = queue.Queue(maxsize=1)
+    dummy = LLMResult(
         translation="dummy",
         explanation=None,
         segment_id=str(uuid.uuid4()),
@@ -608,7 +608,7 @@ def test_llm_worker_update_client(
     new_client = make_mock_llm_client(return_value=("new", None))
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
-    result_q: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
+    result_q: queue.Queue[LLMResult] = queue.Queue(maxsize=50)
 
     w = LlmWorker(
         text_queue=text_q,
@@ -636,7 +636,7 @@ def test_cleanup_closes_db_repo_and_llm_client(
     mock_repo = make_mock_db_repo()
 
     text_q: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
-    result_q: queue.Queue[TranslationResult] = queue.Queue(maxsize=50)
+    result_q: queue.Queue[LLMResult] = queue.Queue(maxsize=50)
 
     with _patch("src.pipeline.llm_worker.LearningRepository", return_value=mock_repo):
         w = LlmWorker(

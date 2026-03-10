@@ -5,7 +5,7 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from src.pipeline.types import ASRResult, PipelineStageMetrics, SpeechSegment, TranslationResult
+from src.pipeline.types import ASRResult, PipelineStageMetrics, SpeechSegment, LLMResult
 
 
 class TestSpeechSegment:
@@ -72,7 +72,7 @@ class TestTranslationResult:
 
     def test_construct_with_valid_data(self) -> None:
         """Test constructing TranslationResult with valid data."""
-        result = TranslationResult(
+        result = LLMResult(
             translation="你好",
             explanation="Greeting used in Japanese",
             segment_id="seg-002",
@@ -86,7 +86,7 @@ class TestTranslationResult:
 
     def test_construct_with_none_values(self) -> None:
         """Test constructing TranslationResult with None values."""
-        result = TranslationResult(
+        result = LLMResult(
             translation=None,
             explanation=None,
             segment_id="seg-003",
@@ -99,7 +99,7 @@ class TestTranslationResult:
 
     def test_fields_are_immutable(self) -> None:
         """Test that TranslationResult fields cannot be modified (frozen)."""
-        result = TranslationResult(
+        result = LLMResult(
             translation="你好",
             explanation="Greeting",
             segment_id="seg-002",

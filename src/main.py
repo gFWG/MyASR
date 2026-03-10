@@ -190,7 +190,7 @@ def main() -> None:
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn, _learning_panel))
 
-        pipeline.connect_signals(overlay.on_asr_ready, overlay.on_translation_ready)
+        pipeline.connect_signals(overlay.on_asr_ready, overlay.on_llm_ready)
         pipeline.start()
         overlay.set_status("Listening...")
         overlay.show()

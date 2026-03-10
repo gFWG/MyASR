@@ -94,7 +94,7 @@ def test_on_sentence_ready_no_translation_shows_unavailable(
         return_value="<b>テスト</b>",
     ):
         overlay.on_sentence_ready(result)
-    assert "Translation unavailable" in overlay._cn_browser.toPlainText()
+    assert "LLM unavailable" in overlay._cn_browser.toPlainText()
 
 
 def test_on_sentence_ready_explanation_fallback(overlay: OverlayWindow) -> None:
@@ -399,15 +399,15 @@ def test_on_asr_ready_updates_browsers(overlay: OverlayWindow) -> None:
 
 
 def test_on_translation_ready_updates_cn_browser(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import TranslationResult
+    from src.pipeline.types import LLMResult
 
-    result = TranslationResult(
+    result = LLMResult(
         translation="测试",
         explanation="grammar exp",
         segment_id="seg-1",
         elapsed_ms=20.0,
     )
-    overlay.on_translation_ready(result)
+    overlay.on_llm_ready(result)
 
     html = overlay._cn_browser.toHtml()
     assert "测试" in html
@@ -415,17 +415,17 @@ def test_on_translation_ready_updates_cn_browser(overlay: OverlayWindow) -> None
 
 
 def test_on_translation_ready_handles_none(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import TranslationResult
+    from src.pipeline.types import LLMResult
 
-    result = TranslationResult(
+    result = LLMResult(
         translation=None,
         explanation=None,
         segment_id="seg-2",
         elapsed_ms=20.0,
     )
-    overlay.on_translation_ready(result)
+    overlay.on_llm_ready(result)
 
-    assert "Translation unavailable" in overlay._cn_browser.toPlainText()
+    assert "LLM unavailable" in overlay._cn_browser.toPlainText()
 
 
 # ── Sentence history + navigation tests ──

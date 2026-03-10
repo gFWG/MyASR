@@ -11,7 +11,7 @@ from src.db.repository import LearningRepository
 from src.exceptions import LLMTimeoutError, LLMUnavailableError
 from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.perf import StageTimer
-from src.pipeline.types import ASRResult, TranslationResult
+from src.pipeline.types import ASRResult, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class LlmWorker(QThread):
     def __init__(
         self,
         text_queue: queue.Queue[ASRResult],
-        result_queue: queue.Queue[TranslationResult],
+        result_queue: queue.Queue[LLMResult],
         llm_client: AsyncOllamaClient,
         db_path: str | None = None,
         config: dict[str, Any] | None = None,
@@ -92,7 +92,7 @@ class LlmWorker(QThread):
             translation_result = await self._translate_one(asr_result)
             self._dispatch(translation_result)
 
-    async def _translate_one(self, asr_result: ASRResult) -> TranslationResult:
+    async def _translate_one(self, asr_result: ASRResult) -> LLMResult:
         """Call the LLM client and build a TranslationResult.
 
         Returns a result with ``translation=None`` on LLM errors instead of raising.
@@ -112,7 +112,7 @@ class LlmWorker(QThread):
 
         elapsed_ms = timer.result.elapsed_ms
 
-        result = TranslationResult(
+        result = LLMResult(
             translation=translation,
             explanation=explanation,
             segment_id=asr_result.segment_id,
@@ -141,7 +141,7 @@ class LlmWorker(QThread):
 
         return result
 
-    def _dispatch(self, result: TranslationResult) -> None:
+    def _dispatch(self, result: LLMResult) -> None:
         """Emit signal and put result into result_queue non-blockingly."""
         self.translation_ready.emit(result)
         try:

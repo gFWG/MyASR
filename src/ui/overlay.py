@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 
 from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
-from src.pipeline.types import ASRResult, TranslationResult
+from src.pipeline.types import ASRResult, LLMResult
 from src.ui.highlight import HighlightRenderer
 from src.ui.shortcuts import GlobalShortcutManager
 
@@ -212,7 +212,7 @@ class OverlayWindow(QWidget):
 
         self._jp_browser.setHtml(rich_text)
 
-        translation = result.chinese_translation or result.explanation or "Translation unavailable"
+        translation = result.chinese_translation or result.explanation or "LLM unavailable"
         self._cn_browser.setHtml(_centered_html(translation))
 
     def on_asr_ready(self, result: ASRResult) -> None:
@@ -225,19 +225,17 @@ class OverlayWindow(QWidget):
         self._cn_browser.setHtml(_centered_html("Translating…", color="#AAAAAA"))
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
 
-    def on_translation_ready(self, result: TranslationResult) -> None:
-        """Update display with translation when it arrives async.
+    def on_llm_ready(self, result: LLMResult) -> None:
+        """Update display with LLM output when it arrives async.
 
         Args:
-            result: Translation output. translation/explanation may be None
+            result: LLM output. translation/explanation may be None
                 if LLM failed gracefully.
         """
-        translation = result.translation or "Translation unavailable"
-        if result.explanation:
-            translation = f"{translation}<br><small>{result.explanation}</small>"
+        text = result.translation or result.explanation or "LLM unavailable"
 
-        self._cn_browser.setHtml(_centered_html(translation))
-        logger.debug("on_translation_ready: segment_id=%s", result.segment_id)
+        self._cn_browser.setHtml(_centered_html(text))
+        logger.debug("on_llm_ready: segment_id=%s", result.segment_id)
 
     def on_config_changed(self, config: AppConfig) -> None:
         """Apply live config changes to the overlay without restarting.
