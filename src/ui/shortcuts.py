@@ -1,4 +1,11 @@
-"""Global shortcut manager for system-wide hotkeys using pynput."""
+"""Global shortcut manager for system-wide hotkeys using pynput.
+
+Uses ``pynput.keyboard.Listener`` with ``keyboard.HotKey`` objects
+rather than the higher-level ``GlobalHotKeys`` wrapper, because the
+latter silently fails on Windows 11 due to key-state de-sync and
+canonical-key mismatches.  The manual approach lets us call
+``listener.canonical(key)`` for robust matching on every platform.
+"""
 
 import logging
 from typing import Callable
@@ -71,6 +78,10 @@ def _qt_key_to_pynput(key_string: str) -> str:
 class GlobalShortcutManager(QObject):
     """System-wide hotkey manager using pynput.
 
+    Uses ``keyboard.Listener`` + ``keyboard.HotKey`` for reliable
+    key matching on Windows 11 (avoids ``GlobalHotKeys`` silent-failure
+    bug).
+
     Callbacks are dispatched to the Qt main thread via QTimer.singleShot
     — no direct Qt calls from the pynput listener thread.
     Hotkeys pass through to other applications (suppress=False).
@@ -83,9 +94,10 @@ class GlobalShortcutManager(QObject):
     def __init__(self, config: AppConfig, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._config = config
-        self._hotkeys: keyboard.GlobalHotKeys | None = None
-        self._hotkey_dict: dict[str, Callable[[], None]] = {}
-        self._build_hotkey_dict(config)
+        self._listener: keyboard.Listener | None = None
+        self._hotkeys: list[keyboard.HotKey] = []
+        self._hotkey_labels: dict[int, str] = {}
+        self._build_hotkeys(config)
 
     @Slot()
     def _emit_toggle_display(self) -> None:
@@ -104,43 +116,74 @@ class GlobalShortcutManager(QObject):
         slot_method = getattr(self, slot_name)
 
         def _callback() -> None:
+            logger.info("Shortcut activated: %s", slot_name)
             QTimer.singleShot(0, slot_method)
 
         return _callback
 
-    def _build_hotkey_dict(self, config: AppConfig) -> None:
+    def _build_hotkeys(self, config: AppConfig) -> None:
+        """Build ``keyboard.HotKey`` instances from the config."""
         mapping: list[tuple[str, str]] = [
             (config.shortcut_toggle_display, "_emit_toggle_display"),
             (config.shortcut_prev_sentence, "_emit_prev_sentence"),
             (config.shortcut_next_sentence, "_emit_next_sentence"),
         ]
-        self._hotkey_dict = {}
+        self._hotkeys = []
+        self._hotkey_labels = {}
         for key_string, slot_name in mapping:
             try:
-                pynput_key = _qt_key_to_pynput(key_string)
-                self._hotkey_dict[pynput_key] = self._make_callback(slot_name)
-                logger.debug("Registered hotkey %r -> %s", pynput_key, slot_name)
+                pynput_str = _qt_key_to_pynput(key_string)
+                parsed_keys = keyboard.HotKey.parse(pynput_str)
+                hotkey = keyboard.HotKey(parsed_keys, self._make_callback(slot_name))
+                self._hotkeys.append(hotkey)
+                self._hotkey_labels[id(hotkey)] = f"{pynput_str} -> {slot_name}"
+                logger.debug("Registered hotkey %r -> %s", pynput_str, slot_name)
             except ValueError:
                 logger.warning("Could not convert shortcut %r — skipping", key_string)
 
+    def _on_press(self, key: keyboard.Key | keyboard.KeyCode | None) -> None:
+        """Handle key-press events from the listener."""
+        if self._listener is None or key is None:
+            return
+        canonical = self._listener.canonical(key)
+        logger.debug("Key pressed: %s (canonical: %s)", key, canonical)
+        for hotkey in self._hotkeys:
+            hotkey.press(canonical)
+
+    def _on_release(self, key: keyboard.Key | keyboard.KeyCode | None) -> None:
+        """Handle key-release events from the listener."""
+        if self._listener is None or key is None:
+            return
+        canonical = self._listener.canonical(key)
+        logger.debug("Key released: %s (canonical: %s)", key, canonical)
+        for hotkey in self._hotkeys:
+            hotkey.release(canonical)
+
     def start(self) -> None:
-        if self._hotkeys is not None:
+        """Start listening for global hotkeys."""
+        if self._listener is not None:
             logger.warning("GlobalShortcutManager.start() called while already running")
             return
-        self._hotkeys = keyboard.GlobalHotKeys(self._hotkey_dict, suppress=False)
-        self._hotkeys.start()
-        logger.info("GlobalShortcutManager started with %d hotkeys", len(self._hotkey_dict))
+        self._listener = keyboard.Listener(
+            on_press=self._on_press,
+            on_release=self._on_release,
+            suppress=False,
+        )
+        self._listener.start()
+        logger.info("GlobalShortcutManager started with %d hotkeys", len(self._hotkeys))
 
     def stop(self) -> None:
-        if self._hotkeys is None:
+        """Stop listening for global hotkeys."""
+        if self._listener is None:
             return
-        self._hotkeys.stop()
-        self._hotkeys.join()
-        self._hotkeys = None
+        self._listener.stop()
+        self._listener.join()
+        self._listener = None
         logger.info("GlobalShortcutManager stopped")
 
     def update_shortcuts(self, config: AppConfig) -> None:
+        """Rebuild hotkeys from *config* and restart the listener."""
         self._config = config
         self.stop()
-        self._build_hotkey_dict(config)
+        self._build_hotkeys(config)
         self.start()

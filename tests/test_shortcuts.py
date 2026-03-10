@@ -41,9 +41,9 @@ def test_signals_defined(qapp: QApplication) -> None:
 
 
 def test_lifecycle_start_stop(qapp: QApplication, mocker: MagicMock) -> None:
-    mock_hotkeys_instance = MagicMock()
+    mock_listener_instance = MagicMock()
     mock_cls = mocker.patch(
-        "src.ui.shortcuts.keyboard.GlobalHotKeys", return_value=mock_hotkeys_instance
+        "src.ui.shortcuts.keyboard.Listener", return_value=mock_listener_instance
     )
 
     config = AppConfig()
@@ -51,30 +51,30 @@ def test_lifecycle_start_stop(qapp: QApplication, mocker: MagicMock) -> None:
     manager.start()
 
     mock_cls.assert_called_once()
-    mock_hotkeys_instance.start.assert_called_once()
+    mock_listener_instance.start.assert_called_once()
 
     manager.stop()
-    mock_hotkeys_instance.stop.assert_called_once()
-    mock_hotkeys_instance.join.assert_called_once()
+    mock_listener_instance.stop.assert_called_once()
+    mock_listener_instance.join.assert_called_once()
 
 
 def test_lifecycle_start_idempotent(qapp: QApplication, mocker: MagicMock) -> None:
-    mock_hotkeys_instance = MagicMock()
-    mocker.patch("src.ui.shortcuts.keyboard.GlobalHotKeys", return_value=mock_hotkeys_instance)
+    mock_listener_instance = MagicMock()
+    mocker.patch("src.ui.shortcuts.keyboard.Listener", return_value=mock_listener_instance)
 
     config = AppConfig()
     manager = GlobalShortcutManager(config)
     manager.start()
     manager.start()
 
-    assert mock_hotkeys_instance.start.call_count == 1
+    assert mock_listener_instance.start.call_count == 1
 
 
 def test_update_shortcuts_restarts_listener(qapp: QApplication, mocker: MagicMock) -> None:
     mock_instance_1 = MagicMock()
     mock_instance_2 = MagicMock()
     mock_cls = mocker.patch(
-        "src.ui.shortcuts.keyboard.GlobalHotKeys",
+        "src.ui.shortcuts.keyboard.Listener",
         side_effect=[mock_instance_1, mock_instance_2],
     )
 
@@ -105,3 +105,79 @@ def test_make_callback_uses_qtimer(qapp: QApplication, mocker: MagicMock) -> Non
     cb()
 
     mock_timer.singleShot.assert_called_once_with(0, manager._emit_toggle_display)
+
+
+def test_on_press_dispatches_to_hotkeys(qapp: QApplication, mocker: MagicMock) -> None:
+    """Key presses should be forwarded to all HotKey objects via canonical()."""
+    mock_listener = MagicMock()
+    mocker.patch("src.ui.shortcuts.keyboard.Listener", return_value=mock_listener)
+
+    config = AppConfig()
+    manager = GlobalShortcutManager(config)
+    manager.start()
+
+    # Replace real HotKey objects with mocks so we can verify calls
+    mock_hotkeys = [MagicMock() for _ in manager._hotkeys]
+    manager._hotkeys = mock_hotkeys
+
+    fake_key = MagicMock()
+    canonical_key = MagicMock()
+    mock_listener.canonical.return_value = canonical_key
+
+    manager._on_press(fake_key)
+
+    mock_listener.canonical.assert_called_once_with(fake_key)
+    for hotkey in mock_hotkeys:
+        hotkey.press.assert_called_once_with(canonical_key)
+
+
+def test_on_release_dispatches_to_hotkeys(qapp: QApplication, mocker: MagicMock) -> None:
+    """Key releases should be forwarded to all HotKey objects via canonical()."""
+    mock_listener = MagicMock()
+    mocker.patch("src.ui.shortcuts.keyboard.Listener", return_value=mock_listener)
+
+    config = AppConfig()
+    manager = GlobalShortcutManager(config)
+    manager.start()
+
+    # Replace real HotKey objects with mocks so we can verify calls
+    mock_hotkeys = [MagicMock() for _ in manager._hotkeys]
+    manager._hotkeys = mock_hotkeys
+
+    fake_key = MagicMock()
+    canonical_key = MagicMock()
+    mock_listener.canonical.return_value = canonical_key
+
+    manager._on_release(fake_key)
+
+    mock_listener.canonical.assert_called_once_with(fake_key)
+    for hotkey in mock_hotkeys:
+        hotkey.release.assert_called_once_with(canonical_key)
+
+
+def test_on_press_none_key_is_noop(qapp: QApplication, mocker: MagicMock) -> None:
+    """Pressing None should be silently ignored."""
+    mock_listener = MagicMock()
+    mocker.patch("src.ui.shortcuts.keyboard.Listener", return_value=mock_listener)
+
+    config = AppConfig()
+    manager = GlobalShortcutManager(config)
+    manager.start()
+
+    manager._on_press(None)
+    mock_listener.canonical.assert_not_called()
+
+
+def test_builds_correct_number_of_hotkeys(qapp: QApplication) -> None:
+    """Manager should build exactly 3 hotkeys (toggle, prev, next)."""
+    config = AppConfig()
+    manager = GlobalShortcutManager(config)
+    assert len(manager._hotkeys) == 3
+
+
+def test_hotkey_with_invalid_shortcut_skipped(qapp: QApplication) -> None:
+    """An invalid shortcut string should be skipped without crashing."""
+    config = AppConfig(shortcut_toggle_display="Ctrl+Bogus")
+    manager = GlobalShortcutManager(config)
+    # Only 2 valid hotkeys should remain (prev + next)
+    assert len(manager._hotkeys) == 2
