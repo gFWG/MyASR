@@ -1,11 +1,10 @@
-"""Pipeline orchestrator: coordinates VadWorker, AsrWorker, and LlmWorker.
+"""Pipeline orchestrator: coordinates VadWorker and AsrWorker.
 
 The orchestrator is a plain Python class (not a QThread).  It owns the
-inter-stage queues, instantiates the three worker threads, and wires their
+inter-stage queues, instantiates the worker threads, and wires their
 signals to caller-provided callbacks via :meth:`connect_signals`.
 """
 
-import dataclasses
 import logging
 import queue
 from collections.abc import Callable
@@ -15,11 +14,8 @@ import numpy as np
 
 from src.asr.qwen_asr import QwenASR
 from src.audio.backends import WasapiLoopbackCapture
-from src.config import AppConfig
-from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.asr_worker import AsrWorker
-from src.pipeline.llm_worker import LlmWorker
-from src.pipeline.types import ASRResult, LLMResult, SpeechSegment
+from src.pipeline.types import ASRResult, SpeechSegment
 from src.pipeline.vad_worker import VadWorker
 from src.vad.silero import SileroVAD
 
@@ -27,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineOrchestrator:
-    """Coordinator that wires VadWorker → AsrWorker → LlmWorker via queues.
+    """Coordinator that wires VadWorker → AsrWorker via queues.
 
     This class is NOT a thread.  It creates the inter-stage queues, instantiates
     worker threads with injected models, and exposes a simple :meth:`start` /
@@ -40,9 +36,7 @@ class PipelineOrchestrator:
             ``"sample_rate"`` (int, default 16000),
             ``"asr_batch_size"`` (int, default 4),
             ``"asr_flush_timeout_ms"`` (int, default 500),
-            ``"db_path"`` (str, default ``":memory:"``),
-            ``"ollama_url"`` (str, default ``"http://localhost:11434"``),
-            ``"ollama_model"`` (str, default ``"qwen3.5:4b"``).
+            ``"db_path"`` (str, default ``":memory:"``).
     """
 
     def __init__(self, config: dict[str, Any]) -> None:
@@ -52,7 +46,6 @@ class PipelineOrchestrator:
         self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1000)
         self._segment_queue: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
         self._text_queue: queue.Queue[ASRResult] = queue.Queue(maxsize=50)
-        self._result_queue: queue.Queue[LLMResult] = queue.Queue(maxsize=50)
 
         # ── Models (heavy GPU objects — created at construction time) ───────
         vad_model = SileroVAD(
@@ -63,11 +56,6 @@ class PipelineOrchestrator:
         )
 
         asr_model = QwenASR(model_path=config.get("model_path"))
-
-        # AsyncOllamaClient requires AppConfig; build a minimal one from the
-        # config dict, falling back to defaults for any missing fields.
-        app_cfg = self._build_app_config(config)
-        llm_client = AsyncOllamaClient(app_cfg)
 
         db_path: str = config.get("db_path", ":memory:")
 
@@ -85,13 +73,6 @@ class PipelineOrchestrator:
             config=config,
             db_path=db_path,
         )
-        self._llm_worker = LlmWorker(
-            text_queue=self._text_queue,
-            result_queue=self._result_queue,
-            llm_client=llm_client,
-            db_path=db_path,
-            config=config,
-        )
 
         # ── Audio capture (started in start(), stopped in stop()) ────────────
         # Each call to start() re-starts capture; WasapiLoopbackCapture feeds
@@ -107,24 +88,21 @@ class PipelineOrchestrator:
     # ── Lifecycle ────────────────────────────────────────────────────────────
 
     def start(self) -> None:
-        """Start audio capture then all worker threads (capture → VAD → ASR → LLM)."""
-        logger.info("Starting audio capture and pipeline workers: capture → VAD → ASR → LLM")
+        """Start audio capture then all worker threads (capture → VAD → ASR)."""
+        logger.info("Starting audio capture and pipeline workers: capture → VAD → ASR")
         self._capture.start(callback=self.put_audio)
         self._vad_worker.start()
         self._asr_worker.start()
-        self._llm_worker.start()
         self._running = True
 
     def stop(self) -> None:
-        """Stop all worker threads then audio capture (LLM → ASR → VAD → capture).
+        """Stop all worker threads then audio capture (ASR → VAD → capture).
 
         Each worker is stopped then waited on for up to 3 seconds to allow
         in-flight items to drain gracefully before the upstream worker stops.
         Audio capture is stopped last so any in-flight chunks can still be drained.
         """
-        logger.info("Stopping pipeline workers: LLM → ASR → VAD → capture")
-        self._llm_worker.stop()
-        self._llm_worker.wait(3000)
+        logger.info("Stopping pipeline workers: ASR → VAD → capture")
         self._asr_worker.stop()
         self._asr_worker.wait(3000)
         self._vad_worker.stop()
@@ -157,19 +135,14 @@ class PipelineOrchestrator:
     def connect_signals(
         self,
         on_asr_ready: Callable[[ASRResult], None],
-        on_translation_ready: Callable[[LLMResult], None],
     ) -> None:
         """Connect worker output signals to caller-provided callbacks.
 
         Args:
             on_asr_ready: Callable connected to ``AsrWorker.asr_ready``.
                 Receives an ``ASRResult`` object.
-            on_translation_ready: Callable connected to
-                ``LlmWorker.translation_ready``.  Receives a
-                ``TranslationResult`` object.
         """
         self._asr_worker.asr_ready.connect(on_asr_ready)
-        self._llm_worker.translation_ready.connect(on_translation_ready)
 
     # ── Signal properties ────────────────────────────────────────────────────
 
@@ -179,13 +152,8 @@ class PipelineOrchestrator:
         return self._asr_worker.asr_ready
 
     @property
-    def translation_ready(self) -> Any:  # PySide6 Signal has no usable stub type
-        """The ``translation_ready`` signal forwarded from :class:`LlmWorker`."""
-        return self._llm_worker.translation_ready
-
-    @property
     def error_occurred(self) -> list[Any]:  # PySide6 Signal has no usable stub type
-        """List of ``error_occurred`` signals from all three workers.
+        """List of ``error_occurred`` signals from all workers.
 
         Callers can iterate and connect each signal to a single handler:
 
@@ -197,38 +165,4 @@ class PipelineOrchestrator:
         return [
             self._vad_worker.error_occurred,
             self._asr_worker.error_occurred,
-            self._llm_worker.error_occurred,
         ]
-
-    # ── Config hot-reload ───────────────────────────────────────────────────
-
-    def on_config_changed(self, config: AppConfig) -> None:
-        """Apply updated configuration to the LLM worker at runtime."""
-        import asyncio as _asyncio
-
-        old_client = self._llm_worker._llm_client
-        new_client = AsyncOllamaClient(config)
-        self._llm_worker.update_client(new_client)
-        _loop = _asyncio.new_event_loop()
-        _loop.run_until_complete(old_client.close())
-        _loop.close()
-        logger.info("PipelineOrchestrator: LLM client replaced with new config")
-
-    # ── Internal helpers ─────────────────────────────────────────────────────
-
-    @staticmethod
-    def _build_app_config(config: dict[str, Any]) -> AppConfig:
-        """Build an ``AppConfig`` from a plain config dict.
-
-        Only fields explicitly present in *config* are overridden; all others
-        retain their ``AppConfig`` defaults.
-
-        Args:
-            config: Flat configuration dictionary from the orchestrator caller.
-
-        Returns:
-            ``AppConfig`` instance suitable for ``AsyncOllamaClient``.
-        """
-        known_fields = {f.name for f in dataclasses.fields(AppConfig)}
-        filtered = {k: v for k, v in config.items() if k in known_fields}
-        return AppConfig(**filtered)

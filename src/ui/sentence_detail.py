@@ -1,7 +1,7 @@
 """Sentence detail dialog for viewing saved sentences with JLPT annotations.
 
-Displays a sentence's Japanese text, translation, and explanation alongside
-JLPT-badged vocabulary and grammar sections.
+Displays a sentence's Japanese text alongside JLPT-badged vocabulary and
+grammar sections.
 """
 
 from __future__ import annotations
@@ -104,11 +104,6 @@ class SentenceDetailDialog(QDialog):
 
         content_layout.addWidget(self._build_header())
         content_layout.addWidget(self._build_japanese_section())
-        content_layout.addWidget(self._build_translation_section())
-
-        explanation_widget = self._build_explanation_section()
-        if explanation_widget is not None:
-            content_layout.addWidget(explanation_widget)
 
         if self._vocab_hits:
             content_layout.addWidget(self._build_vocab_group())
@@ -151,47 +146,6 @@ class SentenceDetailDialog(QDialog):
         )
         browser.setHtml(html_text)
         return browser
-
-    def _build_translation_section(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-
-        header = QLabel("Translation")
-        header.setStyleSheet("font-weight: bold; font-size: 12px; color: #555555;")
-
-        translation = self._sentence.chinese_translation or ""
-        body = QLabel(translation)
-        body.setWordWrap(True)
-        body.setStyleSheet(f"font-family: {_FONT_FAMILIES}; font-size: 14px;")
-        body.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-
-        layout.addWidget(header)
-        layout.addWidget(body)
-        return container
-
-    def _build_explanation_section(self) -> QWidget | None:
-        explanation = self._sentence.explanation
-        if not explanation:
-            return None
-
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-
-        header = QLabel("Explanation")
-        header.setStyleSheet("font-weight: bold; font-size: 12px; color: #555555;")
-
-        body = QLabel(explanation)
-        body.setWordWrap(True)
-        body.setStyleSheet(f"font-family: {_FONT_FAMILIES}; font-size: 13px; color: #333333;")
-        body.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-
-        layout.addWidget(header)
-        layout.addWidget(body)
-        return container
 
     def _build_vocab_group(self) -> QGroupBox:
         group = QGroupBox("Vocabulary")

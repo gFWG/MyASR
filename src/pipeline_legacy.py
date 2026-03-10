@@ -1,4 +1,4 @@
-"""PipelineWorker: QThread that runs the Audio→VAD→ASR→Preprocessing→LLM pipeline."""
+"""PipelineWorker: QThread that runs the Audio→VAD→ASR→Preprocessing pipeline."""
 
 import logging
 import queue
@@ -14,7 +14,6 @@ from src.config import AppConfig
 from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord, SentenceResult
 from src.db.repository import LearningRepository
 from src.exceptions import ASRError, AudioCaptureError
-from src.llm.ollama_client import OllamaClient
 from src.profiling import PipelineProfiler, StageTimer
 from src.vad.silero import SileroVAD
 
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineWorker(QThread):
-    """QThread that runs the Audio→VAD→ASR→Preprocessing→LLM pipeline.
+    """QThread that runs the Audio→VAD→ASR→Preprocessing pipeline.
 
     Emits sentence_ready with a SentenceResult when transcription + analysis complete.
     Emits error_occurred with an error string for fatal/non-fatal errors.
@@ -44,7 +43,6 @@ class PipelineWorker(QThread):
         self._config_queue: queue.Queue[AppConfig] = queue.Queue()
         self._user_level: int = config.user_jlpt_level
         self._running = False
-        self._llm = OllamaClient(config)
         self._db_path = db_path
         self._repo: LearningRepository | None = None
         self._profiler = PipelineProfiler(config.profiling)
@@ -74,10 +72,9 @@ class PipelineWorker(QThread):
     def _apply_config(self, config: AppConfig) -> None:
         self._config = config
         self._user_level = config.user_jlpt_level
-        self._llm = OllamaClient(config)
 
     def run(self) -> None:
-        """Main thread loop: capture → VAD → ASR → preprocessing → LLM → emit."""
+        """Main thread loop: capture → VAD → ASR → preprocessing → emit."""
         self._running = True
 
         if self._db_path is not None:
@@ -137,14 +134,8 @@ class PipelineWorker(QThread):
                         self.error_occurred.emit(str(exc))
                         continue
 
-                with StageTimer("llm", self._profiler):
-                    # translation, explanation = self._llm.translate(text)
-                    translation, explanation = (None, None)  # Disable LLM calls for now
-
                 result = SentenceResult(
                     japanese_text=text,
-                    chinese_translation=translation,
-                    explanation=explanation,
                     analysis=analysis,
                 )
 
@@ -207,8 +198,6 @@ class PipelineWorker(QThread):
         record = SentenceRecord(
             id=None,
             japanese_text=result.japanese_text,
-            chinese_translation=result.chinese_translation,
-            explanation=result.explanation,
             source_context=None,
             created_at=result.created_at.isoformat(),
         )

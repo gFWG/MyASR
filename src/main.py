@@ -85,8 +85,6 @@ def main() -> None:
             "asr_batch_size": 4,
             "asr_flush_timeout_ms": 500,
             "db_path": config.db_path,
-            "ollama_url": config.ollama_url,
-            "ollama_model": config.ollama_model,
         }
         pipeline = PipelineOrchestrator(config=pipeline_config)
         tray = SystemTrayManager()
@@ -190,7 +188,7 @@ def main() -> None:
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn, _learning_panel))
 
-        pipeline.connect_signals(overlay.on_asr_ready, overlay.on_llm_ready)
+        pipeline.connect_signals(overlay.on_asr_ready)
         pipeline.start()
         overlay.set_status("Listening...")
         overlay.show()

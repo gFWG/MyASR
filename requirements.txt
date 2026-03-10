@@ -2,7 +2,6 @@
 torch
 torchaudio
 
-pynput>=1.7
 sounddevice; platform_system == "Linux"
 silero-vad
 fugashi
@@ -13,7 +12,6 @@ numpy
 scipy
 qwen-asr
 PyAudioWPatch; platform_system == "Windows"
-httpx>=0.28.1
 soundfile>=0.13.1
 soxr>=1.0.0
 

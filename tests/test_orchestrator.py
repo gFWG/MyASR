@@ -1,19 +1,19 @@
 """Tests for PipelineOrchestrator.
 
 Tests cover:
-- Constructor creates all four queues with correct maxsizes
+- Constructor creates queues with correct maxsizes
 - Constructor instantiates workers with correct queue wiring
-- start() calls .start() on VAD, ASR, LLM workers in that order
-- stop() calls .stop() on LLM, ASR, VAD workers in reverse order and .wait(3000)
+- start() calls .start() on capture, VAD, ASR workers in that order
+- stop() calls .stop() on ASR, VAD workers in reverse order and .wait(3000)
 - put_audio() routes chunk to audio_queue
 - put_audio() drops chunk and logs warning when audio_queue is full
-- connect_signals() wires asr_ready and translation_ready signals
-- Property accessors asr_ready, translation_ready, error_occurred exist
+- connect_signals() wires asr_ready signal
+- Property accessors asr_ready, error_occurred exist
 - _running flag updated on start/stop
 """
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import MagicMock, call, patch
 
 import numpy as np
 import pytest
@@ -31,8 +31,6 @@ def _config() -> dict[str, Any]:
         "asr_batch_size": 4,
         "asr_flush_timeout_ms": 500,
         "db_path": ":memory:",
-        "ollama_url": "http://localhost:11434",
-        "ollama_model": "qwen3.5:4b",
     }
 
 
@@ -43,16 +41,13 @@ def _config() -> dict[str, Any]:
 
 @pytest.fixture()
 def mock_workers() -> dict[str, MagicMock]:
-    """Pre-built mock workers (VAD / ASR / LLM)."""
+    """Pre-built mock workers (VAD / ASR)."""
     vad_worker = MagicMock()
     asr_worker = MagicMock()
-    llm_worker = MagicMock()
-    # Simulate Qt signals as MagicMock attributes
-    for worker in (vad_worker, asr_worker, llm_worker):
+    for worker in (vad_worker, asr_worker):
         worker.error_occurred = MagicMock()
     asr_worker.asr_ready = MagicMock()
-    llm_worker.translation_ready = MagicMock()
-    return {"vad": vad_worker, "asr": asr_worker, "llm": llm_worker}
+    return {"vad": vad_worker, "asr": asr_worker}
 
 
 @pytest.fixture()
@@ -63,14 +58,11 @@ def orchestrator(
     """PipelineOrchestrator with all GPU models and workers replaced by mocks."""
     mock_vad_model = MagicMock()
     mock_asr_model = MagicMock()
-    mock_llm_client = MagicMock()
-    mock_llm_client.close = AsyncMock()
     mock_capture = MagicMock()
 
     with (
         patch("src.pipeline.orchestrator.SileroVAD", return_value=mock_vad_model),
         patch("src.pipeline.orchestrator.QwenASR", return_value=mock_asr_model),
-        patch("src.pipeline.orchestrator.AsyncOllamaClient", return_value=mock_llm_client),
         patch(
             "src.pipeline.orchestrator.WasapiLoopbackCapture",
             return_value=mock_capture,
@@ -82,10 +74,6 @@ def orchestrator(
         patch(
             "src.pipeline.orchestrator.AsrWorker",
             return_value=mock_workers["asr"],
-        ),
-        patch(
-            "src.pipeline.orchestrator.LlmWorker",
-            return_value=mock_workers["llm"],
         ),
     ):
         orch = PipelineOrchestrator(config=_config())
@@ -118,13 +106,6 @@ def test_orchestrator_creates_text_queue_with_maxsize_50(
     assert orchestrator._text_queue.maxsize == 50
 
 
-def test_orchestrator_creates_result_queue_with_maxsize_50(
-    orchestrator: PipelineOrchestrator,
-) -> None:
-    """result_queue must have maxsize=50."""
-    assert orchestrator._result_queue.maxsize == 50
-
-
 # ---------------------------------------------------------------------------
 # Constructor: worker instantiation
 # ---------------------------------------------------------------------------
@@ -133,11 +114,10 @@ def test_orchestrator_creates_result_queue_with_maxsize_50(
 def test_orchestrator_instantiates_workers(
     qt_app: Any,
 ) -> None:
-    """Constructor calls VadWorker, AsrWorker, LlmWorker with expected queues."""
+    """Constructor calls VadWorker, AsrWorker with expected queues."""
     with (
         patch("src.pipeline.orchestrator.SileroVAD"),
         patch("src.pipeline.orchestrator.QwenASR"),
-        patch("src.pipeline.orchestrator.AsyncOllamaClient"),
         patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
         patch(
             "src.pipeline.orchestrator.VadWorker",
@@ -145,16 +125,11 @@ def test_orchestrator_instantiates_workers(
         patch(
             "src.pipeline.orchestrator.AsrWorker",
         ) as MockAsrWorker,
-        patch(
-            "src.pipeline.orchestrator.LlmWorker",
-        ) as MockLlmWorker,
     ):
-        # Provide mock signals on worker instances
-        for MockWorker in (MockVadWorker, MockAsrWorker, MockLlmWorker):
+        for MockWorker in (MockVadWorker, MockAsrWorker):
             instance = MagicMock()
             instance.error_occurred = MagicMock()
             instance.asr_ready = MagicMock()
-            instance.translation_ready = MagicMock()
             MockWorker.return_value = instance
 
         orch = PipelineOrchestrator(config=_config())
@@ -171,12 +146,6 @@ def test_orchestrator_instantiates_workers(
             asr_call.args and asr_call.args[0] is orch._segment_queue
         )
 
-        # LlmWorker receives text_queue + result_queue
-        llm_call = MockLlmWorker.call_args
-        assert llm_call.kwargs.get("text_queue") is orch._text_queue or (
-            llm_call.args and llm_call.args[0] is orch._text_queue
-        )
-
 
 # ---------------------------------------------------------------------------
 # start() ordering
@@ -187,18 +156,16 @@ def test_start_calls_workers_in_order(
     orchestrator: PipelineOrchestrator,
     mock_workers: dict[str, MagicMock],
 ) -> None:
-    """start() must call VAD.start() first, then ASR, then LLM."""
+    """start() must call VAD.start() first, then ASR."""
     manager = MagicMock()
     manager.attach_mock(mock_workers["vad"].start, "vad_start")
     manager.attach_mock(mock_workers["asr"].start, "asr_start")
-    manager.attach_mock(mock_workers["llm"].start, "llm_start")
 
     orchestrator.start()
 
     assert manager.mock_calls == [
         call.vad_start(),
         call.asr_start(),
-        call.llm_start(),
     ]
 
 
@@ -219,18 +186,16 @@ def test_stop_calls_workers_in_reverse_order(
     orchestrator: PipelineOrchestrator,
     mock_workers: dict[str, MagicMock],
 ) -> None:
-    """stop() must call LLM.stop() first, then ASR, then VAD."""
+    """stop() must call ASR.stop() first, then VAD."""
     orchestrator.start()
 
     manager = MagicMock()
     manager.attach_mock(mock_workers["vad"].stop, "vad_stop")
     manager.attach_mock(mock_workers["asr"].stop, "asr_stop")
-    manager.attach_mock(mock_workers["llm"].stop, "llm_stop")
 
     orchestrator.stop()
 
     assert manager.mock_calls == [
-        call.llm_stop(),
         call.asr_stop(),
         call.vad_stop(),
     ]
@@ -246,7 +211,6 @@ def test_stop_calls_wait_on_each_worker(
 
     mock_workers["vad"].wait.assert_called_once_with(3000)
     mock_workers["asr"].wait.assert_called_once_with(3000)
-    mock_workers["llm"].wait.assert_called_once_with(3000)
 
 
 def test_stop_clears_running_flag(
@@ -312,20 +276,8 @@ def test_connect_signals_connects_asr_ready(
 ) -> None:
     """connect_signals() calls connect on asr_worker.asr_ready."""
     on_asr = MagicMock()
-    on_trans = MagicMock()
-    orchestrator.connect_signals(on_asr_ready=on_asr, on_translation_ready=on_trans)
+    orchestrator.connect_signals(on_asr_ready=on_asr)
     mock_workers["asr"].asr_ready.connect.assert_called_once_with(on_asr)
-
-
-def test_connect_signals_connects_translation_ready(
-    orchestrator: PipelineOrchestrator,
-    mock_workers: dict[str, MagicMock],
-) -> None:
-    """connect_signals() calls connect on llm_worker.translation_ready."""
-    on_asr = MagicMock()
-    on_trans = MagicMock()
-    orchestrator.connect_signals(on_asr_ready=on_asr, on_translation_ready=on_trans)
-    mock_workers["llm"].translation_ready.connect.assert_called_once_with(on_trans)
 
 
 # ---------------------------------------------------------------------------
@@ -341,49 +293,19 @@ def test_asr_ready_property_returns_worker_signal(
     assert orchestrator.asr_ready is mock_workers["asr"].asr_ready
 
 
-def test_translation_ready_property_returns_worker_signal(
-    orchestrator: PipelineOrchestrator,
-    mock_workers: dict[str, MagicMock],
-) -> None:
-    """translation_ready property must return the llm_worker.translation_ready signal."""
-    assert orchestrator.translation_ready is mock_workers["llm"].translation_ready
-
-
 def test_error_occurred_property_accessible(
     orchestrator: PipelineOrchestrator,
 ) -> None:
     """error_occurred property must be accessible (list of worker signals)."""
     err = orchestrator.error_occurred
-    # error_occurred is a list of signals from all three workers
     assert isinstance(err, list)
-    assert len(err) == 3
+    assert len(err) == 2
 
 
-def test_on_config_changed_replaces_llm_client(
+def test_on_config_changed_is_noop(
     orchestrator: PipelineOrchestrator,
-    mock_workers: dict[str, MagicMock],
 ) -> None:
+    """on_config_changed() should not raise."""
     from src.config import AppConfig
 
-    mock_workers["llm"]._llm_client = MagicMock()
-    mock_workers["llm"]._llm_client.close = AsyncMock()
-    new_config = AppConfig(ollama_model="new-model")
-    orchestrator.on_config_changed(new_config)
-    mock_workers["llm"].update_client.assert_called_once()
-    call_args = mock_workers["llm"].update_client.call_args
-    new_client = call_args[0][0]
-    assert new_client._model == "new-model"
-
-
-def test_config_change_closes_old_client(
-    orchestrator: PipelineOrchestrator,
-    mock_workers: dict[str, MagicMock],
-) -> None:
-    from src.config import AppConfig
-
-    old_client = MagicMock()
-    old_client.close = AsyncMock()
-    mock_workers["llm"]._llm_client = old_client
-    new_config = AppConfig(ollama_model="changed-model")
-    orchestrator.on_config_changed(new_config)
-    old_client.close.assert_awaited_once()
+    orchestrator.on_config_changed(AppConfig())

@@ -10,8 +10,6 @@ import numpy as np
 class SentenceRecord:
     id: int | None
     japanese_text: str
-    chinese_translation: str | None
-    explanation: str | None
     source_context: str | None
     created_at: str
 
@@ -80,8 +78,6 @@ class AnalysisResult:
 @dataclass
 class SentenceResult:
     japanese_text: str
-    chinese_translation: str | None
-    explanation: str | None
     analysis: AnalysisResult
     created_at: datetime = field(default_factory=datetime.now)
     sentence_id: int | None = None

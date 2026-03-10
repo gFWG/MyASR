@@ -74,7 +74,7 @@ class LearningPanel(QWidget):
         top_bar = QHBoxLayout()
 
         self._search_edit = QLineEdit()
-        self._search_edit.setPlaceholderText("Search Japanese / translation…")
+        self._search_edit.setPlaceholderText("Search Japanese…")
         self._search_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
@@ -102,9 +102,9 @@ class LearningPanel(QWidget):
         root_layout.addLayout(top_bar)
 
         # ── table ────────────────────────────────────────────────────────────
-        self._table = QTableWidget(0, 4)
+        self._table = QTableWidget(0, 3)
         self._table.setHorizontalHeaderLabels(
-            ["Created At", "Japanese Text", "Translation", "Vocab Count"],
+            ["Created At", "Japanese Text", "Vocab Count"],
         )
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -113,10 +113,10 @@ class LearningPanel(QWidget):
         self._table.doubleClicked.connect(self._on_row_double_clicked)
 
         header = self._table.horizontalHeader()
-        for col in range(3):
+        for col in range(2):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self._table.setColumnWidth(3, 90)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        self._table.setColumnWidth(2, 90)
 
         root_layout.addWidget(self._table)
 
@@ -215,11 +215,6 @@ class LearningPanel(QWidget):
 
         self._table.setItem(row_idx, 1, QTableWidgetItem(record.japanese_text))
 
-        translation = record.chinese_translation or ""
-        if len(translation) > 40:
-            translation = translation[:40] + "…"
-        self._table.setItem(row_idx, 2, QTableWidgetItem(translation))
-
         # Vocab count: fetch highlights for this record
         vocab_count = 0
         if record.id is not None:
@@ -229,7 +224,7 @@ class LearningPanel(QWidget):
                 vocab_count = len(vocab_hits)
         count_item = QTableWidgetItem(str(vocab_count))
         count_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._table.setItem(row_idx, 3, count_item)
+        self._table.setItem(row_idx, 2, count_item)
 
     # ── slots ────────────────────────────────────────────────────────────────
 

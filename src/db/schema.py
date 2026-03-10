@@ -9,8 +9,6 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS sentence_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     japanese_text TEXT NOT NULL,
-    chinese_translation TEXT,
-    explanation TEXT,
     source_context TEXT,
     created_at TEXT NOT NULL
 );

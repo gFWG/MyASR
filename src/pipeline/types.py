@@ -41,23 +41,6 @@ class ASRResult:
 
 
 @dataclass(frozen=True, slots=True)
-class LLMResult:
-    """Result from LLM translation.
-
-    Attributes:
-        translation: Translated text (e.g., Chinese), or None.
-        explanation: Grammar/vocab explanation, or None.
-        segment_id: ID of the segment that was translated.
-        elapsed_ms: Processing time in milliseconds.
-    """
-
-    translation: str | None
-    explanation: str | None
-    segment_id: str
-    elapsed_ms: float
-
-
-@dataclass(frozen=True, slots=True)
 class PipelineStageMetrics:
     """Metrics for a single pipeline stage execution.
 
@@ -74,4 +57,4 @@ class PipelineStageMetrics:
     elapsed_ms: float
 
 
-__all__ = ["ASRResult", "PipelineStageMetrics", "SpeechSegment", "LLMResult"]
+__all__ = ["ASRResult", "PipelineStageMetrics", "SpeechSegment"]

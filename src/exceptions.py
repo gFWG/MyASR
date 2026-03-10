@@ -25,17 +25,5 @@ class PreprocessingError(MyASRError):
     """Error during text preprocessing/analysis."""
 
 
-class LLMError(MyASRError):
-    """Error communicating with the LLM service."""
-
-
-class LLMTimeoutError(LLMError):
-    """LLM request timed out."""
-
-
-class LLMUnavailableError(LLMError):
-    """LLM service is not reachable."""
-
-
 class DatabaseError(MyASRError):
     """Error during database operations."""

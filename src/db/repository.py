@@ -73,13 +73,11 @@ class LearningRepository:
         cursor = self._conn.execute(
             """
             INSERT INTO sentence_records
-                (japanese_text, chinese_translation, explanation, source_context, created_at)
-            VALUES (?, ?, ?, ?, ?)
+                (japanese_text, source_context, created_at)
+            VALUES (?, ?, ?)
             """,
             (
                 asr_result.text,
-                None,
-                None,
                 asr_result.segment_id,
                 datetime.now().isoformat(),
             ),
@@ -90,34 +88,6 @@ class LearningRepository:
         self._conn.commit()
         logger.info("Inserted partial sentence record id=%d", row_id)
         return row_id
-
-    def update_translation(
-        self, row_id: int, translation: str | None, explanation: str | None
-    ) -> bool:
-        """Update translation and explanation for an existing sentence record.
-
-        Args:
-            row_id: Primary key ID of the sentence record to update.
-            translation: Chinese translation text, or None.
-            explanation: Grammar/vocab explanation, or None.
-
-        Returns:
-            True if the row was updated successfully, False if row not found.
-        """
-        cursor = self._conn.execute(
-            """
-            UPDATE sentence_records
-            SET chinese_translation = ?, explanation = ?
-            WHERE id = ?
-            """,
-            (translation, explanation, row_id),
-        )
-        if cursor.rowcount == 0:
-            logger.warning("No row found to update for row_id=%d", row_id)
-            return False
-        self._conn.commit()
-        logger.info("Updated translation for sentence record id=%d", row_id)
-        return True
 
     def insert_sentence(
         self,
@@ -140,14 +110,11 @@ class LearningRepository:
             cursor = self._conn.execute(
                 """
                 INSERT INTO sentence_records
-                    (japanese_text, chinese_translation, explanation,
-                     source_context, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                    (japanese_text, source_context, created_at)
+                VALUES (?, ?, ?)
                 """,
                 (
                     record.japanese_text,
-                    record.chinese_translation,
-                    record.explanation,
                     record.source_context,
                     record.created_at,
                 ),
@@ -226,8 +193,7 @@ class LearningRepository:
         """
         cursor = self._conn.execute(
             """
-            SELECT id, japanese_text, chinese_translation, explanation,
-                   source_context, created_at
+            SELECT id, japanese_text, source_context, created_at
             FROM sentence_records
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
@@ -239,19 +205,17 @@ class LearningRepository:
             SentenceRecord(
                 id=row[0],
                 japanese_text=row[1],
-                chinese_translation=row[2],
-                explanation=row[3],
-                source_context=row[4],
-                created_at=row[5],
+                source_context=row[2],
+                created_at=row[3],
             )
             for row in rows
         ]
 
     def search_sentences(self, query: str) -> list[SentenceRecord]:
-        """Full-text search on japanese_text and chinese_translation using LIKE.
+        """Full-text search on japanese_text using LIKE.
 
         Args:
-            query: Search string to look for in japanese_text or chinese_translation.
+            query: Search string to look for in japanese_text.
 
         Returns:
             List of matching SentenceRecord items.
@@ -259,23 +223,20 @@ class LearningRepository:
         pattern = f"%{query}%"
         cursor = self._conn.execute(
             """
-            SELECT id, japanese_text, chinese_translation, explanation,
-                   source_context, created_at
+            SELECT id, japanese_text, source_context, created_at
             FROM sentence_records
-            WHERE japanese_text LIKE ? OR chinese_translation LIKE ?
+            WHERE japanese_text LIKE ?
             ORDER BY created_at DESC
             """,
-            (pattern, pattern),
+            (pattern,),
         )
         rows = cursor.fetchall()
         return [
             SentenceRecord(
                 id=row[0],
                 japanese_text=row[1],
-                chinese_translation=row[2],
-                explanation=row[3],
-                source_context=row[4],
-                created_at=row[5],
+                source_context=row[2],
+                created_at=row[3],
             )
             for row in rows
         ]
@@ -341,8 +302,7 @@ class LearningRepository:
 
         cursor = self._conn.execute(
             f"""
-            SELECT id, japanese_text, chinese_translation, explanation,
-                   source_context, created_at
+            SELECT id, japanese_text, source_context, created_at
             FROM sentence_records
             {where_sql}
             ORDER BY created_at DESC
@@ -354,8 +314,6 @@ class LearningRepository:
         columns = [
             "id",
             "japanese_text",
-            "chinese_translation",
-            "explanation",
             "source_context",
             "created_at",
         ]
@@ -485,8 +443,7 @@ class LearningRepository:
         params: list[object] = []
 
         if query is not None:
-            where_clauses.append("(japanese_text LIKE ? OR chinese_translation LIKE ?)")
-            params.append(f"%{query}%")
+            where_clauses.append("japanese_text LIKE ?")
             params.append(f"%{query}%")
         if date_from is not None:
             where_clauses.append("created_at >= ?")
@@ -503,8 +460,7 @@ class LearningRepository:
 
         cursor = self._conn.execute(
             f"""
-            SELECT id, japanese_text, chinese_translation, explanation,
-                   source_context, created_at
+            SELECT id, japanese_text, source_context, created_at
             FROM sentence_records
             {where_sql}
             {order_sql}
@@ -517,10 +473,8 @@ class LearningRepository:
             SentenceRecord(
                 id=row[0],
                 japanese_text=row[1],
-                chinese_translation=row[2],
-                explanation=row[3],
-                source_context=row[4],
-                created_at=row[5],
+                source_context=row[2],
+                created_at=row[3],
             )
             for row in rows
         ]
@@ -534,7 +488,7 @@ class LearningRepository:
         """Return count of sentences matching filters.
 
         Args:
-            query: Optional search string matched against japanese_text and chinese_translation.
+            query: Optional search string matched against japanese_text.
             date_from: Optional ISO date string; only records on or after this date.
             date_to: Optional ISO date string; only records on or before this date.
 
@@ -545,8 +499,7 @@ class LearningRepository:
         params: list[object] = []
 
         if query is not None:
-            where_clauses.append("(japanese_text LIKE ? OR chinese_translation LIKE ?)")
-            params.append(f"%{query}%")
+            where_clauses.append("japanese_text LIKE ?")
             params.append(f"%{query}%")
         if date_from is not None:
             where_clauses.append("created_at >= ?")
@@ -579,8 +532,7 @@ class LearningRepository:
         """
         cursor = self._conn.execute(
             """
-            SELECT id, japanese_text, chinese_translation, explanation,
-                   source_context, created_at
+            SELECT id, japanese_text, source_context, created_at
             FROM sentence_records
             WHERE id = ?
             """,
@@ -593,10 +545,8 @@ class LearningRepository:
         sentence = SentenceRecord(
             id=row[0],
             japanese_text=row[1],
-            chinese_translation=row[2],
-            explanation=row[3],
-            source_context=row[4],
-            created_at=row[5],
+            source_context=row[2],
+            created_at=row[3],
         )
 
         vcursor = self._conn.execute(

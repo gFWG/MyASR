@@ -1,8 +1,7 @@
 """Transparent PySide6 overlay window for Japanese text display.
 
-Displays JLPT-highlighted Japanese text with Chinese translation.
-Supports drag to move, configurable shortcuts, sentence history
-navigation, and hover detection for vocabulary/grammar tooltips.
+Displays JLPT-highlighted Japanese text. Supports drag to move,
+sentence history navigation, and hover detection for vocabulary/grammar tooltips.
 """
 
 from __future__ import annotations
@@ -29,19 +28,16 @@ from PySide6.QtWidgets import (
 
 from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
-from src.pipeline.types import ASRResult, LLMResult
+from src.pipeline.types import ASRResult
 from src.ui.highlight import HighlightRenderer
-from src.ui.shortcuts import GlobalShortcutManager
 
 logger = logging.getLogger(__name__)
 
 _JP_FONT_SIZE = 16
-_CN_FONT_SIZE = 14
 _BG_COLOR = QColor(30, 30, 30, 200)
 _CORNER_RADIUS = 12
 _MAX_HISTORY = 10
 _RESIZE_MARGIN = 8
-_SINGLE_MODE_HEIGHT_RATIO = 0.6
 
 _FONT_FAMILIES = ["Segoe UI", "Yu Gothic UI", "Noto Sans CJK JP", "sans-serif"]
 
@@ -77,11 +73,10 @@ def _centered_html(text: str, color: str = "#EEEEEE") -> str:
 
 
 class OverlayWindow(QWidget):
-    """Transparent frameless overlay window for Japanese text + Chinese translation.
+    """Transparent frameless overlay window for JLPT-highlighted Japanese text.
 
-    Displays JLPT-highlighted Japanese text and Chinese translation in a
-    semi-transparent rounded-corner overlay. Supports drag to move,
-    configurable shortcuts, sentence history navigation, and hover
+    Displays JLPT-highlighted Japanese text in a semi-transparent rounded-corner
+    overlay. Supports drag to move, sentence history navigation, and hover
     detection for vocabulary/grammar tooltips.
 
     Signals:
@@ -116,8 +111,6 @@ class OverlayWindow(QWidget):
 
         self._center_on_screen()
 
-        self._display_mode: str = config.overlay_display_mode
-        self._single_sub_mode: str = "jp"
         self._drag_pos: QPoint | None = None
         self._current_result: SentenceResult | None = None
         self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
@@ -129,48 +122,19 @@ class OverlayWindow(QWidget):
         layout.setSpacing(2)
 
         self._jp_browser = _make_browser(_JP_FONT_SIZE)
-        self._cn_browser = _make_browser(_CN_FONT_SIZE)
 
         layout.addWidget(self._jp_browser)
-        layout.addWidget(self._cn_browser)
 
         self._jp_browser.setMouseTracking(True)
         self._jp_browser.viewport().setMouseTracking(True)
         self._jp_browser.viewport().installEventFilter(self)
 
-        self._cn_browser.setMouseTracking(True)
-        self._cn_browser.viewport().setMouseTracking(True)
-        self._cn_browser.viewport().installEventFilter(self)
-
         self.setMouseTracking(True)
         self._resize_edge: str = ""
         self._resize_origin: QPoint | None = None
         self._resize_geo: QRect | None = None
-        self._both_mode_height: int = config.overlay_height
-
-        self._shortcut_mgr = GlobalShortcutManager(config, self)
-        self._shortcut_mgr.toggle_display_triggered.connect(self._toggle_mode)
-        self._shortcut_mgr.prev_sentence_triggered.connect(self._prev_sentence)
-        self._shortcut_mgr.next_sentence_triggered.connect(self._next_sentence)
-        self._shortcut_mgr.start()
-
-        self._apply_display_mode()
 
         self.set_status("Initializing...")
-
-    def _apply_display_mode(self) -> None:
-        if self._display_mode == "both":
-            self._jp_browser.setVisible(True)
-            self._cn_browser.setVisible(True)
-            self.resize(self.width(), self._both_mode_height)
-        else:
-            self._jp_browser.setVisible(self._single_sub_mode == "jp")
-            self._cn_browser.setVisible(self._single_sub_mode == "cn")
-            shrunk = max(
-                self.minimumHeight(),
-                int(self._both_mode_height * _SINGLE_MODE_HEIGHT_RATIO),
-            )
-            self.resize(self.width(), shrunk)
 
     def _center_on_screen(self) -> None:
         screen_geo = QApplication.primaryScreen().geometry()
@@ -182,8 +146,7 @@ class OverlayWindow(QWidget):
         """Display a new sentence result and add it to history.
 
         Args:
-            result: Pipeline output containing Japanese text, Chinese
-                translation, and JLPT analysis data.
+            result: Pipeline output containing Japanese text and JLPT analysis data.
         """
         self._current_result = result
 
@@ -212,30 +175,14 @@ class OverlayWindow(QWidget):
 
         self._jp_browser.setHtml(rich_text)
 
-        translation = result.chinese_translation or result.explanation or "LLM unavailable"
-        self._cn_browser.setHtml(_centered_html(translation))
-
     def on_asr_ready(self, result: ASRResult) -> None:
-        """Show ASR text immediately with 'Translating...' placeholder.
+        """Show ASR text immediately.
 
         Args:
             result: ASR output containing Japanese text.
         """
         self._jp_browser.setHtml(_centered_html(result.text))
-        self._cn_browser.setHtml(_centered_html("Translating…", color="#AAAAAA"))
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
-
-    def on_llm_ready(self, result: LLMResult) -> None:
-        """Update display with LLM output when it arrives async.
-
-        Args:
-            result: LLM output. translation/explanation may be None
-                if LLM failed gracefully.
-        """
-        text = result.translation or result.explanation or "LLM unavailable"
-
-        self._cn_browser.setHtml(_centered_html(text))
-        logger.debug("on_llm_ready: segment_id=%s", result.segment_id)
 
     def on_config_changed(self, config: AppConfig) -> None:
         """Apply live config changes to the overlay without restarting.
@@ -248,32 +195,21 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab = config.enable_vocab_highlight
         self._enable_grammar = config.enable_grammar_highlight
-        old_mode = self._display_mode
-        self._display_mode = config.overlay_display_mode
 
         self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
-        self._cn_browser.setFont(_make_font(config.overlay_font_size_cn))
 
-        if old_mode == "both" and config.overlay_display_mode == "single":
-            self._both_mode_height = self.height()
-
-        self._shortcut_mgr.update_shortcuts(config)
         self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
-        self._apply_display_mode()
 
         if self._current_result is not None:
             self._render_result(self._current_result)
 
         logger.debug(
-            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d cn_font=%d "
-            "vocab=%s grammar=%s display_mode=%s",
+            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d vocab=%s grammar=%s",
             config.overlay_opacity,
             config.user_jlpt_level,
             config.overlay_font_size_jp,
-            config.overlay_font_size_cn,
             config.enable_vocab_highlight,
             config.enable_grammar_highlight,
-            config.overlay_display_mode,
         )
 
     def set_status(self, text: str) -> None:
@@ -283,27 +219,7 @@ class OverlayWindow(QWidget):
             text: Status string to display in the JP browser.
         """
         self._jp_browser.setHtml(_centered_html(text))
-        self._cn_browser.setHtml("")
         logger.debug("set_status: %s", text)
-
-    def _toggle_mode(self) -> None:
-        if self._display_mode == "both":
-            # Switch from both → single(jp)
-            self._both_mode_height = self.height()
-            self._display_mode = "single"
-            self._single_sub_mode = "jp"
-        elif self._single_sub_mode == "jp":
-            # single(jp) → single(cn)
-            self._single_sub_mode = "cn"
-        else:
-            # single(cn) → both
-            self._display_mode = "both"
-        self._apply_display_mode()
-        logger.debug(
-            "_toggle_mode: display_mode=%s sub_mode=%s",
-            self._display_mode,
-            self._single_sub_mode,
-        )
 
     def _prev_sentence(self) -> None:
         if not self._history or self._history_index <= 0:
@@ -341,8 +257,6 @@ class OverlayWindow(QWidget):
     def _save_size(self) -> None:
         self._config.overlay_width = self.width()
         self._config.overlay_height = self.height()
-        if self._display_mode == "both":
-            self._both_mode_height = self.height()
         save_config(self._config)
 
     def _edge_at(self, pos: QPoint) -> str:
@@ -465,8 +379,7 @@ class OverlayWindow(QWidget):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         jp_vp = self._jp_browser.viewport()
-        cn_vp = self._cn_browser.viewport()
-        is_browser_viewport = watched is jp_vp or watched is cn_vp
+        is_browser_viewport = watched is jp_vp
 
         if is_browser_viewport and isinstance(event, QMouseEvent):
             etype = event.type()
@@ -493,5 +406,4 @@ class OverlayWindow(QWidget):
         return super().eventFilter(watched, event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        self._shortcut_mgr.stop()
         super().closeEvent(event)
