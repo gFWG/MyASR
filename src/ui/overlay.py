@@ -21,6 +21,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QHBoxLayout,
+    QPushButton,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -36,10 +38,28 @@ logger = logging.getLogger(__name__)
 _JP_FONT_SIZE = 16
 _BG_COLOR = QColor(30, 30, 30, 200)
 _CORNER_RADIUS = 12
-_MAX_HISTORY = 10
 _RESIZE_MARGIN = 8
+_ARROW_BTN_WIDTH = 28
 
 _FONT_FAMILIES = ["Segoe UI", "Yu Gothic UI", "Noto Sans CJK JP", "sans-serif"]
+
+_ARROW_BTN_STYLE = """
+    QPushButton {{
+        background-color: rgba(255, 255, 255, {opacity});
+        border: none;
+        border-radius: 6px;
+        color: rgba(255, 255, 255, {text_opacity});
+        font-size: 18px;
+        font-weight: bold;
+        padding: 0px;
+    }}
+    QPushButton:hover {{
+        background-color: rgba(255, 255, 255, 60);
+    }}
+    QPushButton:pressed {{
+        background-color: rgba(255, 255, 255, 80);
+    }}
+"""
 
 
 def _make_font(size: int) -> QFont:
@@ -72,6 +92,23 @@ def _centered_html(text: str, color: str = "#EEEEEE") -> str:
     )
 
 
+def _make_arrow_button(text: str) -> QPushButton:
+    """Create a translucent arrow button for sentence navigation.
+
+    Args:
+        text: Arrow character to display (e.g. "◀" or "▶").
+
+    Returns:
+        Configured QPushButton with translucent styling.
+    """
+    btn = QPushButton(text)
+    btn.setFixedWidth(_ARROW_BTN_WIDTH)
+    btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+    btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    btn.setStyleSheet(_ARROW_BTN_STYLE.format(opacity=30, text_opacity=180))
+    return btn
+
+
 class OverlayWindow(QWidget):
     """Transparent frameless overlay window for JLPT-highlighted Japanese text.
 
@@ -93,6 +130,7 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab: bool = config.enable_vocab_highlight
         self._enable_grammar: bool = config.enable_grammar_highlight
+        self._max_history: int = config.max_history
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -117,13 +155,26 @@ class OverlayWindow(QWidget):
         self._history: list[SentenceResult] = []
         self._history_index: int = -1
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(2)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(8, 8, 8, 8)
+        outer_layout.setSpacing(2)
+
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(4)
+
+        self._prev_btn = _make_arrow_button("◀")
+        self._prev_btn.clicked.connect(self._prev_sentence)
 
         self._jp_browser = _make_browser(_JP_FONT_SIZE)
 
-        layout.addWidget(self._jp_browser)
+        self._next_btn = _make_arrow_button("▶")
+        self._next_btn.clicked.connect(self._next_sentence)
+
+        content_layout.addWidget(self._prev_btn)
+        content_layout.addWidget(self._jp_browser, 1)
+        content_layout.addWidget(self._next_btn)
+        outer_layout.addLayout(content_layout)
 
         self._jp_browser.setMouseTracking(True)
         self._jp_browser.viewport().setMouseTracking(True)
@@ -135,6 +186,7 @@ class OverlayWindow(QWidget):
         self._resize_geo: QRect | None = None
 
         self.set_status("Initializing...")
+        self._update_arrow_visibility()
 
     def _center_on_screen(self) -> None:
         screen_geo = QApplication.primaryScreen().geometry()
@@ -151,11 +203,12 @@ class OverlayWindow(QWidget):
         self._current_result = result
 
         self._history.append(result)
-        if len(self._history) > _MAX_HISTORY:
+        if len(self._history) > self._max_history:
             self._history.pop(0)
         self._history_index = len(self._history) - 1
 
         self._render_result(result)
+        self._update_arrow_visibility()
         logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
 
     def _render_result(self, result: SentenceResult) -> None:
@@ -195,21 +248,31 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab = config.enable_vocab_highlight
         self._enable_grammar = config.enable_grammar_highlight
+        self._max_history = config.max_history
 
         self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
 
         self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
 
+        # Trim history if max was reduced
+        while len(self._history) > self._max_history:
+            self._history.pop(0)
+            self._history_index = max(0, self._history_index - 1)
+
         if self._current_result is not None:
             self._render_result(self._current_result)
 
+        self._update_arrow_visibility()
+
         logger.debug(
-            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d vocab=%s grammar=%s",
+            "on_config_changed: opacity=%.2f user_level=%d jp_font=%d vocab=%s grammar=%s"
+            " max_history=%d",
             config.overlay_opacity,
             config.user_jlpt_level,
             config.overlay_font_size_jp,
             config.enable_vocab_highlight,
             config.enable_grammar_highlight,
+            config.max_history,
         )
 
     def set_status(self, text: str) -> None:
@@ -228,6 +291,7 @@ class OverlayWindow(QWidget):
         result = self._history[self._history_index]
         self._current_result = result
         self._render_result(result)
+        self._update_arrow_visibility()
         logger.debug("_prev_sentence: index=%d", self._history_index)
 
     def _next_sentence(self) -> None:
@@ -237,7 +301,15 @@ class OverlayWindow(QWidget):
         result = self._history[self._history_index]
         self._current_result = result
         self._render_result(result)
+        self._update_arrow_visibility()
         logger.debug("_next_sentence: index=%d", self._history_index)
+
+    def _update_arrow_visibility(self) -> None:
+        """Show/hide arrow buttons based on history navigation state."""
+        can_go_prev = len(self._history) > 0 and self._history_index > 0
+        can_go_next = len(self._history) > 0 and self._history_index < len(self._history) - 1
+        self._prev_btn.setVisible(can_go_prev)
+        self._next_btn.setVisible(can_go_next)
 
     def _handle_hover_at_viewport_pos(self, viewport_pos: QPoint) -> None:
         if self._current_result is None or self._current_result.analysis is None:

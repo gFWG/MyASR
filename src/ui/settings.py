@@ -10,7 +10,6 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
-    QComboBox,
     QDialog,
     QDoubleSpinBox,
     QFormLayout,
@@ -101,6 +100,11 @@ class SettingsDialog(QDialog):
         self._vad_min_speech_spin.setSuffix(" ms")
         layout.addRow("VAD Min Speech", self._vad_min_speech_spin)
 
+        self._max_history_spin = QSpinBox()
+        self._max_history_spin.setRange(1, 100)
+        self._max_history_spin.setSingleStep(1)
+        layout.addRow("Max Sentence History", self._max_history_spin)
+
         self._tabs.addTab(widget, "General")
 
     def _build_appearance_tab(self) -> None:
@@ -190,6 +194,7 @@ class SettingsDialog(QDialog):
         self._vad_threshold_spin.setValue(config.vad_threshold)
         self._vad_min_silence_spin.setValue(config.vad_min_silence_ms)
         self._vad_min_speech_spin.setValue(config.vad_min_speech_ms)
+        self._max_history_spin.setValue(config.max_history)
 
         opacity_pct = round(config.overlay_opacity * 100)
         self._opacity_slider.setValue(max(10, min(100, opacity_pct)))
@@ -212,6 +217,7 @@ class SettingsDialog(QDialog):
             vad_threshold=self._vad_threshold_spin.value(),
             vad_min_silence_ms=self._vad_min_silence_spin.value(),
             vad_min_speech_ms=self._vad_min_speech_spin.value(),
+            max_history=self._max_history_spin.value(),
             overlay_opacity=self._opacity_slider.value() / 100.0,
             overlay_font_size_jp=self._font_size_jp_spin.value(),
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
