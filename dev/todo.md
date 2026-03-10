@@ -1,11 +1,11 @@
 TODO:
 
-1. Completely remove all related features and code for the shortcut key functionality.
+1. Add a translucent arrow button on the far left and far right of the overlay to select the previous and next sentences.
 
-2. Completely remove all related features and code for LLM integration, including any UI components, backend logic, and API calls associated with LLM features...
+2. The maximum number of sentences to retain can be configured, with a default of 10, and includes highlighted information.
 
 Checklist:
 
 1. [ ] Complete all tasks on the TODO list
-2. [ ] Test the application thoroughly to ensure Ensure that other unrelated code are not affected.
+2. [ ] Test the application thoroughly to ensure that other unrelated code are not affected.
 3. [ ] No mypy/ruff errors should be present in the codebase after the changes.
