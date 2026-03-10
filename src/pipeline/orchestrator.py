@@ -14,6 +14,7 @@ import numpy as np
 
 from src.asr.qwen_asr import QwenASR
 from src.audio.backends import WasapiLoopbackCapture
+from src.config import AppConfig
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.types import ASRResult, SpeechSegment
 from src.pipeline.vad_worker import VadWorker
@@ -166,3 +167,39 @@ class PipelineOrchestrator:
             self._vad_worker.error_occurred,
             self._asr_worker.error_occurred,
         ]
+
+    # ── Hot-reload config ─────────────────────────────────────────────────────
+
+    def on_config_changed(self, config: AppConfig) -> None:
+        """Apply live config changes to pipeline components.
+
+        Currently supports hot-reloading VAD parameters:
+        - vad_threshold
+        - vad_min_silence_ms
+        - vad_min_speech_ms
+
+        Note: Some config changes (sample_rate, db_path, model_path) require
+        a full pipeline restart and cannot be hot-reloaded.
+
+        Args:
+            config: Updated application configuration.
+        """
+        # Update internal config dict
+        self._config["vad_threshold"] = config.vad_threshold
+        self._config["vad_min_silence_ms"] = config.vad_min_silence_ms
+        self._config["vad_min_speech_ms"] = config.vad_min_speech_ms
+
+        # Update VAD parameters dynamically
+        self._vad_worker.update_vad_params(
+            threshold=config.vad_threshold,
+            min_silence_ms=config.vad_min_silence_ms,
+            min_speech_ms=config.vad_min_speech_ms,
+        )
+
+        logger.info(
+            "PipelineOrchestrator config updated: threshold=%.2f, min_silence=%dms, "
+            "min_speech=%dms",
+            config.vad_threshold,
+            config.vad_min_silence_ms,
+            config.vad_min_speech_ms,
+        )

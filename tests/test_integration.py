@@ -137,19 +137,15 @@ def test_orchestrator_start_stop_lifecycle(qt_app: Any) -> None:
     with (
         patch("src.pipeline.orchestrator.SileroVAD") as MockVAD,
         patch("src.pipeline.orchestrator.QwenASR") as MockASR,
-        patch("src.pipeline.orchestrator.AsyncOllamaClient") as MockLLM,
         patch("src.pipeline.orchestrator.WasapiLoopbackCapture") as MockCapture,
         patch("src.pipeline.orchestrator.VadWorker") as MockVadW,
         patch("src.pipeline.orchestrator.AsrWorker") as MockAsrW,
-        patch("src.pipeline.orchestrator.LlmWorker") as MockLlmW,
     ):
         MockVAD.return_value = MagicMock()
         MockASR.return_value = MagicMock()
-        MockLLM.return_value = MagicMock()
         MockCapture.return_value = MagicMock()
         MockVadW.return_value = MagicMock()
         MockAsrW.return_value = MagicMock()
-        MockLlmW.return_value = MagicMock()
 
         orch = PipelineOrchestrator(config)
         orch.start()
@@ -167,7 +163,6 @@ def test_orchestrator_put_audio_drops_when_full(qt_app: Any, caplog: Any) -> Non
     with (
         patch("src.pipeline.orchestrator.SileroVAD"),
         patch("src.pipeline.orchestrator.QwenASR"),
-        patch("src.pipeline.orchestrator.AsyncOllamaClient"),
     ):
         orch = PipelineOrchestrator(config)
         while True:
@@ -470,12 +465,10 @@ class TestPipelineOrchestratorIntegration:
         """Pre-built mock workers with Qt-signal-like attributes."""
         vad_worker = MagicMock()
         asr_worker = MagicMock()
-        llm_worker = MagicMock()
-        for worker in (vad_worker, asr_worker, llm_worker):
+        for worker in (vad_worker, asr_worker):
             worker.error_occurred = MagicMock()
         asr_worker.asr_ready = MagicMock()
-        llm_worker.translation_ready = MagicMock()
-        return {"vad": vad_worker, "asr": asr_worker, "llm": llm_worker}
+        return {"vad": vad_worker, "asr": asr_worker}
 
     @pytest.fixture()
     def orchestrator(self, qt_app: Any, mock_workers: dict[str, MagicMock]) -> Any:
@@ -485,51 +478,45 @@ class TestPipelineOrchestratorIntegration:
         with (
             patch("src.pipeline.orchestrator.SileroVAD"),
             patch("src.pipeline.orchestrator.QwenASR"),
-            patch("src.pipeline.orchestrator.AsyncOllamaClient"),
             patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
             patch("src.pipeline.orchestrator.VadWorker", return_value=mock_workers["vad"]),
             patch("src.pipeline.orchestrator.AsrWorker", return_value=mock_workers["asr"]),
-            patch("src.pipeline.orchestrator.LlmWorker", return_value=mock_workers["llm"]),
         ):
             orch = PipelineOrchestrator(config=_pipeline_config())
             yield orch
 
-    def test_start_calls_workers_in_vad_asr_llm_order(
+    def test_start_calls_workers_in_vad_asr_order(
         self,
         orchestrator: Any,
         mock_workers: dict[str, MagicMock],
     ) -> None:
-        """start() must invoke VAD.start(), then ASR.start(), then LLM.start()."""
+        """start() must invoke VAD.start(), then ASR.start()."""
         manager = MagicMock()
         manager.attach_mock(mock_workers["vad"].start, "vad_start")
         manager.attach_mock(mock_workers["asr"].start, "asr_start")
-        manager.attach_mock(mock_workers["llm"].start, "llm_start")
 
         orchestrator.start()
 
         assert manager.mock_calls == [
             call.vad_start(),
             call.asr_start(),
-            call.llm_start(),
         ], f"Unexpected call order: {manager.mock_calls}"
 
-    def test_stop_calls_workers_in_llm_asr_vad_order(
+    def test_stop_calls_workers_in_asr_vad_order(
         self,
         orchestrator: Any,
         mock_workers: dict[str, MagicMock],
     ) -> None:
-        """stop() must invoke LLM.stop() first, then ASR, then VAD (reverse pipeline)."""
+        """stop() must invoke ASR.stop() first, then VAD (reverse pipeline)."""
         orchestrator.start()
 
         manager = MagicMock()
         manager.attach_mock(mock_workers["vad"].stop, "vad_stop")
         manager.attach_mock(mock_workers["asr"].stop, "asr_stop")
-        manager.attach_mock(mock_workers["llm"].stop, "llm_stop")
 
         orchestrator.stop()
 
         assert manager.mock_calls == [
-            call.llm_stop(),
             call.asr_stop(),
             call.vad_stop(),
         ], f"Unexpected call order: {manager.mock_calls}"
@@ -545,7 +532,6 @@ class TestPipelineOrchestratorIntegration:
 
         mock_workers["vad"].wait.assert_called_once_with(3000)
         mock_workers["asr"].wait.assert_called_once_with(3000)
-        mock_workers["llm"].wait.assert_called_once_with(3000)
 
     def test_put_audio_feeds_10_chunks_into_pipeline(self, orchestrator: Any) -> None:
         """10 mock audio chunks put via put_audio() must reach the audio queue."""

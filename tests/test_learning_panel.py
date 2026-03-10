@@ -18,15 +18,13 @@ from src.ui.learning_panel import LearningPanel
 
 def _make_record(
     japanese_text: str = "猫が好きです",
-    chinese_translation: str = "我喜欢猫",
+    source_context: str | None = None,
     created_at: str = "2024-01-15T10:00:00",
 ) -> SentenceRecord:
     return SentenceRecord(
         id=None,
         japanese_text=japanese_text,
-        chinese_translation=chinese_translation,
-        explanation=None,
-        source_context=None,
+        source_context=source_context,
         created_at=created_at,
     )
 
@@ -41,9 +39,9 @@ def test_panel_creates_with_db_path(qapp: QApplication, tmp_path: Path) -> None:
     assert panel is not None
 
 
-def test_panel_has_table_with_4_columns(qapp: QApplication, tmp_path: Path) -> None:
+def test_panel_has_table_with_3_columns(qapp: QApplication, tmp_path: Path) -> None:
     panel = _make_panel(qapp, tmp_path / "test.db")
-    assert panel._table.columnCount() == 4
+    assert panel._table.columnCount() == 3
 
 
 def test_panel_has_search_and_pagination(qapp: QApplication, tmp_path: Path) -> None:
@@ -78,12 +76,12 @@ def test_search_filters_results(qapp: QApplication) -> None:
     conn = init_db(":memory:")
     repo = LearningRepository(conn=conn)
     repo.insert_sentence(
-        _make_record(japanese_text="唯一のテキストxyz", chinese_translation="unique xyz"),
+        _make_record(japanese_text="唯一のテキストxyz"),
         [],
         [],
     )
     repo.insert_sentence(
-        _make_record(japanese_text="別のテキスト", chinese_translation="other text"),
+        _make_record(japanese_text="別のテキスト"),
         [],
         [],
     )

@@ -406,3 +406,80 @@ def test_process_chunk_performance_short_chunks(
     assert mean_ms < 5.0, (
         f"process_chunk (short chunks) too slow: mean {mean_ms:.3f} ms/chunk (limit 5 ms)."
     )
+
+
+# ── update_params() tests ────────────────────────────────────────────────────────
+
+
+def test_update_params_sets_threshold(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """update_params() should update VADIterator.threshold."""
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+    # Set up mock with real attribute values
+    mock_iterator.threshold = 0.5
+
+    vad = SileroVAD(threshold=0.5)
+    assert vad._vad_iterator.threshold == 0.5
+
+    vad.update_params(threshold=0.7)
+    assert vad._vad_iterator.threshold == 0.7
+
+
+def test_update_params_sets_min_silence_ms(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """update_params() should update VADIterator.min_silence_duration_ms."""
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+    # Set up mock with real attribute values
+    mock_iterator.min_silence_duration_ms = 300
+
+    vad = SileroVAD(min_silence_ms=300)
+    assert vad._vad_iterator.min_silence_duration_ms == 300
+
+    vad.update_params(min_silence_ms=600)
+    assert vad._vad_iterator.min_silence_duration_ms == 600
+
+
+def test_update_params_sets_min_speech_ms(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """update_params() should update _min_speech_samples."""
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+
+    vad = SileroVAD(min_speech_ms=250, sample_rate=16000)
+    # 250ms at 16kHz = 4000 samples
+    assert vad._min_speech_samples == 4000
+
+    vad.update_params(min_speech_ms=500)
+    # 500ms at 16kHz = 8000 samples
+    assert vad._min_speech_samples == 8000
+
+
+def test_update_params_none_unchanged(
+    mock_silero: tuple[MagicMock, MagicMock, MagicMock],
+) -> None:
+    """update_params() with None should leave values unchanged."""
+    from src.vad.silero import SileroVAD
+
+    _, _, mock_iterator = mock_silero
+    mock_iterator.return_value = None
+    # Set up mock with real attribute values
+    mock_iterator.threshold = 0.5
+    mock_iterator.min_silence_duration_ms = 300
+
+    vad = SileroVAD(threshold=0.5, min_silence_ms=300, min_speech_ms=250)
+    vad.update_params()  # All None
+
+    assert vad._vad_iterator.threshold == 0.5
+    assert vad._vad_iterator.min_silence_duration_ms == 300
+    assert vad._min_speech_samples == 4000  # 250ms at 16kHz

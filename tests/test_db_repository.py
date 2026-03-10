@@ -20,16 +20,12 @@ def repo() -> LearningRepository:
 def make_record(
     id: int | None = None,
     japanese_text: str = "猫が好きです",
-    chinese_translation: str | None = "我喜欢猫",
-    explanation: str | None = None,
     source_context: str | None = None,
     created_at: str = "2024-01-15T10:00:00",
 ) -> SentenceRecord:
     return SentenceRecord(
         id=id,
         japanese_text=japanese_text,
-        chinese_translation=chinese_translation,
-        explanation=explanation,
         source_context=source_context,
         created_at=created_at,
     )
@@ -92,7 +88,6 @@ def test_insert_returns_positive_id(repo: LearningRepository) -> None:
 def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
     rec = make_record(
         japanese_text="昨日映画を見た",
-        chinese_translation="昨天看了电影",
         source_context="movie",
     )
     sentence_id, _vocab_ids, _grammar_ids = repo.insert_sentence(rec, [], [])
@@ -101,7 +96,6 @@ def test_insert_and_retrieve_roundtrip(repo: LearningRepository) -> None:
     r = rows[0]
     assert r.id == sentence_id
     assert r.japanese_text == "昨日映画を見た"
-    assert r.chinese_translation == "昨天看了电影"
     assert r.source_context == "movie"
     assert r.created_at == "2024-01-15T10:00:00"
 
@@ -181,8 +175,8 @@ def test_get_sentences_limit_offset(repo: LearningRepository) -> None:
 
 
 def test_search_finds_matching_records(repo: LearningRepository) -> None:
-    r1 = make_record(japanese_text="猫が好きです", chinese_translation="我喜欢猫")
-    r2 = make_record(japanese_text="犬が好きです", chinese_translation="我喜欢狗")
+    r1 = make_record(japanese_text="猫が好きです")
+    r2 = make_record(japanese_text="犬が好きです")
     repo.insert_sentence(r1, [], [])
     repo.insert_sentence(r2, [], [])
     results = repo.search_sentences("猫")
@@ -196,9 +190,9 @@ def test_search_returns_empty_for_no_match(repo: LearningRepository) -> None:
     assert results == []
 
 
-def test_search_matches_chinese_translation(repo: LearningRepository) -> None:
-    repo.insert_sentence(make_record(chinese_translation="我喜欢猫"), [], [])
-    results = repo.search_sentences("喜欢")
+def test_search_matches_japanese_text(repo: LearningRepository) -> None:
+    repo.insert_sentence(make_record(japanese_text="猫が好きです"), [], [])
+    results = repo.search_sentences("猫")
     assert len(results) == 1
 
 
@@ -505,79 +499,4 @@ def test_separate_repos_same_db_file(tmp_path: object) -> None:
 # Two-phase write tests
 
 
-def test_insert_partial_creates_row_with_null_translation(repo: LearningRepository) -> None:
-    asr_result = ASRResult(text="猫が好きです", segment_id="seg-123", elapsed_ms=50.0)
-    row_id = repo.insert_partial(asr_result)
 
-    assert isinstance(row_id, int)
-    assert row_id >= 1
-
-    conn: sqlite3.Connection = repo._conn
-    cursor = conn.execute(
-        "SELECT id, japanese_text, chinese_translation, explanation "
-        "FROM sentence_records WHERE id=?",
-        (row_id,),
-    )
-    row = cursor.fetchone()
-    assert row is not None
-    assert row[0] == row_id
-    assert row[1] == "猫が好きです"
-    assert row[2] is None
-    assert row[3] is None
-
-
-def test_update_translation_fills_null_fields(repo: LearningRepository) -> None:
-    asr_result = ASRResult(text="犬が好きです", segment_id="seg-456", elapsed_ms=60.0)
-    row_id = repo.insert_partial(asr_result)
-
-    result = repo.update_translation(
-        row_id, translation="我喜欢狗", explanation="Subject marked with が expresses preference"
-    )
-
-    assert result is True
-
-    conn: sqlite3.Connection = repo._conn
-    cursor = conn.execute(
-        "SELECT chinese_translation, explanation FROM sentence_records WHERE id=?",
-        (row_id,),
-    )
-    row = cursor.fetchone()
-    assert row is not None
-    assert row[0] == "我喜欢狗"
-    assert row[1] == "Subject marked with が expresses preference"
-
-
-def test_two_phase_write_produces_complete_record(repo: LearningRepository) -> None:
-    asr_result = ASRResult(text="映画を見た", segment_id="seg-789", elapsed_ms=55.0)
-
-    row_id = repo.insert_partial(asr_result)
-    assert row_id >= 1
-
-    conn: sqlite3.Connection = repo._conn
-    cursor = conn.execute(
-        "SELECT japanese_text, chinese_translation, explanation FROM sentence_records WHERE id=?",
-        (row_id,),
-    )
-    row = cursor.fetchone()
-    assert row[0] == "映画を見た"
-    assert row[1] is None
-    assert row[2] is None
-
-    update_result = repo.update_translation(
-        row_id, translation="看了电影", explanation="Past tense verb を見た"
-    )
-    assert update_result is True
-
-    cursor2 = conn.execute(
-        "SELECT japanese_text, chinese_translation, explanation FROM sentence_records WHERE id=?",
-        (row_id,),
-    )
-    row2 = cursor2.fetchone()
-    assert row2[0] == "映画を見た"
-    assert row2[1] == "看了电影"
-    assert row2[2] == "Past tense verb を見た"
-
-
-def test_update_translation_nonexistent_row(repo: LearningRepository) -> None:
-    result = repo.update_translation(999999, translation="test", explanation="test")
-    assert result is False
