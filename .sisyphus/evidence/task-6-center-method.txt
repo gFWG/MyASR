@@ -1,5 +1,0 @@
-    def _center_on_screen(self) -> None:
-        screen_geo = QApplication.primaryScreen().geometry()
-        x = screen_geo.center().x() - self.width() // 2
-        y = screen_geo.bottom() - self.height() - 40
-        self.move(x, y)

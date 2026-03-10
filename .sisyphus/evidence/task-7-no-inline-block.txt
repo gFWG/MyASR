@@ -1,8 +1,0 @@
-Evidence: No inline-block CSS in highlight.py
-File: /home/yuheng/MyASR-post-mvp/src/ui/highlight.py
-
-Command: grep -n 'inline-block' src/ui/highlight.py
-Result: No inline-block found
-
-Verification: PASSED
-The file contains no CSS display: inline-block anywhere.

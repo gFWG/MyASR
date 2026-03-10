@@ -1,4 +1,0 @@
-Testing rule: N5_past_ta (N5)
-Matches found: 1
-  N3_nagara: "ながら" N3 (high)
-PASS — grammar matching works

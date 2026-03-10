@@ -1,5 +1,0 @@
-REVIEW ACTION STATUS: DISABLED
-- Action text: "Review (coming soon)" (or "Review (N due)" when count > 0)
-- setEnabled(False) called in _setup_menu()
-- setEnabled(False) called in update_review_badge() regardless of count
-- review_requested signal is NOT connected to the action

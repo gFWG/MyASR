@@ -1,7 +1,0 @@
-Cancel button behaviour (connected in __init__):
-    self._cancel_btn.clicked.connect(self.close)
-
-Cancel calls ONLY self.close() — no save_config() call, no config_changed.emit().
-The _on_save() method (which calls save_config and emits) is connected ONLY to _save_btn.
-
-Confirmed: Cancel does NOT call save_config or emit config_changed signal.

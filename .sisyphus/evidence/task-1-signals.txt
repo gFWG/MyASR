@@ -1,6 +1,0 @@
-SIGNALS:
-1. settings_requested = Signal()
-2. history_requested = Signal()
-3. review_requested = Signal()
-4. toggle_overlay = Signal()
-5. quit_requested = Signal()

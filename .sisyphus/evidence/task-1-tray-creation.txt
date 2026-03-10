@@ -1,2 +1,0 @@
-ACTIONS: ["Settings", "Learning History", "Review (coming soon)", "Show/Hide Overlay", "Quit"]
-ICON: non-null QPixmap 32x32

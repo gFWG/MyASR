@@ -1,3 +1,0 @@
-512-sample chunks: mean=0.016 ms/chunk (1000 chunks, 0.016s total)
-341-sample chunks: mean=0.010 ms/chunk (1000 chunks, 0.010s total)
-Both under 5ms limit: True

@@ -1,1 +1,0 @@
-overlay_opacity=0.78 overlay_width=800 overlay_height=120 overlay_font_size_jp=16 overlay_font_size_cn=14 enable_vocab_highlight=True enable_grammar_highlight=True audio_device_id=None

@@ -1,5 +1,0 @@
-Text: 音楽を聴きながら概念を理解した (user_level=4)
-vocab_hits: 1
-  V: 概念 lemma=概念 level=1 at 8-10
-grammar_hits: 1
-  G: ながら rule=N3_nagara level=3 at 5-8

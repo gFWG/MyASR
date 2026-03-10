@@ -1,1 +1,0 @@
-'ながら' at 5-8, verify='ながら', match=True
