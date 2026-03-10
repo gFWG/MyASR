@@ -107,10 +107,11 @@ def test_on_sentence_ready_explanation_fallback(overlay: OverlayWindow) -> None:
     assert "Grammar explanation" in overlay._cn_browser.toPlainText()
 
 
-def test_toggle_mode_noop_when_both(overlay: OverlayWindow) -> None:
+def test_toggle_mode_from_both_switches_to_single_jp(overlay: OverlayWindow) -> None:
     overlay._display_mode = "both"
     overlay._toggle_mode()
-    assert overlay._display_mode == "both"
+    assert overlay._display_mode == "single"
+    assert overlay._single_sub_mode == "jp"
 
 
 def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow) -> None:
@@ -121,21 +122,23 @@ def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow)
     assert overlay._single_sub_mode == "cn"
 
 
-def test_toggle_mode_cycles_jp_cn_when_single(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "jp"
-    overlay._toggle_mode()
-    assert overlay._single_sub_mode == "cn"
-    overlay._toggle_mode()
-    assert overlay._single_sub_mode == "jp"
-
-
-def test_toggle_mode_single_cn_cycles_back_to_jp(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "cn"
+def test_toggle_mode_full_cycle(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "both"
     overlay._toggle_mode()
     assert overlay._display_mode == "single"
     assert overlay._single_sub_mode == "jp"
+    overlay._toggle_mode()
+    assert overlay._display_mode == "single"
+    assert overlay._single_sub_mode == "cn"
+    overlay._toggle_mode()
+    assert overlay._display_mode == "both"
+
+
+def test_toggle_mode_single_cn_cycles_back_to_both(overlay: OverlayWindow) -> None:
+    overlay._display_mode = "single"
+    overlay._single_sub_mode = "cn"
+    overlay._toggle_mode()
+    assert overlay._display_mode == "both"
 
 
 def test_toggle_mode_hides_cn_browser_in_single_jp(overlay: OverlayWindow) -> None:
@@ -410,8 +413,24 @@ def test_on_translation_ready_updates_cn_browser(overlay: OverlayWindow) -> None
     overlay.on_llm_ready(result)
 
     html = overlay._cn_browser.toHtml()
+    # on_llm_ready uses `translation or explanation or "LLM unavailable"`,
+    # so when translation is set, it takes priority over explanation.
     assert "测试" in html
-    assert "grammar exp" in html
+
+
+def test_on_llm_ready_falls_back_to_explanation(overlay: OverlayWindow) -> None:
+    from src.pipeline.types import LLMResult
+
+    result = LLMResult(
+        translation=None,
+        explanation="grammar explanation",
+        segment_id="seg-1",
+        elapsed_ms=20.0,
+    )
+    overlay.on_llm_ready(result)
+
+    html = overlay._cn_browser.toHtml()
+    assert "grammar explanation" in html
 
 
 def test_on_translation_ready_handles_none(overlay: OverlayWindow) -> None:

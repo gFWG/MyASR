@@ -10,7 +10,7 @@ def test_pipeline_package_is_the_new_orchestrator() -> None:
     # src.pipeline is now the new multi-stage pipeline package (not the old monolith).
     # The old monolith lives at src.pipeline_legacy (tested above).
     from src.pipeline.orchestrator import PipelineOrchestrator
-    from src.pipeline.types import ASRResult, SpeechSegment, LLMResult
+    from src.pipeline.types import ASRResult, LLMResult, SpeechSegment
 
     assert PipelineOrchestrator is not None
     assert SpeechSegment is not None

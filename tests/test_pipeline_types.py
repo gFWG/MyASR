@@ -5,7 +5,7 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from src.pipeline.types import ASRResult, PipelineStageMetrics, SpeechSegment, LLMResult
+from src.pipeline.types import ASRResult, LLMResult, PipelineStageMetrics, SpeechSegment
 
 
 class TestSpeechSegment:

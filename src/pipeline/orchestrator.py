@@ -19,7 +19,7 @@ from src.config import AppConfig
 from src.llm.ollama_client import AsyncOllamaClient
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.llm_worker import LlmWorker
-from src.pipeline.types import ASRResult, SpeechSegment, LLMResult
+from src.pipeline.types import ASRResult, LLMResult, SpeechSegment
 from src.pipeline.vad_worker import VadWorker
 from src.vad.silero import SileroVAD
 

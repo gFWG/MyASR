@@ -288,11 +288,16 @@ class OverlayWindow(QWidget):
 
     def _toggle_mode(self) -> None:
         if self._display_mode == "both":
-            return
-        if self._single_sub_mode == "jp":
+            # Switch from both → single(jp)
+            self._both_mode_height = self.height()
+            self._display_mode = "single"
+            self._single_sub_mode = "jp"
+        elif self._single_sub_mode == "jp":
+            # single(jp) → single(cn)
             self._single_sub_mode = "cn"
         else:
-            self._single_sub_mode = "jp"
+            # single(cn) → both
+            self._display_mode = "both"
         self._apply_display_mode()
         logger.debug(
             "_toggle_mode: display_mode=%s sub_mode=%s",
