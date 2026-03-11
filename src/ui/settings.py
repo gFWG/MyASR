@@ -101,7 +101,7 @@ class SettingsDialog(QDialog):
         layout.addRow("VAD Min Speech", self._vad_min_speech_spin)
 
         self._max_history_spin = QSpinBox()
-        self._max_history_spin.setRange(1, 100)
+        self._max_history_spin.setRange(1, 50)
         self._max_history_spin.setSingleStep(1)
         layout.addRow("Max Sentence History", self._max_history_spin)
 

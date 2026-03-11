@@ -32,6 +32,7 @@ from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult
 from src.ui.highlight import HighlightRenderer
+from src.ui.history import HistoryManager
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,6 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab: bool = config.enable_vocab_highlight
         self._enable_grammar: bool = config.enable_grammar_highlight
-        self._max_history: int = config.max_history
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -157,11 +157,8 @@ class OverlayWindow(QWidget):
 
         self._drag_pos: QPoint | None = None
         self._current_result: SentenceResult | None = None
-        self._latest_result: SentenceResult | None = None
-        self._browsing: bool = False
         self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
-        self._history: list[SentenceResult] = []
-        self._history_index: int = -1
+        self._history = HistoryManager(config.max_history)
 
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(8, 8, 8, 8)
@@ -227,27 +224,24 @@ class OverlayWindow(QWidget):
         Args:
             result: Pipeline output containing Japanese text and JLPT analysis data.
         """
-        self._latest_result = result
+        self._history.add(result)
 
-        self._history.append(result)
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
-
-        if self._browsing:
-            # Stay in browse mode — update preview browser with latest
-            self._render_in_browser(self._preview_browser, result)
+        if self._history.is_browsing:
+            # BROWSE mode - update preview browser with latest
+            if self._history.latest is not None:
+                self._render_in_browser(self._preview_browser, self._history.latest)
             self._preview_browser.setVisible(True)
         else:
-            # LIVE mode — show latest in main browser
-            self._history_index = len(self._history) - 1
-            self._current_result = result
-            self._render_result(result)
+            # LIVE mode - show latest in main browser
+            if self._history.current is not None:
+                self._current_result = self._history.current
+                self._render_result(self._current_result)
 
         self._update_arrow_visibility()
         logger.debug(
-            "on_sentence_ready: displayed sentence id=%s browsing=%s",
+            "on_sentence_ready: sentence_id=%s is_browsing=%s",
             result.sentence_id,
-            self._browsing,
+            self._history.is_browsing,
         )
 
     def _render_in_browser(self, browser: "QTextBrowser", result: SentenceResult) -> None:
@@ -285,7 +279,10 @@ class OverlayWindow(QWidget):
         Args:
             result: ASR output containing Japanese text.
         """
-        self._jp_browser.setHtml(_centered_html(result.text))
+        if self._history.is_browsing:
+            self._preview_browser.setHtml(_centered_html(result.text))
+        else:
+            self._jp_browser.setHtml(_centered_html(result.text))
         QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
 
@@ -300,19 +297,20 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab = config.enable_vocab_highlight
         self._enable_grammar = config.enable_grammar_highlight
-        self._max_history = config.max_history
 
         # Update font on both widget and document for HTML content
         new_font = _make_font(config.overlay_font_size_jp)
         self._jp_browser.setFont(new_font)
         self._jp_browser.document().setDefaultFont(new_font)
+        # 同时更新 preview browser
+        self._preview_browser.setFont(new_font)
+        self._preview_browser.document().setDefaultFont(new_font)
+
 
         self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
 
-        # Trim history if max was reduced
-        while len(self._history) > self._max_history:
-            self._history.pop(0)
-            self._history_index = max(0, self._history_index - 1)
+        # Resize history capacity
+        self._history.resize(config.max_history)
 
         if self._current_result is not None:
             self._render_result(self._current_result)
@@ -344,39 +342,39 @@ class OverlayWindow(QWidget):
         logger.debug("set_status: %s", text)
 
     def _prev_sentence(self) -> None:
-        if not self._history or self._history_index <= 0:
+        if not self._history.go_prev():
             return
 
-        # Entering BROWSE mode: show preview browser with latest result
-        if not self._browsing:
-            self._browsing = True
-            if self._latest_result is not None:
-                self._render_in_browser(self._preview_browser, self._latest_result)
+        # Show preview browser when first entering BROWSE mode
+        if self._history.latest is not None and not self._preview_browser.isVisible():
+            self._render_in_browser(self._preview_browser, self._history.latest)
             self._preview_browser.setVisible(True)
 
-        self._history_index -= 1
-        result = self._history[self._history_index]
-        self._current_result = result
-        self._render_result(result)
+        if self._history.current is not None:
+            self._current_result = self._history.current
+            self._render_result(self._current_result)
         self._update_arrow_visibility()
-        logger.debug("_prev_sentence: index=%d browsing=%s", self._history_index, self._browsing)
+        logger.debug("_prev_sentence: cursor=%s", self._history.cursor_index)
 
     def _next_sentence(self) -> None:
-        if not self._history or self._history_index >= len(self._history) - 1:
+        if not self._history.can_go_next:
             return
-        self._history_index += 1
-        result = self._history[self._history_index]
-        self._current_result = result
-        self._render_result(result)
 
-        # If we've reached the latest entry, collapse back to LIVE mode
-        if self._history_index >= len(self._history) - 1:
-            self._browsing = False
+        self._history.go_next()  # May enter LIVE mode
+
+        if not self._history.is_browsing:
+            # Returned to LIVE mode
             self._preview_browser.setVisible(False)
-            self._latest_result = result  # sync latest
 
+        if self._history.current is not None:
+            self._current_result = self._history.current
+            self._render_result(self._current_result)
         self._update_arrow_visibility()
-        logger.debug("_next_sentence: index=%d browsing=%s", self._history_index, self._browsing)
+        logger.debug(
+            "_next_sentence: cursor=%s is_browsing=%s",
+            self._history.cursor_index,
+            self._history.is_browsing,
+        )
 
     def _update_arrow_visibility(self) -> None:
         """Enable/disable arrow buttons based on history navigation state.
@@ -384,10 +382,8 @@ class OverlayWindow(QWidget):
         Buttons remain always visible for a consistent layout; only their
         enabled state (and therefore their visual opacity) changes.
         """
-        can_go_prev = len(self._history) > 0 and self._history_index > 0
-        can_go_next = len(self._history) > 0 and self._history_index < len(self._history) - 1
-        self._prev_btn.setEnabled(can_go_prev)
-        self._next_btn.setEnabled(can_go_next)
+        self._prev_btn.setEnabled(self._history.can_go_prev)
+        self._next_btn.setEnabled(self._history.can_go_next)
 
     def _adjust_height_to_content(self) -> None:
         """Resize overlay height to fit text content.
@@ -592,7 +588,7 @@ class OverlayWindow(QWidget):
                     )
                 elif is_prev_viewport:
                     self._handle_hover_at_viewport_pos(
-                        self._preview_browser, self._latest_result, event.position().toPoint()
+                        self._preview_browser, self._history.latest, event.position().toPoint()
                     )
 
             # Drag-to-move — only on the main jp_browser viewport

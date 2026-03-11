@@ -288,9 +288,9 @@ def test_on_sentence_ready_adds_to_history(overlay: OverlayWindow) -> None:
         return_value="<b>テスト</b>",
     ):
         overlay.on_sentence_ready(result)
-    assert len(overlay._history) == 1
-    assert overlay._history[0] is result
-    assert overlay._history_index == 0
+    assert overlay._history.count == 1
+    assert overlay._history.latest is result
+    assert overlay._history.cursor_index == -1  # LIVE mode
 
 
 @pytest.mark.xfail(reason="pre-existing: _MAX_HISTORY=10 but test expects 100")
@@ -301,8 +301,8 @@ def test_history_max_size(overlay: OverlayWindow) -> None:
     ):
         for i in range(105):
             overlay.on_sentence_ready(_make_result(japanese_text=f"sentence {i}"))
-    assert len(overlay._history) == 100
-    assert overlay._history_index == 99
+    assert overlay._history.count == 50
+    assert overlay._history.cursor_index == -1  # LIVE mode
 
 
 def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
@@ -315,7 +315,7 @@ def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
         overlay.on_sentence_ready(r1)
         overlay.on_sentence_ready(r2)
         overlay._prev_sentence()
-    assert overlay._history_index == 0
+    assert overlay._history.cursor_index == 0  # Browsing oldest
     assert overlay._current_result is r1
 
 
@@ -327,7 +327,8 @@ def test_prev_sentence_noop_at_start(overlay: OverlayWindow) -> None:
     ):
         overlay.on_sentence_ready(r1)
     overlay._prev_sentence()
-    assert overlay._history_index == 0
+    # Single entry cannot browse - stays in LIVE mode
+    assert overlay._history.cursor_index == -1
 
 
 def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
@@ -341,7 +342,8 @@ def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
         overlay.on_sentence_ready(r2)
         overlay._prev_sentence()
         overlay._next_sentence()
-    assert overlay._history_index == 1
+    # go_next returns to LIVE mode
+    assert overlay._history.cursor_index == -1
     assert overlay._current_result is r2
 
 
@@ -353,17 +355,18 @@ def test_next_sentence_noop_at_end(overlay: OverlayWindow) -> None:
     ):
         overlay.on_sentence_ready(r1)
     overlay._next_sentence()
-    assert overlay._history_index == 0
+    # Already in LIVE mode, stays in LIVE mode
+    assert overlay._history.cursor_index == -1
 
 
 def test_prev_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
     overlay._prev_sentence()
-    assert overlay._history_index == -1
+    assert overlay._history.cursor_index == -1
 
 
 def test_next_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
     overlay._next_sentence()
-    assert overlay._history_index == -1
+    assert overlay._history.cursor_index == -1
 
 
 # ── Display mode config change tests ──
