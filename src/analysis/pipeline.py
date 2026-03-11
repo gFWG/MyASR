@@ -26,7 +26,7 @@ class PreprocessingPipeline:
         """
         self._config = config
         self._tokenizer = FugashiTokenizer()
-        self._vocab_lookup = JLPTVocabLookup("data/jlpt_vocab.json")
+        self._vocab_lookup = JLPTVocabLookup("data/vocabulary.csv")
         self._grammar_matcher = GrammarMatcher("data/grammar_rules.json")
 
     def process(self, text: str) -> AnalysisResult:
