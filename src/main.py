@@ -96,8 +96,9 @@ def main() -> None:
         for error_signal in pipeline.error_occurred:
             error_signal.connect(_on_pipeline_error)
 
-        def _on_highlight_hovered(hit: VocabHit | GrammarHit, point: QPoint) -> None:
-            result: SentenceResult | None = overlay._current_result
+        def _on_highlight_hovered(
+            hit: VocabHit | GrammarHit, point: QPoint, result: SentenceResult | None
+        ) -> None:
             sentence_id: int | None = result.sentence_id if result is not None else None
 
             highlight_id = 0
@@ -188,7 +189,7 @@ def main() -> None:
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline, conn, _learning_panel))
 
-        pipeline.connect_signals(overlay.on_asr_ready)
+        pipeline.connect_signals(overlay.on_asr_ready, on_sentence_ready=overlay.on_sentence_ready)
         pipeline.start()
         overlay.set_status("Listening...")
         overlay.show()

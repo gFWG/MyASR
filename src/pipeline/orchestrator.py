@@ -12,9 +12,12 @@ from typing import Any
 
 import numpy as np
 
+from src.analysis.pipeline import PreprocessingPipeline
 from src.asr.qwen_asr import QwenASR
 from src.audio.backends import WasapiLoopbackCapture
 from src.config import AppConfig
+from src.db.models import SentenceResult
+from src.pipeline.analysis_worker import AnalysisWorker
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.types import ASRResult, SpeechSegment
 from src.pipeline.vad_worker import VadWorker
@@ -58,8 +61,6 @@ class PipelineOrchestrator:
 
         asr_model = QwenASR(model_path=config.get("model_path"))
 
-        db_path: str = config.get("db_path", ":memory:")
-
         # ── Workers ─────────────────────────────────────────────────────────
         self._vad_worker = VadWorker(
             audio_queue=self._audio_queue,
@@ -72,7 +73,19 @@ class PipelineOrchestrator:
             text_queue=self._text_queue,
             asr=asr_model,
             config=config,
-            db_path=db_path,
+        )
+
+        # ── Analysis worker (ASRResult → SentenceResult with DB persistence) ──
+        # AppConfig-based construction: PreprocessingPipeline needs AppConfig.
+        # We pass config dict; analysis pipeline uses user_jlpt_level.
+        _valid_keys = AppConfig.__dataclass_fields__.keys()
+        _app_config = AppConfig(**{k: v for k, v in config.items() if k in _valid_keys})
+        analysis_pipeline = PreprocessingPipeline(_app_config)
+        self._analysis_worker = AnalysisWorker(
+            text_queue=self._text_queue,
+            analysis_pipeline=analysis_pipeline,
+            db_path=config.get("db_path", ":memory:"),
+            config=config,
         )
 
         # ── Audio capture (started in start(), stopped in stop()) ────────────
@@ -94,6 +107,7 @@ class PipelineOrchestrator:
         self._capture.start(callback=self.put_audio)
         self._vad_worker.start()
         self._asr_worker.start()
+        self._analysis_worker.start()
         self._running = True
 
     def stop(self) -> None:
@@ -103,7 +117,9 @@ class PipelineOrchestrator:
         in-flight items to drain gracefully before the upstream worker stops.
         Audio capture is stopped last so any in-flight chunks can still be drained.
         """
-        logger.info("Stopping pipeline workers: ASR → VAD → capture")
+        logger.info("Stopping pipeline workers: analysis → ASR → VAD → capture")
+        self._analysis_worker.stop()
+        self._analysis_worker.wait(3000)
         self._asr_worker.stop()
         self._asr_worker.wait(3000)
         self._vad_worker.stop()
@@ -136,14 +152,20 @@ class PipelineOrchestrator:
     def connect_signals(
         self,
         on_asr_ready: Callable[[ASRResult], None],
+        on_sentence_ready: Callable[[SentenceResult], None] | None = None,
     ) -> None:
         """Connect worker output signals to caller-provided callbacks.
 
         Args:
             on_asr_ready: Callable connected to ``AsrWorker.asr_ready``.
                 Receives an ``ASRResult`` object.
+            on_sentence_ready: Optional callable connected to
+                ``AnalysisWorker.sentence_ready``.  Receives a
+                ``SentenceResult`` object.
         """
         self._asr_worker.asr_ready.connect(on_asr_ready)
+        if on_sentence_ready is not None:
+            self._analysis_worker.sentence_ready.connect(on_sentence_ready)
 
     # ── Signal properties ────────────────────────────────────────────────────
 
@@ -166,6 +188,7 @@ class PipelineOrchestrator:
         return [
             self._vad_worker.error_occurred,
             self._asr_worker.error_occurred,
+            self._analysis_worker.error_occurred,
         ]
 
     # ── Hot-reload config ─────────────────────────────────────────────────────

@@ -124,10 +124,11 @@ class OverlayWindow(QWidget):
     Signals:
         highlight_hovered: Emitted when the cursor hovers over a highlighted
             word or grammar pattern. Arguments are the hit
-            (VocabHit | GrammarHit) and the global cursor position.
+            (VocabHit | GrammarHit), the global cursor position, and the
+            SentenceResult that contains the highlighted text.
     """
 
-    highlight_hovered = Signal(object, object)
+    highlight_hovered = Signal(object, object, object)
 
     def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -156,6 +157,8 @@ class OverlayWindow(QWidget):
 
         self._drag_pos: QPoint | None = None
         self._current_result: SentenceResult | None = None
+        self._latest_result: SentenceResult | None = None
+        self._browsing: bool = False
         self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
         self._history: list[SentenceResult] = []
         self._history_index: int = -1
@@ -166,6 +169,11 @@ class OverlayWindow(QWidget):
 
         # Top stretch for vertical centering
         outer_layout.addStretch(1)
+
+        # Preview browser: shown when browsing history, displays the latest result
+        self._preview_browser = _make_browser(_JP_FONT_SIZE)
+        self._preview_browser.setVisible(False)
+        outer_layout.addWidget(self._preview_browser)
 
         content_layout = QHBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -191,6 +199,10 @@ class OverlayWindow(QWidget):
         self._jp_browser.viewport().setMouseTracking(True)
         self._jp_browser.viewport().installEventFilter(self)
 
+        self._preview_browser.setMouseTracking(True)
+        self._preview_browser.viewport().setMouseTracking(True)
+        self._preview_browser.viewport().installEventFilter(self)
+
         self.setMouseTracking(True)
         self._resize_edge: str = ""
         self._resize_origin: QPoint | None = None
@@ -208,21 +220,43 @@ class OverlayWindow(QWidget):
     def on_sentence_ready(self, result: SentenceResult) -> None:
         """Display a new sentence result and add it to history.
 
+        In LIVE mode (not browsing): render the new sentence in the main browser.
+        In BROWSE mode (browsing history): keep the browsed sentence in the main
+        browser and update the preview browser with the new latest result.
+
         Args:
             result: Pipeline output containing Japanese text and JLPT analysis data.
         """
-        self._current_result = result
+        self._latest_result = result
 
         self._history.append(result)
         if len(self._history) > self._max_history:
             self._history.pop(0)
-        self._history_index = len(self._history) - 1
 
-        self._render_result(result)
+        if self._browsing:
+            # Stay in browse mode — update preview browser with latest
+            self._render_in_browser(self._preview_browser, result)
+            self._preview_browser.setVisible(True)
+        else:
+            # LIVE mode — show latest in main browser
+            self._history_index = len(self._history) - 1
+            self._current_result = result
+            self._render_result(result)
+
         self._update_arrow_visibility()
-        logger.debug("on_sentence_ready: displayed sentence id=%s", result.sentence_id)
+        logger.debug(
+            "on_sentence_ready: displayed sentence id=%s browsing=%s",
+            result.sentence_id,
+            self._browsing,
+        )
 
-    def _render_result(self, result: SentenceResult) -> None:
+    def _render_in_browser(self, browser: "QTextBrowser", result: SentenceResult) -> None:
+        """Render a SentenceResult into the given browser widget.
+
+        Args:
+            browser: The QTextBrowser to render into.
+            result: The sentence result to render.
+        """
         if result.analysis is not None:
             filtered_analysis = AnalysisResult(
                 tokens=result.analysis.tokens,
@@ -237,7 +271,11 @@ class OverlayWindow(QWidget):
         else:
             rich_text = _centered_html(result.japanese_text)
 
-        self._jp_browser.setHtml(rich_text)
+        browser.setHtml(rich_text)
+
+    def _render_result(self, result: SentenceResult) -> None:
+        """Render a result into the active browser and schedule height adjustment."""
+        self._render_in_browser(self._jp_browser, result)
         # Defer height adjustment to allow document layout
         QTimer.singleShot(0, self._adjust_height_to_content)
 
@@ -308,12 +346,20 @@ class OverlayWindow(QWidget):
     def _prev_sentence(self) -> None:
         if not self._history or self._history_index <= 0:
             return
+
+        # Entering BROWSE mode: show preview browser with latest result
+        if not self._browsing:
+            self._browsing = True
+            if self._latest_result is not None:
+                self._render_in_browser(self._preview_browser, self._latest_result)
+            self._preview_browser.setVisible(True)
+
         self._history_index -= 1
         result = self._history[self._history_index]
         self._current_result = result
         self._render_result(result)
         self._update_arrow_visibility()
-        logger.debug("_prev_sentence: index=%d", self._history_index)
+        logger.debug("_prev_sentence: index=%d browsing=%s", self._history_index, self._browsing)
 
     def _next_sentence(self) -> None:
         if not self._history or self._history_index >= len(self._history) - 1:
@@ -322,8 +368,15 @@ class OverlayWindow(QWidget):
         result = self._history[self._history_index]
         self._current_result = result
         self._render_result(result)
+
+        # If we've reached the latest entry, collapse back to LIVE mode
+        if self._history_index >= len(self._history) - 1:
+            self._browsing = False
+            self._preview_browser.setVisible(False)
+            self._latest_result = result  # sync latest
+
         self._update_arrow_visibility()
-        logger.debug("_next_sentence: index=%d", self._history_index)
+        logger.debug("_next_sentence: index=%d browsing=%s", self._history_index, self._browsing)
 
     def _update_arrow_visibility(self) -> None:
         """Enable/disable arrow buttons based on history navigation state.
@@ -341,19 +394,25 @@ class OverlayWindow(QWidget):
 
         Calculates the ideal height based on the document content and resizes
         the window while respecting minimum and maximum height constraints.
+        When in BROWSE mode (both browsers visible) the heights are summed.
         """
-        doc = self._jp_browser.document()
-        # Set the text width to match browser width for accurate height calculation
-        doc.setTextWidth(self._jp_browser.width())
+        # Main browser height
+        jp_doc = self._jp_browser.document()
+        jp_doc.setTextWidth(self._jp_browser.width())
+        jp_height = jp_doc.size().height()
 
-        # Get the document's ideal height
-        doc_height = doc.size().height()
+        # Preview browser height (only when visible)
+        preview_height = 0.0
+        if self._preview_browser.isVisible():
+            prev_doc = self._preview_browser.document()
+            prev_doc.setTextWidth(self._preview_browser.width())
+            preview_height = prev_doc.size().height()
 
         # Calculate total height: margins (top + bottom = 16) + content padding
         margins = 16  # 8px top + 8px bottom from outer_layout.setContentsMargins
         padding = 16  # Extra padding for visual comfort
 
-        total_height = int(doc_height + margins + padding)
+        total_height = int(jp_height + preview_height + margins + padding)
 
         # Clamp to min/max bounds
         min_h = self.minimumHeight()
@@ -364,20 +423,32 @@ class OverlayWindow(QWidget):
         if abs(self.height() - new_height) > 2:
             self.resize(self.width(), new_height)
 
-    def _handle_hover_at_viewport_pos(self, viewport_pos: QPoint) -> None:
-        if self._current_result is None or self._current_result.analysis is None:
+    def _handle_hover_at_viewport_pos(
+        self,
+        browser: "QTextBrowser",
+        result: "SentenceResult | None",
+        viewport_pos: QPoint,
+    ) -> None:
+        """Emit highlight_hovered for the highlighted word under the cursor.
+
+        Args:
+            browser: The browser widget in whose viewport the hover occurred.
+            result: The SentenceResult currently displayed in that browser.
+            viewport_pos: Mouse position in viewport-local coordinates.
+        """
+        if result is None or result.analysis is None:
             return
 
-        cursor = self._jp_browser.cursorForPosition(viewport_pos)
+        cursor = browser.cursorForPosition(viewport_pos)
         char_pos = cursor.position()
 
         hit: VocabHit | GrammarHit | None = self._renderer.get_highlight_at_position(
             char_pos,
-            self._current_result.analysis,
+            result.analysis,
         )
         if hit is not None:
-            global_pos = self._jp_browser.viewport().mapToGlobal(viewport_pos)
-            self.highlight_hovered.emit(hit, global_pos)
+            global_pos = browser.viewport().mapToGlobal(viewport_pos)
+            self.highlight_hovered.emit(hit, global_pos, result)
 
     def _save_size(self) -> None:
         self._config.overlay_width = self.width()
@@ -504,29 +575,42 @@ class OverlayWindow(QWidget):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         jp_vp = self._jp_browser.viewport()
-        is_browser_viewport = watched is jp_vp
+        prev_vp = self._preview_browser.viewport()
+        is_jp_viewport = watched is jp_vp
+        is_prev_viewport = watched is prev_vp
+        is_browser_viewport = is_jp_viewport or is_prev_viewport
 
         if is_browser_viewport and isinstance(event, QMouseEvent):
             etype = event.type()
 
-            if watched is jp_vp and etype == QEvent.Type.MouseMove:
-                if not (event.buttons() & Qt.MouseButton.LeftButton):
-                    self._handle_hover_at_viewport_pos(event.position().toPoint())
-
-            if etype == QEvent.Type.MouseButtonPress:
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._drag_pos = (
-                        event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            # Hover detection — route to correct browser + result
+            no_left_btn = not (event.buttons() & Qt.MouseButton.LeftButton)
+            if etype == QEvent.Type.MouseMove and no_left_btn:
+                if is_jp_viewport:
+                    self._handle_hover_at_viewport_pos(
+                        self._jp_browser, self._current_result, event.position().toPoint()
                     )
-                    return True
-            elif etype == QEvent.Type.MouseMove:
-                if event.buttons() & Qt.MouseButton.LeftButton and self._drag_pos is not None:
-                    self.move(event.globalPosition().toPoint() - self._drag_pos)
-                    return True
-            elif etype == QEvent.Type.MouseButtonRelease:
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._drag_pos = None
-                    return True
+                elif is_prev_viewport:
+                    self._handle_hover_at_viewport_pos(
+                        self._preview_browser, self._latest_result, event.position().toPoint()
+                    )
+
+            # Drag-to-move — only on the main jp_browser viewport
+            if is_jp_viewport:
+                if etype == QEvent.Type.MouseButtonPress:
+                    if event.button() == Qt.MouseButton.LeftButton:
+                        self._drag_pos = (
+                            event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                        )
+                        return True
+                elif etype == QEvent.Type.MouseMove:
+                    if event.buttons() & Qt.MouseButton.LeftButton and self._drag_pos is not None:
+                        self.move(event.globalPosition().toPoint() - self._drag_pos)
+                        return True
+                elif etype == QEvent.Type.MouseButtonRelease:
+                    if event.button() == Qt.MouseButton.LeftButton:
+                        self._drag_pos = None
+                        return True
 
         return super().eventFilter(watched, event)
 

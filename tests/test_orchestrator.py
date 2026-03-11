@@ -299,7 +299,7 @@ def test_error_occurred_property_accessible(
     """error_occurred property must be accessible (list of worker signals)."""
     err = orchestrator.error_occurred
     assert isinstance(err, list)
-    assert len(err) == 2
+    assert len(err) == 3
 
 
 def test_on_config_changed_calls_vad_worker_update(

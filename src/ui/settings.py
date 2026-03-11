@@ -130,19 +130,6 @@ class SettingsDialog(QDialog):
         self._grammar_highlight_check = QCheckBox("Show grammar highlights")
         layout.addRow("", self._grammar_highlight_check)
 
-        self._display_mode_value: str = "both"
-        display_mode_row = QHBoxLayout()
-        self._display_mode_btn_both = QPushButton("both")
-        self._display_mode_btn_both.setCheckable(True)
-        self._display_mode_btn_single = QPushButton("single")
-        self._display_mode_btn_single.setCheckable(True)
-        display_mode_row.addWidget(self._display_mode_btn_both)
-        display_mode_row.addWidget(self._display_mode_btn_single)
-        display_mode_row.addStretch()
-        self._display_mode_btn_both.clicked.connect(lambda: self._select_display_mode("both"))
-        self._display_mode_btn_single.clicked.connect(lambda: self._select_display_mode("single"))
-        layout.addRow("Display Mode", display_mode_row)
-
         self._jlpt_color_buttons: dict[str, QPushButton] = {}
         jlpt_labels = {
             "n4_vocab": "N4 Vocab",
@@ -162,11 +149,6 @@ class SettingsDialog(QDialog):
             layout.addRow(label, btn)
 
         self._tabs.addTab(widget, "Appearance")
-
-    def _select_display_mode(self, mode: str) -> None:
-        self._display_mode_value = mode
-        self._display_mode_btn_both.setChecked(mode == "both")
-        self._display_mode_btn_single.setChecked(mode == "single")
 
     def _make_color_callback(self, key: str) -> Callable[[], None]:
         """Create a callback that opens a color dialog for the given JLPT color key."""
@@ -202,8 +184,6 @@ class SettingsDialog(QDialog):
         self._vocab_highlight_check.setChecked(config.enable_vocab_highlight)
         self._grammar_highlight_check.setChecked(config.enable_grammar_highlight)
 
-        self._select_display_mode(config.overlay_display_mode)
-
         for key, btn in self._jlpt_color_buttons.items():
             hex_color = config.jlpt_colors.get(key, DEFAULT_JLPT_COLORS.get(key, "#FFFFFF"))
             btn.setProperty("hex_color", hex_color)
@@ -227,7 +207,6 @@ class SettingsDialog(QDialog):
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
             audio_device_id=self._config.audio_device_id,
-            overlay_display_mode=self._display_mode_value,  # type: ignore[arg-type]
             jlpt_colors={
                 key: btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
                 for key, btn in self._jlpt_color_buttons.items()

@@ -8,7 +8,6 @@ import pytest
 from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord
 from src.db.repository import LearningRepository
 from src.db.schema import init_db
-from src.pipeline.types import ASRResult
 
 
 @pytest.fixture
@@ -497,6 +496,3 @@ def test_separate_repos_same_db_file(tmp_path: object) -> None:
 
 
 # Two-phase write tests
-
-
-

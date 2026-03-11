@@ -4,7 +4,7 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from src.profiling.config import ProfilingConfig
 
@@ -40,7 +40,6 @@ class AppConfig:
     enable_vocab_highlight: bool = True
     enable_grammar_highlight: bool = True
     audio_device_id: int | None = None
-    overlay_display_mode: Literal["both", "single"] = "both"
     max_history: int = 10
     jlpt_colors: dict[str, str] = dataclasses.field(
         default_factory=lambda: dict(DEFAULT_JLPT_COLORS)

@@ -105,20 +105,6 @@ def test_collect_config_preserves_non_ui_fields(qapp: QApplication) -> None:
     assert collected.audio_device_id == 5
 
 
-def test_display_mode_segmented_populated(qapp: QApplication) -> None:
-    config = AppConfig(overlay_display_mode="single")
-    d = SettingsDialog(config)
-    assert d._display_mode_value == "single"
-    assert d._display_mode_btn_single.isChecked() is True
-    assert d._display_mode_btn_both.isChecked() is False
-
-
-def test_collect_config_includes_display_mode(dialog: SettingsDialog) -> None:
-    dialog._select_display_mode("single")
-    collected = dialog._collect_config()
-    assert collected.overlay_display_mode == "single"
-
-
 def test_on_save_does_not_close_dialog(qapp: QApplication) -> None:
     config = AppConfig()
     d = SettingsDialog(config)
