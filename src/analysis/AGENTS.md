@@ -23,7 +23,7 @@ Japanese NLP analysis pipeline. Performs morphological analysis, JLPT vocabulary
 
 ## CONVENTIONS
 
-- **Dictionary lookup**: Vocab levels N1-N5 stored in `data/jlpt_vocab.json`.
+- **Dictionary lookup**: Vocab levels N1-N5 loaded from `data/vocabulary.csv` via `JLPTVocabLookup`.
 - **Regex patterns**: Grammar rules with pre-compiled regex in `data/grammar_rules.json`.
 - **Level filtering**: Hits only returned if `hit.level < user_level` (lower is harder).
 - **POS filtering**: Punctuation and symbols are excluded during tokenization.

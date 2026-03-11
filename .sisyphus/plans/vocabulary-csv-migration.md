@@ -183,7 +183,7 @@ Max Concurrent: 3 (Waves 1 & 2)
 
 ## TODOs
 
-- [ ] 0. **Establish Green Baseline**
+- [x] 0. **Establish Green Baseline**
 
   **What to do**:
   - Run `pytest tests/` and confirm all existing tests pass
@@ -224,7 +224,7 @@ Max Concurrent: 3 (Waves 1 & 2)
 
   **Commit**: NO
 
-- [ ] 1. **VocabEntry Dataclass + CSV Loader with Tests**
+- [x] 1. **VocabEntry Dataclass + CSV Loader with Tests**
 
   **What to do**:
   - **RED**: Write tests first in `tests/test_jlpt_vocab.py` (update existing file):
@@ -321,7 +321,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/analysis/jlpt_vocab.py`, `tests/test_jlpt_vocab.py`
   - Pre-commit: `pytest tests/test_jlpt_vocab.py -v`
 
-- [ ] 2. **Update VocabHit and HighlightVocab Models with New Fields**
+- [x] 2. **Update VocabHit and HighlightVocab Models with New Fields**
 
   **What to do**:
   - **RED**: Write tests first:
@@ -402,7 +402,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/db/models.py`, relevant test files
   - Pre-commit: `pytest tests/ -v`
 
-- [ ] 3. **Update DB Schema, Migration, and Repository for New Columns**
+- [x] 3. **Update DB Schema, Migration, and Repository for New Columns**
 
   **What to do**:
   - **RED**: Write tests first in `tests/test_db_repository.py` (update existing):
@@ -516,7 +516,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/db/schema.py`, `src/db/repository.py`, `tests/test_db_repository.py`
   - Pre-commit: `pytest tests/test_db_repository.py -v`
 
-- [ ] 4. **Integrate Dash-Stripping into Lookup + Update find_beyond_level**
+ - [x] 4. **Integrate Dash-Stripping into Lookup + Update find_beyond_level**
 
   **What to do**:
   - **RED**: Write/update tests in `tests/test_jlpt_vocab.py`:
@@ -608,7 +608,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/analysis/jlpt_vocab.py`, `src/analysis/pipeline.py`, `tests/test_jlpt_vocab.py`
   - Pre-commit: `pytest tests/test_jlpt_vocab.py tests/test_analysis_pipeline.py -v`
 
-- [ ] 5. **Wire CSV into PreprocessingPipeline + AnalysisWorker**
+ - [x] 5. **Wire CSV into PreprocessingPipeline + AnalysisWorker**
 
   **What to do**:
   - **RED**: Write/update tests:
@@ -690,7 +690,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/analysis/pipeline.py`, `src/pipeline/analysis_worker.py`, `tests/test_analysis_pipeline.py`, `tests/test_analysis_worker.py`
   - Pre-commit: `pytest tests/test_analysis_pipeline.py tests/test_analysis_worker.py -v`
 
-- [ ] 6. **Update Learning Panel Export for New Fields**
+- [x] 6. **Update Learning Panel Export for New Fields**
 
   **What to do**:
   - **RED**: Write tests:
@@ -763,7 +763,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/db/repository.py`, `tests/test_db_repository.py`
   - Pre-commit: `pytest tests/test_db_repository.py -v`
 
-- [ ] 7. **Update Tooltip to Display Pronunciation + Definition**
+- [x] 7. **Update Tooltip to Display Pronunciation + Definition**
 
   **What to do**:
   - **RED**: Write/update tests in `tests/test_tooltip.py`:
@@ -848,7 +848,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/ui/tooltip.py`, `tests/test_tooltip.py`
   - Pre-commit: `pytest tests/test_tooltip.py -v`
 
-- [ ] 8. **Update Sentence Detail Dialog for Pronunciation + Definition**
+- [x] 8. **Update Sentence Detail Dialog for Pronunciation + Definition**
 
   **What to do**:
   - **RED**: Write/update tests:
@@ -928,7 +928,7 @@ Max Concurrent: 3 (Waves 1 & 2)
   - Files: `src/ui/sentence_detail.py`, test files
   - Pre-commit: `pytest tests/ -v`
 
-- [ ] 9. **Remove Old JSON + Final Integration Test + Cleanup**
+- [x] 9. **Remove Old JSON + Final Integration Test + Cleanup**
 
   **What to do**:
   - **RED**: Write integration test:
@@ -1039,19 +1039,19 @@ Max Concurrent: 3 (Waves 1 & 2)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check . && ruff format --check . && mypy src/ && pytest tests/`. Review all changed files for: `as any`/`@ts-ignore`/`type: ignore`, empty catches, print/console.log in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic names (data/result/item/temp).
   Output: `Lint [PASS/FAIL] | Type Check [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   Start from clean state. Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration (CSV loads → lookup works → analysis runs → DB stores → tooltip shows all fields). Test edge cases: empty definition, unknown lemma, dash-annotated lemma. Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (`git log`/`git diff`). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination: Task N touching Task M's files. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
