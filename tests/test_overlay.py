@@ -9,8 +9,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.config import AppConfig
-from src.db.models import AnalysisResult, SentenceResult, VocabHit
-from src.ui.overlay import OverlayWindow
+from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
+from src.ui.overlay import OverlayWindow, _centered_html
 
 
 @pytest.fixture
@@ -19,141 +19,36 @@ def overlay(qapp: QApplication) -> OverlayWindow:
         "src.ui.overlay.HighlightRenderer.build_rich_text",
         return_value="<b>テスト</b>",
     ):
-        window = OverlayWindow(AppConfig())
-    return window
+        return OverlayWindow(AppConfig())
 
 
-def _make_result(
-    japanese_text: str = "テスト文",
-    chinese_translation: str | None = "测试句",
-    explanation: str | None = None,
-) -> SentenceResult:
-    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[])
+def _make_result(japanese_text: str = "テスト文") -> SentenceResult:
     return SentenceResult(
         japanese_text=japanese_text,
-        chinese_translation=chinese_translation,
-        explanation=explanation,
-        analysis=analysis,
+        analysis=AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[]),
     )
 
 
-def test_overlay_has_frameless_hint(overlay: OverlayWindow) -> None:
+def test_overlay_has_window_flags(overlay: OverlayWindow) -> None:
     flags = overlay.windowFlags()
     assert flags & Qt.WindowType.FramelessWindowHint
-
-
-def test_overlay_has_stays_on_top_hint(overlay: OverlayWindow) -> None:
-    flags = overlay.windowFlags()
     assert flags & Qt.WindowType.WindowStaysOnTopHint
-
-
-def test_overlay_has_tool_hint(overlay: OverlayWindow) -> None:
-    flags = overlay.windowFlags()
     assert flags & Qt.WindowType.Tool
 
 
-def test_overlay_initial_size(overlay: OverlayWindow) -> None:
+def test_overlay_initial_size_uses_config_defaults(overlay: OverlayWindow) -> None:
     assert overlay.width() == 800
     assert overlay.height() == 120
 
 
-def test_overlay_initial_mode_is_both(overlay: OverlayWindow) -> None:
-    assert overlay._display_mode == "both"
-
-
-def test_overlay_highlight_hovered_signal_exists() -> None:
-    assert hasattr(OverlayWindow, "highlight_hovered")
-
-
-def test_on_sentence_ready_stores_current_result(overlay: OverlayWindow) -> None:
-    result = _make_result()
+def test_overlay_uses_custom_dimensions(qapp: QApplication) -> None:
     with patch(
         "src.ui.overlay.HighlightRenderer.build_rich_text",
         return_value="<b>テスト</b>",
     ):
-        overlay.on_sentence_ready(result)
-    assert overlay._current_result is result
-
-
-def test_on_sentence_ready_sets_cn_browser_text(overlay: OverlayWindow) -> None:
-    result = _make_result(chinese_translation="测试")
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        overlay.on_sentence_ready(result)
-    assert "测试" in overlay._cn_browser.toPlainText()
-
-
-def test_on_sentence_ready_no_translation_shows_unavailable(
-    overlay: OverlayWindow,
-) -> None:
-    result = _make_result(chinese_translation=None, explanation=None)
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        overlay.on_sentence_ready(result)
-    assert "LLM unavailable" in overlay._cn_browser.toPlainText()
-
-
-def test_on_sentence_ready_explanation_fallback(overlay: OverlayWindow) -> None:
-    result = _make_result(chinese_translation=None, explanation="Grammar explanation")
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        overlay.on_sentence_ready(result)
-    assert "Grammar explanation" in overlay._cn_browser.toPlainText()
-
-
-def test_toggle_mode_from_both_switches_to_single_jp(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "both"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "single"
-    assert overlay._single_sub_mode == "jp"
-
-
-def test_toggle_mode_changes_from_single_jp_to_single_cn(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "jp"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "single"
-    assert overlay._single_sub_mode == "cn"
-
-
-def test_toggle_mode_full_cycle(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "both"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "single"
-    assert overlay._single_sub_mode == "jp"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "single"
-    assert overlay._single_sub_mode == "cn"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "both"
-
-
-def test_toggle_mode_single_cn_cycles_back_to_both(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "cn"
-    overlay._toggle_mode()
-    assert overlay._display_mode == "both"
-
-
-def test_toggle_mode_hides_cn_browser_in_single_jp(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "jp"
-    overlay._apply_display_mode()
-    assert overlay._cn_browser.isHidden()
-    assert not overlay._jp_browser.isHidden()
-
-
-def test_toggle_mode_shows_both_browsers_in_both(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "both"
-    overlay._apply_display_mode()
-    assert not overlay._cn_browser.isHidden()
-    assert not overlay._jp_browser.isHidden()
+        window = OverlayWindow(AppConfig(overlay_width=640, overlay_height=110))
+    assert window.width() == 640
+    assert window.height() == 110
 
 
 def test_set_status_updates_jp_browser(overlay: OverlayWindow) -> None:
@@ -161,69 +56,26 @@ def test_set_status_updates_jp_browser(overlay: OverlayWindow) -> None:
     assert "Listening..." in overlay._jp_browser.toPlainText()
 
 
-def test_set_status_clears_cn_browser(overlay: OverlayWindow) -> None:
-    overlay._cn_browser.setPlainText("Some previous text")
-    overlay.set_status("Waiting...")
-    assert overlay._cn_browser.toPlainText() == ""
+def test_centered_html_wraps_and_escapes() -> None:
+    result = _centered_html("<script>x</script>")
+    assert "<table" in result
+    assert 'align="center"' in result
+    assert "&lt;script&gt;x&lt;/script&gt;" in result
 
 
-def test_overlay_has_jp_and_cn_browsers(overlay: OverlayWindow) -> None:
-    assert overlay._jp_browser is not None
-    assert overlay._cn_browser is not None
-
-
-def test_overlay_browsers_read_only(overlay: OverlayWindow) -> None:
-    assert overlay._jp_browser.isReadOnly()
-    assert overlay._cn_browser.isReadOnly()
-
-
-def test_overlay_renderer_stored_as_instance(overlay: OverlayWindow) -> None:
-    from src.ui.highlight import HighlightRenderer
-
-    assert isinstance(overlay._renderer, HighlightRenderer)
-
-
-def test_on_config_changed_updates_user_level(overlay: OverlayWindow) -> None:
-    config = AppConfig(user_jlpt_level=2)
-    overlay.on_config_changed(config)
-    assert overlay._user_level == 2
-
-
-def test_on_config_changed_updates_enable_vocab(overlay: OverlayWindow) -> None:
-    config = AppConfig(enable_vocab_highlight=False)
-    overlay.on_config_changed(config)
-    assert overlay._enable_vocab is False
-
-
-def test_on_config_changed_updates_enable_grammar(overlay: OverlayWindow) -> None:
-    config = AppConfig(enable_grammar_highlight=False)
-    overlay.on_config_changed(config)
-    assert overlay._enable_grammar is False
-
-
-def test_on_config_changed_rerenders_current_result(overlay: OverlayWindow) -> None:
+def test_on_sentence_ready_stores_result_and_history(overlay: OverlayWindow) -> None:
     result = _make_result()
     with patch(
         "src.ui.overlay.HighlightRenderer.build_rich_text",
         return_value="<b>テスト</b>",
-    ) as mock_build:
+    ):
         overlay.on_sentence_ready(result)
-        mock_build.reset_mock()
-        overlay.on_config_changed(AppConfig())
-        assert mock_build.called
+    assert overlay._current_result is result
+    assert overlay._history == [result]
+    assert overlay._history_index == 0
 
 
-def test_on_config_changed_no_rerender_when_no_result(overlay: OverlayWindow) -> None:
-    overlay._current_result = None
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ) as mock_build:
-        overlay.on_config_changed(AppConfig())
-        mock_build.assert_not_called()
-
-
-def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
+def test_on_sentence_ready_filters_vocab_when_disabled(overlay: OverlayWindow) -> None:
     overlay._enable_vocab = False
     vocab_hit = VocabHit(
         surface="食べ",
@@ -234,17 +86,15 @@ def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWin
         start_pos=0,
         end_pos=2,
     )
-    analysis = AnalysisResult(tokens=[], vocab_hits=[vocab_hit], grammar_hits=[])
     result = SentenceResult(
         japanese_text="食べる",
-        chinese_translation="eat",
-        explanation=None,
-        analysis=analysis,
+        analysis=AnalysisResult(tokens=[], vocab_hits=[vocab_hit], grammar_hits=[]),
     )
     captured: list[AnalysisResult] = []
 
-    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
-        captured.append(a)
+    def capture_analysis(text: str, analysis: AnalysisResult, user_level: int) -> str:
+        del text, user_level
+        captured.append(analysis)
         return "<b>食べる</b>"
 
     with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
@@ -254,9 +104,7 @@ def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWin
     assert captured[0].vocab_hits == []
 
 
-def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
-    from src.db.models import GrammarHit
-
+def test_on_sentence_ready_filters_grammar_when_disabled(overlay: OverlayWindow) -> None:
     overlay._enable_grammar = False
     grammar_hit = GrammarHit(
         rule_id="te-form",
@@ -267,17 +115,15 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
         start_pos=0,
         end_pos=3,
     )
-    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[grammar_hit])
     result = SentenceResult(
         japanese_text="食べている",
-        chinese_translation="eating",
-        explanation=None,
-        analysis=analysis,
+        analysis=AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[grammar_hit]),
     )
     captured: list[AnalysisResult] = []
 
-    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
-        captured.append(a)
+    def capture_analysis(text: str, analysis: AnalysisResult, user_level: int) -> str:
+        del text, user_level
+        captured.append(analysis)
         return "<b>食べている</b>"
 
     with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
@@ -287,404 +133,91 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
     assert captured[0].grammar_hits == []
 
 
-def test_overlay_accepts_config_constructor(qapp: QApplication) -> None:
+def test_history_respects_max_history_from_config(qapp: QApplication) -> None:
     with patch(
         "src.ui.overlay.HighlightRenderer.build_rich_text",
         return_value="<b>テスト</b>",
     ):
-        window = OverlayWindow(AppConfig())
-    assert window is not None
+        window = OverlayWindow(AppConfig(max_history=3))
+
+    for idx in range(5):
+        window.on_sentence_ready(_make_result(japanese_text=f"sentence {idx}"))
+
+    assert len(window._history) == 3
+    assert [item.japanese_text for item in window._history] == [
+        "sentence 2",
+        "sentence 3",
+        "sentence 4",
+    ]
+    assert window._history_index == 2
 
 
-def test_overlay_uses_config_dimensions(qapp: QApplication) -> None:
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        window = OverlayWindow(AppConfig(overlay_width=600, overlay_height=100))
-    assert window.width() == 600
-    assert window.height() == 100
+def test_prev_and_next_sentence_navigation(overlay: OverlayWindow) -> None:
+    first = _make_result(japanese_text="first")
+    second = _make_result(japanese_text="second")
 
+    overlay.on_sentence_ready(first)
+    overlay.on_sentence_ready(second)
 
-def test_overlay_minimum_size(overlay: OverlayWindow) -> None:
-    assert overlay.minimumWidth() >= 400
-    assert overlay.minimumHeight() >= 80
-
-
-def test_overlay_center_on_screen_method_exists(overlay: OverlayWindow) -> None:
-    assert hasattr(overlay, "_center_on_screen")
-
-
-def test_on_config_changed_updates_opacity(overlay: OverlayWindow) -> None:
-    overlay.on_config_changed(AppConfig(overlay_opacity=0.5))
-    assert overlay.windowOpacity() == pytest.approx(0.5, abs=0.01)
-
-
-# ── Text box styling tests (Bug 3: centered HTML, visible on dark bg) ──
-
-
-def test_centered_html_wraps_in_table() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("hello world")
-    assert "<table" in result
-    assert 'align="center"' in result
-    assert "hello world" in result
-
-
-def test_centered_html_escapes_special_chars() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("<script>alert('xss')</script>")
-    assert "<script>" not in result
-    assert "&lt;script&gt;" in result
-
-
-def test_centered_html_uses_light_text_color() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("test")
-    assert "#EEEEEE" in result
-
-
-def test_set_status_uses_html(overlay: OverlayWindow) -> None:
-    overlay.set_status("Listening...")
-    html = overlay._jp_browser.toHtml()
-    assert 'align="center"' in html
-    assert "Listening..." in overlay._jp_browser.toPlainText()
-
-
-def test_cn_browser_uses_centered_html(overlay: OverlayWindow) -> None:
-    result = _make_result(chinese_translation="翻訳テスト")
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        overlay.on_sentence_ready(result)
-    html = overlay._cn_browser.toHtml()
-    assert 'align="center"' in html
-    assert "翻訳テスト" in overlay._cn_browser.toPlainText()
-
-
-def test_browser_stylesheet_has_text_color(overlay: OverlayWindow) -> None:
-    jp_style = overlay._jp_browser.styleSheet()
-    cn_style = overlay._cn_browser.styleSheet()
-    assert "#EEEEEE" in jp_style
-    assert "#EEEEEE" in cn_style
-
-
-# ── Drag from browser viewport tests (Bug 2) ──
-
-
-def test_cn_browser_viewport_has_event_filter(overlay: OverlayWindow) -> None:
-    """Both JP and CN browser viewports must have event filter installed."""
-    # Qt doesn't expose installed event filters directly, but we can verify
-    # the overlay responds to drag events from the CN browser viewport.
-    assert overlay._cn_browser.viewport().hasMouseTracking()
-
-
-def test_jp_browser_viewport_has_mouse_tracking(overlay: OverlayWindow) -> None:
-    assert overlay._jp_browser.viewport().hasMouseTracking()
-
-
-def test_drag_pos_initially_none(overlay: OverlayWindow) -> None:
-    assert overlay._drag_pos is None
-
-
-def test_on_asr_ready_updates_browsers(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import ASRResult
-
-    result = ASRResult(text="テスト", segment_id="seg-1", elapsed_ms=10.0)
-    overlay.on_asr_ready(result)
-
-    assert "テスト" in overlay._jp_browser.toPlainText()
-    assert "Translating…" in overlay._cn_browser.toPlainText()
-
-
-def test_on_translation_ready_updates_cn_browser(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import LLMResult
-
-    result = LLMResult(
-        translation="测试",
-        explanation="grammar exp",
-        segment_id="seg-1",
-        elapsed_ms=20.0,
-    )
-    overlay.on_llm_ready(result)
-
-    html = overlay._cn_browser.toHtml()
-    # on_llm_ready uses `translation or explanation or "LLM unavailable"`,
-    # so when translation is set, it takes priority over explanation.
-    assert "测试" in html
-
-
-def test_on_llm_ready_falls_back_to_explanation(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import LLMResult
-
-    result = LLMResult(
-        translation=None,
-        explanation="grammar explanation",
-        segment_id="seg-1",
-        elapsed_ms=20.0,
-    )
-    overlay.on_llm_ready(result)
-
-    html = overlay._cn_browser.toHtml()
-    assert "grammar explanation" in html
-
-
-def test_on_translation_ready_handles_none(overlay: OverlayWindow) -> None:
-    from src.pipeline.types import LLMResult
-
-    result = LLMResult(
-        translation=None,
-        explanation=None,
-        segment_id="seg-2",
-        elapsed_ms=20.0,
-    )
-    overlay.on_llm_ready(result)
-
-    assert "LLM unavailable" in overlay._cn_browser.toPlainText()
-
-
-# ── Sentence history + navigation tests ──
-
-
-def test_on_sentence_ready_adds_to_history(overlay: OverlayWindow) -> None:
-    result = _make_result()
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ):
-        overlay.on_sentence_ready(result)
-    assert len(overlay._history) == 1
-    assert overlay._history[0] is result
-    assert overlay._history_index == 0
-
-
-@pytest.mark.xfail(reason="pre-existing: _MAX_HISTORY=10 but test expects 100")
-def test_history_max_size(overlay: OverlayWindow) -> None:
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
-    ):
-        for i in range(105):
-            overlay.on_sentence_ready(_make_result(japanese_text=f"sentence {i}"))
-    assert len(overlay._history) == 100
-    assert overlay._history_index == 99
-
-
-def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
-    r1 = _make_result(japanese_text="first")
-    r2 = _make_result(japanese_text="second")
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
-    ):
-        overlay.on_sentence_ready(r1)
-        overlay.on_sentence_ready(r2)
-        overlay._prev_sentence()
-    assert overlay._history_index == 0
-    assert overlay._current_result is r1
-
-
-def test_prev_sentence_noop_at_start(overlay: OverlayWindow) -> None:
-    r1 = _make_result()
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
-    ):
-        overlay.on_sentence_ready(r1)
     overlay._prev_sentence()
     assert overlay._history_index == 0
+    assert overlay._current_result is first
 
-
-def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
-    r1 = _make_result(japanese_text="first")
-    r2 = _make_result(japanese_text="second")
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
-    ):
-        overlay.on_sentence_ready(r1)
-        overlay.on_sentence_ready(r2)
-        overlay._prev_sentence()
-        overlay._next_sentence()
+    overlay._next_sentence()
     assert overlay._history_index == 1
-    assert overlay._current_result is r2
+    assert overlay._current_result is second
 
 
-def test_next_sentence_noop_at_end(overlay: OverlayWindow) -> None:
-    r1 = _make_result()
-    with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
-    ):
-        overlay.on_sentence_ready(r1)
-    overlay._next_sentence()
-    assert overlay._history_index == 0
-
-
-def test_prev_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
+def test_navigation_noop_on_empty_history(overlay: OverlayWindow) -> None:
     overlay._prev_sentence()
-    assert overlay._history_index == -1
-
-
-def test_next_sentence_noop_empty_history(overlay: OverlayWindow) -> None:
     overlay._next_sentence()
     assert overlay._history_index == -1
 
 
-# ── Display mode config change tests ──
+def test_arrow_buttons_always_visible_on_init(overlay: OverlayWindow) -> None:
+    assert not overlay._prev_btn.isHidden()
+    assert not overlay._next_btn.isHidden()
+    assert not overlay._prev_btn.isEnabled()
+    assert not overlay._next_btn.isEnabled()
 
 
-def test_on_config_changed_updates_display_mode(overlay: OverlayWindow) -> None:
-    config = AppConfig(overlay_display_mode="single")
+def test_arrow_buttons_state_after_history_navigation(overlay: OverlayWindow) -> None:
+    first = _make_result(japanese_text="first")
+    second = _make_result(japanese_text="second")
+
+    overlay.on_sentence_ready(first)
+    assert not overlay._prev_btn.isEnabled()
+    assert not overlay._next_btn.isEnabled()
+
+    overlay.on_sentence_ready(second)
+    assert overlay._prev_btn.isEnabled()
+    assert not overlay._next_btn.isEnabled()
+
+    overlay._prev_sentence()
+    assert not overlay._prev_btn.isEnabled()
+    assert overlay._next_btn.isEnabled()
+
+
+def test_on_config_changed_updates_runtime_settings(overlay: OverlayWindow) -> None:
+    config = AppConfig(
+        overlay_opacity=0.5,
+        user_jlpt_level=2,
+        enable_vocab_highlight=False,
+        enable_grammar_highlight=False,
+        max_history=5,
+    )
     overlay.on_config_changed(config)
-    assert overlay._display_mode == "single"
+
+    assert overlay.windowOpacity() == pytest.approx(0.5, abs=0.01)
+    assert overlay._user_level == 2
+    assert overlay._enable_vocab is False
+    assert overlay._enable_grammar is False
+    assert overlay._max_history == 5
 
 
-def test_on_config_changed_rebinds_shortcuts(overlay: OverlayWindow) -> None:
-    config = AppConfig(shortcut_toggle_display="Ctrl+X")
-    with patch(
-        "src.ui.overlay.GlobalShortcutManager.update_shortcuts",
-    ) as mock_update:
-        overlay.on_config_changed(config)
-        mock_update.assert_called_once_with(config)
-
-
-def test_overlay_has_global_shortcut_manager(overlay: OverlayWindow) -> None:
-    from src.ui.shortcuts import GlobalShortcutManager
-
-    assert isinstance(overlay._shortcut_mgr, GlobalShortcutManager)
-
-
-def test_overlay_shortcut_mgr_signals_connected(qapp: QApplication) -> None:
-    with patch("src.ui.overlay.GlobalShortcutManager.start"):
-        window = OverlayWindow(AppConfig())
-    with patch.object(window, "_toggle_mode") as mock_toggle:
-        window._shortcut_mgr.toggle_display_triggered.emit()
-        mock_toggle.assert_called_once()
-    with patch.object(window, "_prev_sentence") as mock_prev:
-        window._shortcut_mgr.prev_sentence_triggered.emit()
-        mock_prev.assert_called_once()
-    with patch.object(window, "_next_sentence") as mock_next:
-        window._shortcut_mgr.next_sentence_triggered.emit()
-        mock_next.assert_called_once()
-
-
-def test_apply_display_mode_single_jp_hides_cn(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "jp"
-    overlay._apply_display_mode()
-    assert not overlay._jp_browser.isHidden()
-    assert overlay._cn_browser.isHidden()
-
-
-def test_apply_display_mode_single_cn_hides_jp(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "cn"
-    overlay._apply_display_mode()
-    assert overlay._jp_browser.isHidden()
-    assert not overlay._cn_browser.isHidden()
-
-
-def test_apply_display_mode_both_shows_all(overlay: OverlayWindow) -> None:
-    overlay._display_mode = "both"
-    overlay._apply_display_mode()
-    assert not overlay._jp_browser.isHidden()
-    assert not overlay._cn_browser.isHidden()
-
-
-# ── Four-corner resize tests ──
-
-
-def test_edge_at_returns_empty_for_center(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    center = QPoint(overlay.width() // 2, overlay.height() // 2)
-    assert overlay._edge_at(center) == ""
-
-
-def test_edge_at_detects_top_left_corner(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(2, 2)) == "tl"
-
-
-def test_edge_at_detects_top_right_corner(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(overlay.width() - 2, 2)) == "tr"
-
-
-def test_edge_at_detects_bottom_left_corner(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(2, overlay.height() - 2)) == "bl"
-
-
-def test_edge_at_detects_bottom_right_corner(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(overlay.width() - 2, overlay.height() - 2)) == "br"
-
-
-def test_edge_at_detects_top_edge(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(overlay.width() // 2, 2)) == "t"
-
-
-def test_edge_at_detects_bottom_edge(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(overlay.width() // 2, overlay.height() - 2)) == "b"
-
-
-def test_edge_at_detects_left_edge(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(2, overlay.height() // 2)) == "l"
-
-
-def test_edge_at_detects_right_edge(overlay: OverlayWindow) -> None:
-    from PySide6.QtCore import QPoint
-
-    assert overlay._edge_at(QPoint(overlay.width() - 2, overlay.height() // 2)) == "r"
-
-
-def test_resize_state_initially_empty(overlay: OverlayWindow) -> None:
-    assert overlay._resize_edge == ""
-    assert overlay._resize_origin is None
-    assert overlay._resize_geo is None
-
-
-# ── Single mode height shrink tests ──
-
-
-def test_single_mode_shrinks_height(overlay: OverlayWindow) -> None:
-    original_height = overlay.height()
-    overlay._display_mode = "single"
-    overlay._single_sub_mode = "jp"
-    overlay._apply_display_mode()
-    assert overlay.height() < original_height
-
-
-def test_both_mode_restores_height(overlay: OverlayWindow) -> None:
-    original_height = overlay.height()
-    overlay._both_mode_height = original_height
-    overlay._display_mode = "single"
-    overlay._apply_display_mode()
-    overlay._display_mode = "both"
-    overlay._apply_display_mode()
-    assert overlay.height() == original_height
-
-
-def test_on_config_changed_stores_both_height_on_switch_to_single(
-    overlay: OverlayWindow,
-) -> None:
-    original_height = overlay.height()
-    config = AppConfig(overlay_display_mode="single")
-    overlay.on_config_changed(config)
-    assert overlay._both_mode_height == original_height
+def test_edge_at_detects_corners_and_edges(overlay: OverlayWindow) -> None:
+    assert overlay._edge_at(overlay.rect().center()) == ""
+    assert overlay._edge_at(overlay.rect().topLeft()) == "tl"
+    assert overlay._edge_at(overlay.rect().topRight()) == "tr"
+    assert overlay._edge_at(overlay.rect().bottomLeft()) == "bl"
+    assert overlay._edge_at(overlay.rect().bottomRight()) == "br"

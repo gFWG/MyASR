@@ -59,6 +59,10 @@ _ARROW_BTN_STYLE = """
     QPushButton:pressed {{
         background-color: rgba(255, 255, 255, 80);
     }}
+    QPushButton:disabled {{
+        background-color: rgba(255, 255, 255, 10);
+        color: rgba(255, 255, 255, 40);
+    }}
 """
 
 
@@ -106,6 +110,7 @@ def _make_arrow_button(text: str) -> QPushButton:
     btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
     btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     btn.setStyleSheet(_ARROW_BTN_STYLE.format(opacity=30, text_opacity=180))
+    btn.setEnabled(False)
     return btn
 
 
@@ -305,11 +310,15 @@ class OverlayWindow(QWidget):
         logger.debug("_next_sentence: index=%d", self._history_index)
 
     def _update_arrow_visibility(self) -> None:
-        """Show/hide arrow buttons based on history navigation state."""
+        """Enable/disable arrow buttons based on history navigation state.
+
+        Buttons remain always visible for a consistent layout; only their
+        enabled state (and therefore their visual opacity) changes.
+        """
         can_go_prev = len(self._history) > 0 and self._history_index > 0
         can_go_next = len(self._history) > 0 and self._history_index < len(self._history) - 1
-        self._prev_btn.setVisible(can_go_prev)
-        self._next_btn.setVisible(can_go_next)
+        self._prev_btn.setEnabled(can_go_prev)
+        self._next_btn.setEnabled(can_go_next)
 
     def _handle_hover_at_viewport_pos(self, viewport_pos: QPoint) -> None:
         if self._current_result is None or self._current_result.analysis is None:

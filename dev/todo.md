@@ -1,11 +1,10 @@
-TODO:
+TODO
 
-1. Add a translucent arrow button on the far left and far right of the overlay to select the previous and next sentences.
+1. Fix bug: I want to add a translucent arrow button on the far left and far right of the overlay to select the previous and next sentences, but the button is not showing up.
 
-2. The maximum number of sentences to retain can be configured, with a default of 10, and includes highlighted information.
+Checklist after implementation
 
-Checklist:
-
-1. [ ] Complete all tasks on the TODO list
-2. [ ] Test the application thoroughly to ensure that other unrelated code are not affected.
-3. [ ] No mypy/ruff errors should be present in the codebase after the changes.
+- [ ] Complete all tasks on the TODO list
+- [ ] ruff check . && ruff format --check . — zero errors
+- [ ] mypy src/ — zero errors  
+- [ ] pytest tests/ — all new tests pass (skip irrelevant tests)
