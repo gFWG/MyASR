@@ -78,10 +78,15 @@ class TooltipPopup(QWidget):
 
         self._level_label = _make_label(font_size=11)
         self._word_label = _make_label(font_size=13)
+        self._pronunciation_label = _make_label(font_size=11)
+        self._pronunciation_label.setStyleSheet(
+            "background: transparent; color: rgba(255, 255, 255, 0.7);"
+        )
         self._desc_label = _make_label(font_size=11)
 
         layout.addWidget(self._level_label)
         layout.addWidget(self._word_label)
+        layout.addWidget(self._pronunciation_label)
         layout.addWidget(self._desc_label)
 
     # ------------------------------------------------------------------ #
@@ -120,7 +125,21 @@ class TooltipPopup(QWidget):
             f"background: {level_color}; color: white; border-radius: 4px; padding: 1px 4px;"
         )
         self._word_label.setText(f"{hit.lemma} ({hit.surface})")
-        self._desc_label.setText(hit.pos)
+
+        if hit.pronunciation:
+            self._pronunciation_label.setText(hit.pronunciation)
+            self._pronunciation_label.show()
+        else:
+            self._pronunciation_label.hide()
+
+        if hit.definition:
+            self._desc_label.setText(f"{hit.pos} • {hit.definition}")
+            self._desc_label.show()
+        elif hit.pos:
+            self._desc_label.setText(hit.pos)
+            self._desc_label.show()
+        else:
+            self._desc_label.hide()
 
         self.adjustSize()
         self._position_near(position)
@@ -158,8 +177,10 @@ class TooltipPopup(QWidget):
             f"background: {level_color}; color: white; border-radius: 4px; padding: 1px 4px;"
         )
         self._word_label.setText(hit.matched_text)
+        self._pronunciation_label.hide()
         description = hit.description or "Grammar pattern"
         self._desc_label.setText(f"{hit.confidence_type}: {description}")
+        self._desc_label.show()
 
         self.adjustSize()
         self._position_near(position)

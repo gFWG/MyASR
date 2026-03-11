@@ -178,6 +178,21 @@ class SentenceDetailDialog(QDialog):
             pos_label.setStyleSheet("font-size: 12px; color: #777777; font-style: italic;")
             row.addWidget(pos_label)
 
+            if vh.pronunciation:
+                pron_label = QLabel(f"[{vh.pronunciation}]")
+                pron_label.setStyleSheet("font-size: 12px; color: #777777;")
+                row.addWidget(pron_label)
+
+            if vh.definition:
+                sep3 = QLabel("—")
+                sep3.setStyleSheet("color: #888888;")
+                row.addWidget(sep3)
+
+                def_label = QLabel(vh.definition)
+                def_label.setStyleSheet("font-size: 12px; color: #555555;")
+                def_label.setWordWrap(True)
+                row.addWidget(def_label)
+
             row.addStretch()
             layout.addLayout(row)
 

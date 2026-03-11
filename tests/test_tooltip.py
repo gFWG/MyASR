@@ -20,6 +20,8 @@ def _make_vocab_hit(
     lemma: str = "食べる",
     pos: str = "動詞",
     jlpt_level: int = 5,
+    pronunciation: str = "",
+    definition: str = "",
 ) -> VocabHit:
     return VocabHit(
         surface=surface,
@@ -29,6 +31,8 @@ def _make_vocab_hit(
         user_level=5,
         start_pos=0,
         end_pos=len(surface),
+        pronunciation=pronunciation,
+        definition=definition,
     )
 
 
@@ -94,7 +98,34 @@ def test_show_for_vocab_sets_word_label(tooltip: TooltipPopup) -> None:
 def test_show_for_vocab_sets_desc_label(tooltip: TooltipPopup) -> None:
     hit = _make_vocab_hit(pos="動詞")
     tooltip.show_for_vocab(hit, QPoint(100, 100), sentence_id=1, highlight_id=12)
-    assert "動詞" in tooltip._desc_label.text()
+    assert tooltip._desc_label.text() == "動詞"
+    assert not tooltip._desc_label.isHidden()
+
+
+def test_show_for_vocab_with_definition(tooltip: TooltipPopup) -> None:
+    hit = _make_vocab_hit(pos="動詞", definition="to eat")
+    tooltip.show_for_vocab(hit, QPoint(100, 100), sentence_id=1, highlight_id=12)
+    assert tooltip._desc_label.text() == "動詞 • to eat"
+    assert not tooltip._desc_label.isHidden()
+
+
+def test_show_for_vocab_with_pronunciation(tooltip: TooltipPopup) -> None:
+    hit = _make_vocab_hit(pronunciation="タベル")
+    tooltip.show_for_vocab(hit, QPoint(100, 100), sentence_id=1, highlight_id=12)
+    assert tooltip._pronunciation_label.text() == "タベル"
+    assert not tooltip._pronunciation_label.isHidden()
+
+
+def test_show_for_vocab_without_pronunciation_hides_label(tooltip: TooltipPopup) -> None:
+    hit = _make_vocab_hit(pronunciation="")
+    tooltip.show_for_vocab(hit, QPoint(100, 100), sentence_id=1, highlight_id=12)
+    assert tooltip._pronunciation_label.isHidden()
+
+
+def test_show_for_vocab_empty_pos_and_def(tooltip: TooltipPopup) -> None:
+    hit = _make_vocab_hit(pos="", definition="")
+    tooltip.show_for_vocab(hit, QPoint(100, 100), sentence_id=1, highlight_id=12)
+    assert tooltip._desc_label.isHidden()
 
 
 def test_show_for_vocab_makes_widget_visible(tooltip: TooltipPopup) -> None:
@@ -120,6 +151,8 @@ def test_show_for_grammar_sets_desc_label(tooltip: TooltipPopup) -> None:
     tooltip.show_for_grammar(hit, QPoint(100, 100), sentence_id=1, highlight_id=22)
     assert "exact" in tooltip._desc_label.text()
     assert "while doing" in tooltip._desc_label.text()
+    assert not tooltip._desc_label.isHidden()
+    assert tooltip._pronunciation_label.isHidden()
 
 
 def test_show_for_vocab_emits_record_triggered_on_first_show(
