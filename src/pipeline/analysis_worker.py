@@ -107,6 +107,9 @@ class AnalysisWorker(QThread):
                 jlpt_level=hit.jlpt_level,
                 is_beyond_level=hit.jlpt_level > hit.user_level,
                 tooltip_shown=False,
+                vocab_id=hit.vocab_id,
+                pronunciation=hit.pronunciation,
+                definition=hit.definition,
             )
             for hit in analysis.vocab_hits
         ]
