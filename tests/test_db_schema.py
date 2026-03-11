@@ -55,6 +55,9 @@ def test_init_db_schema_columns(tmp_path: Path) -> None:
     assert "jlpt_level" in vocab_cols
     assert "is_beyond_level" in vocab_cols
     assert "tooltip_shown" in vocab_cols
+    assert "vocab_id" in vocab_cols
+    assert "pronunciation" in vocab_cols
+    assert "definition" in vocab_cols
 
     cur = conn.execute("PRAGMA table_info(highlight_grammar)")
     grammar_cols = {r[1] for r in cur.fetchall()}
@@ -111,3 +114,37 @@ def test_init_db_creates_indexes(tmp_path: Path) -> None:
     assert "idx_sentence_created_at" in indexes
     assert "idx_highlight_vocab_sentence" in indexes
     assert "idx_highlight_grammar_sentence" in indexes
+
+
+def test_init_db_migrates_old_database(tmp_path: Path) -> None:
+    db_path = str(tmp_path / "old.db")
+    old_schema = """
+    CREATE TABLE IF NOT EXISTS sentence_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        japanese_text TEXT NOT NULL,
+        source_context TEXT,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS highlight_vocab (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sentence_id INTEGER NOT NULL REFERENCES sentence_records(id) ON DELETE CASCADE,
+        surface TEXT NOT NULL,
+        lemma TEXT NOT NULL,
+        pos TEXT NOT NULL,
+        jlpt_level INTEGER,
+        is_beyond_level INTEGER NOT NULL DEFAULT 0,
+        tooltip_shown INTEGER NOT NULL DEFAULT 0
+    );
+    """
+    old_conn = sqlite3.connect(db_path)
+    old_conn.executescript(old_schema)
+    old_conn.close()
+
+    conn = init_db(db_path)
+    cur = conn.execute("PRAGMA table_info(highlight_vocab)")
+    cols = {r[1] for r in cur.fetchall()}
+    conn.close()
+
+    assert "vocab_id" in cols
+    assert "pronunciation" in cols
+    assert "definition" in cols

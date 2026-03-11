@@ -39,6 +39,9 @@ def make_vocab(
     jlpt_level: int | None = 5,
     is_beyond_level: bool = False,
     tooltip_shown: bool = False,
+    vocab_id: int = 0,
+    pronunciation: str = "",
+    definition: str = "",
 ) -> HighlightVocab:
     return HighlightVocab(
         id=id,
@@ -49,6 +52,9 @@ def make_vocab(
         jlpt_level=jlpt_level,
         is_beyond_level=is_beyond_level,
         tooltip_shown=tooltip_shown,
+        vocab_id=vocab_id,
+        pronunciation=pronunciation,
+        definition=definition,
     )
 
 
@@ -321,11 +327,44 @@ def test_export_records_json_with_highlights(repo: LearningRepository) -> None:
     assert "grammar_highlights" in record
     assert isinstance(record["vocab_highlights"], list)
     assert len(record["vocab_highlights"]) == 1
-    assert record["vocab_highlights"][0]["lemma"] == "猫"
+    vh = record["vocab_highlights"][0]
+    assert vh["lemma"] == "猫"
+    assert "vocab_id" in vh
+    assert "pronunciation" in vh
+    assert "definition" in vh
+
+
+def test_export_records_json_vocab_pronunciation_definition(repo: LearningRepository) -> None:
+    vocab = [
+        make_vocab(
+            surface="食べる",
+            lemma="食べる",
+            jlpt_level=4,
+            vocab_id=42,
+            pronunciation="たべる",
+            definition="to eat",
+        )
+    ]
+    repo.insert_sentence(make_record(japanese_text="食べる"), vocab, [])
+    result = repo.export_records("json")
+    data = json.loads(result)
+    vh = data[0]["vocab_highlights"][0]
+    assert vh["vocab_id"] == 42
+    assert vh["pronunciation"] == "たべる"
+    assert vh["definition"] == "to eat"
 
 
 def test_export_records_csv_with_highlights(repo: LearningRepository) -> None:
-    vocab = [make_vocab(surface="映画", lemma="映画", jlpt_level=4)]
+    vocab = [
+        make_vocab(
+            surface="映画",
+            lemma="映画",
+            jlpt_level=4,
+            vocab_id=7,
+            pronunciation="えいが",
+            definition="movie",
+        )
+    ]
     repo.insert_sentence(make_record(japanese_text="映画を見た"), vocab, [])
     result = repo.export_records("csv")
     reader = csv.reader(io.StringIO(result))
@@ -335,6 +374,16 @@ def test_export_records_csv_with_highlights(repo: LearningRepository) -> None:
     assert "grammar_count" in header
     assert "vocab_lemmas" in header
     assert "grammar_rules" in header
+    assert "vocab_ids" in header
+    assert "vocab_pronunciations" in header
+    assert "vocab_definitions" in header
+    data_row = rows[1]
+    vocab_pron_idx = header.index("vocab_pronunciations")
+    vocab_def_idx = header.index("vocab_definitions")
+    vocab_ids_idx = header.index("vocab_ids")
+    assert data_row[vocab_ids_idx] == "7"
+    assert data_row[vocab_pron_idx] == "えいが"
+    assert data_row[vocab_def_idx] == "movie"
 
 
 def test_export_records_date_filtering(repo: LearningRepository) -> None:
@@ -496,3 +545,65 @@ def test_separate_repos_same_db_file(tmp_path: object) -> None:
 
 
 # Two-phase write tests
+
+
+def test_highlight_vocab_new_fields_default_values() -> None:
+    vocab = HighlightVocab(
+        id=None,
+        sentence_id=1,
+        surface="猫",
+        lemma="猫",
+        pos="名詞",
+        jlpt_level=5,
+        is_beyond_level=False,
+        tooltip_shown=False,
+    )
+    assert vocab.vocab_id == 0
+    assert vocab.pronunciation == ""
+    assert vocab.definition == ""
+
+
+def test_highlight_vocab_new_fields_explicit_values() -> None:
+    vocab = HighlightVocab(
+        id=None,
+        sentence_id=1,
+        surface="猫",
+        lemma="猫",
+        pos="名詞",
+        jlpt_level=5,
+        is_beyond_level=False,
+        tooltip_shown=False,
+        vocab_id=42,
+        pronunciation="ねこ",
+        definition="cat",
+    )
+    assert vocab.vocab_id == 42
+    assert vocab.pronunciation == "ねこ"
+    assert vocab.definition == "cat"
+
+
+def test_highlight_vocab_new_fields_roundtrip(repo: LearningRepository) -> None:
+    vocab = [
+        HighlightVocab(
+            id=None,
+            sentence_id=0,
+            surface="猫",
+            lemma="猫",
+            pos="名詞",
+            jlpt_level=5,
+            is_beyond_level=False,
+            tooltip_shown=False,
+            vocab_id=99,
+            pronunciation="ねこ",
+            definition="cat",
+        )
+    ]
+    sentence_id, _v, _g = repo.insert_sentence(make_record(), vocab, [])
+    result = repo.get_sentence_with_highlights(sentence_id)
+    assert result is not None
+    _, vocab_list, _ = result
+    assert len(vocab_list) == 1
+    v = vocab_list[0]
+    assert v.vocab_id == 99
+    assert v.pronunciation == "ねこ"
+    assert v.definition == "cat"

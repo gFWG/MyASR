@@ -129,8 +129,8 @@ class LearningRepository:
                     """
                     INSERT INTO highlight_vocab
                         (sentence_id, surface, lemma, pos, jlpt_level,
-                         is_beyond_level, tooltip_shown)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                         is_beyond_level, tooltip_shown, vocab_id, pronunciation, definition)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         sentence_id,
@@ -140,6 +140,9 @@ class LearningRepository:
                         v.jlpt_level,
                         int(v.is_beyond_level),
                         int(v.tooltip_shown),
+                        int(v.vocab_id),
+                        v.pronunciation,
+                        v.definition,
                     ),
                 )
                 if vcursor.lastrowid is not None:
@@ -326,7 +329,7 @@ class LearningRepository:
                     sentence_id = row[0]
                     vcursor = self._conn.execute(
                         """
-                        SELECT surface, lemma, jlpt_level, pos
+                        SELECT surface, lemma, jlpt_level, pos, vocab_id, pronunciation, definition
                         FROM highlight_vocab
                         WHERE sentence_id = ?
                         """,
@@ -338,6 +341,9 @@ class LearningRepository:
                             "lemma": vrow[1],
                             "jlpt_level": vrow[2],
                             "pos": vrow[3],
+                            "vocab_id": vrow[4],
+                            "pronunciation": vrow[5],
+                            "definition": vrow[6],
                         }
                         for vrow in vcursor.fetchall()
                     ]
@@ -368,7 +374,16 @@ class LearningRepository:
             writer = csv.writer(output)
             if include_highlights:
                 writer.writerow(
-                    columns + ["vocab_count", "grammar_count", "vocab_lemmas", "grammar_rules"]
+                    columns
+                    + [
+                        "vocab_count",
+                        "grammar_count",
+                        "vocab_lemmas",
+                        "grammar_rules",
+                        "vocab_ids",
+                        "vocab_pronunciations",
+                        "vocab_definitions",
+                    ]
                 )
             else:
                 writer.writerow(columns)
@@ -378,11 +393,16 @@ class LearningRepository:
                 if include_highlights:
                     vcursor = self._conn.execute(
                         """
-                        SELECT lemma FROM highlight_vocab WHERE sentence_id = ?
+                        SELECT lemma, vocab_id, pronunciation, definition
+                        FROM highlight_vocab WHERE sentence_id = ?
                         """,
                         (sentence_id,),
                     )
-                    vocab_lemmas = [vrow[0] for vrow in vcursor.fetchall()]
+                    vocab_rows = vcursor.fetchall()
+                    vocab_lemmas = [vrow[0] for vrow in vocab_rows]
+                    vocab_ids = [str(vrow[1]) for vrow in vocab_rows]
+                    vocab_pronunciations = [vrow[2] for vrow in vocab_rows]
+                    vocab_definitions = [vrow[3] for vrow in vocab_rows]
 
                     gcursor = self._conn.execute(
                         """
@@ -397,6 +417,9 @@ class LearningRepository:
                         len(grammar_patterns),
                         ";".join(vocab_lemmas),
                         ";".join(grammar_patterns),
+                        ";".join(vocab_ids),
+                        ";".join(vocab_pronunciations),
+                        ";".join(vocab_definitions),
                     ]
                     writer.writerow(list(row) + extra_cols)
                 else:
@@ -552,7 +575,7 @@ class LearningRepository:
         vcursor = self._conn.execute(
             """
             SELECT id, sentence_id, surface, lemma, pos, jlpt_level,
-                   is_beyond_level, tooltip_shown
+                   is_beyond_level, tooltip_shown, vocab_id, pronunciation, definition
             FROM highlight_vocab
             WHERE sentence_id = ?
             """,
@@ -568,6 +591,9 @@ class LearningRepository:
                 jlpt_level=vrow[5],
                 is_beyond_level=bool(vrow[6]),
                 tooltip_shown=bool(vrow[7]),
+                vocab_id=int(vrow[8]),
+                pronunciation=str(vrow[9]),
+                definition=str(vrow[10]),
             )
             for vrow in vcursor.fetchall()
         ]

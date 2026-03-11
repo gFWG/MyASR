@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS highlight_vocab (
     pos TEXT NOT NULL,
     jlpt_level INTEGER,
     is_beyond_level INTEGER NOT NULL DEFAULT 0,
-    tooltip_shown INTEGER NOT NULL DEFAULT 0
+    tooltip_shown INTEGER NOT NULL DEFAULT 0,
+    vocab_id INTEGER NOT NULL DEFAULT 0,
+    pronunciation TEXT NOT NULL DEFAULT '',
+    definition TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_highlight_vocab_sentence ON highlight_vocab(sentence_id);
 
@@ -57,6 +60,21 @@ def init_db(db_path: str) -> sqlite3.Connection:
     """
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA_SQL)
+
+    # Migrate existing databases: add new columns if they do not yet exist.
+    migrations = [
+        "ALTER TABLE highlight_vocab ADD COLUMN vocab_id INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE highlight_vocab ADD COLUMN pronunciation TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE highlight_vocab ADD COLUMN definition TEXT NOT NULL DEFAULT ''",
+    ]
+    for stmt in migrations:
+        try:
+            conn.execute(stmt)
+            conn.commit()
+        except sqlite3.OperationalError:
+            # Column already exists — safe to ignore.
+            pass
+
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     logger.info("Database initialized at %s", db_path)
