@@ -14,7 +14,7 @@ def test_grammar_matcher_loads_rules() -> None:
 
 def test_grammar_matcher_rule_count_matches_json() -> None:
     gm = GrammarMatcher(RULES_PATH)
-    rules = json.load(open(RULES_PATH))
+    rules = json.load(open(RULES_PATH, encoding="utf-8"))
     assert len(gm._rules) == len(rules)
 
 

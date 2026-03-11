@@ -16,7 +16,6 @@ MyASR/
 │   ├── main.py             # Entry point: python src/main.py
 │   ├── config.py           # AppConfig dataclass + load/save data/config.json
 │   ├── exceptions.py       # MyASRError hierarchy
-│   ├── pipeline_legacy.py  # DEPRECATED monolithic pipeline (kept for reference)
 │   ├── pipeline/           # Current pipeline: orchestrator + QThread workers
 │   ├── ui/                 # PySide6 overlay, tooltip, settings, tray, learning panel
 │   ├── asr/                # Qwen3-ASR 0.6B wrapper (offline, batch)
@@ -65,7 +64,6 @@ MyASR/
 - **DO NOT** suppress types with `as any` / `@ts-ignore` / `type: ignore`
 - **DO NOT** import heavy ML libs at module level — use lazy imports
 - **DO NOT** hardwire Windows-only code without checking `src/audio/capture.py` ABC pattern
-- `src/pipeline_legacy.py` is the old monolith — do not extend it, use `src/pipeline/` instead
 
 ## UNIQUE STYLES
 
@@ -95,6 +93,4 @@ python src/main.py
 
 - No `[project]` section in pyproject.toml — not an installable package
 - `pytest` uses `pythonpath = ["."]` to resolve `from src...` imports
-- Pipeline has two implementations: current (`src/pipeline/`) and legacy (`src/pipeline_legacy.py`)
-- Orchestrator currently hardwires WasapiLoopbackCapture — cross-platform factory exists only in legacy path
 - Processing speed must exceed acquisition speed (real-time constraint)

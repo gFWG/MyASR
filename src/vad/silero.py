@@ -215,3 +215,31 @@ class SileroVAD:
         self._total_samples = 0
         self._speech_start_sample = 0
         logger.debug("SileroVAD state reset")
+
+    def update_params(
+        self,
+        threshold: float | None = None,
+        min_silence_ms: int | None = None,
+        min_speech_ms: int | None = None,
+    ) -> None:
+        """Update VAD parameters dynamically without reloading the model.
+
+        Thread-safe: Can be called while the VAD is processing audio.
+        Changes take effect immediately for subsequent audio chunks.
+
+        Args:
+            threshold: New speech probability threshold (0.0–1.0). Higher = less sensitive.
+            min_silence_ms: New minimum silence duration in ms to consider speech ended.
+            min_speech_ms: New minimum speech duration in ms; shorter segments are discarded.
+        """
+        if threshold is not None:
+            self._vad_iterator.threshold = threshold
+            logger.info("VAD threshold updated: %.2f", threshold)
+
+        if min_silence_ms is not None:
+            self._vad_iterator.min_silence_duration_ms = min_silence_ms
+            logger.info("VAD min_silence_ms updated: %d", min_silence_ms)
+
+        if min_speech_ms is not None:
+            self._min_speech_samples = int(min_speech_ms * self._sample_rate / 1000)
+            logger.info("VAD min_speech_ms updated: %d", min_speech_ms)

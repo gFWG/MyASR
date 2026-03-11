@@ -164,6 +164,9 @@ class OverlayWindow(QWidget):
         outer_layout.setContentsMargins(8, 8, 8, 8)
         outer_layout.setSpacing(2)
 
+        # Top stretch for vertical centering
+        outer_layout.addStretch(1)
+
         content_layout = QHBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(4)
@@ -180,6 +183,9 @@ class OverlayWindow(QWidget):
         content_layout.addWidget(self._jp_browser, 1)
         content_layout.addWidget(self._next_btn)
         outer_layout.addLayout(content_layout)
+
+        # Bottom stretch for vertical centering
+        outer_layout.addStretch(1)
 
         self._jp_browser.setMouseTracking(True)
         self._jp_browser.viewport().setMouseTracking(True)
@@ -232,6 +238,8 @@ class OverlayWindow(QWidget):
             rich_text = _centered_html(result.japanese_text)
 
         self._jp_browser.setHtml(rich_text)
+        # Defer height adjustment to allow document layout
+        QTimer.singleShot(0, self._adjust_height_to_content)
 
     def on_asr_ready(self, result: ASRResult) -> None:
         """Show ASR text immediately.
@@ -240,6 +248,7 @@ class OverlayWindow(QWidget):
             result: ASR output containing Japanese text.
         """
         self._jp_browser.setHtml(_centered_html(result.text))
+        QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
 
     def on_config_changed(self, config: AppConfig) -> None:
@@ -255,7 +264,10 @@ class OverlayWindow(QWidget):
         self._enable_grammar = config.enable_grammar_highlight
         self._max_history = config.max_history
 
-        self._jp_browser.setFont(_make_font(config.overlay_font_size_jp))
+        # Update font on both widget and document for HTML content
+        new_font = _make_font(config.overlay_font_size_jp)
+        self._jp_browser.setFont(new_font)
+        self._jp_browser.document().setDefaultFont(new_font)
 
         self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
 
@@ -266,6 +278,9 @@ class OverlayWindow(QWidget):
 
         if self._current_result is not None:
             self._render_result(self._current_result)
+        else:
+            # No current result, just adjust height for current content
+            QTimer.singleShot(0, self._adjust_height_to_content)
 
         self._update_arrow_visibility()
 
@@ -287,6 +302,7 @@ class OverlayWindow(QWidget):
             text: Status string to display in the JP browser.
         """
         self._jp_browser.setHtml(_centered_html(text))
+        QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug("set_status: %s", text)
 
     def _prev_sentence(self) -> None:
@@ -319,6 +335,34 @@ class OverlayWindow(QWidget):
         can_go_next = len(self._history) > 0 and self._history_index < len(self._history) - 1
         self._prev_btn.setEnabled(can_go_prev)
         self._next_btn.setEnabled(can_go_next)
+
+    def _adjust_height_to_content(self) -> None:
+        """Resize overlay height to fit text content.
+
+        Calculates the ideal height based on the document content and resizes
+        the window while respecting minimum and maximum height constraints.
+        """
+        doc = self._jp_browser.document()
+        # Set the text width to match browser width for accurate height calculation
+        doc.setTextWidth(self._jp_browser.width())
+
+        # Get the document's ideal height
+        doc_height = doc.size().height()
+
+        # Calculate total height: margins (top + bottom = 16) + content padding
+        margins = 16  # 8px top + 8px bottom from outer_layout.setContentsMargins
+        padding = 16  # Extra padding for visual comfort
+
+        total_height = int(doc_height + margins + padding)
+
+        # Clamp to min/max bounds
+        min_h = self.minimumHeight()
+        max_h = self.maximumHeight()
+        new_height = max(min_h, min(max_h, total_height))
+
+        # Only resize if height differs significantly (avoid jitter)
+        if abs(self.height() - new_height) > 2:
+            self.resize(self.width(), new_height)
 
     def _handle_hover_at_viewport_pos(self, viewport_pos: QPoint) -> None:
         if self._current_result is None or self._current_result.analysis is None:

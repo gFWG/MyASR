@@ -108,3 +108,25 @@ class VadWorker(QThread):
         self._running = False
         self.quit()
         self.wait(2000)
+
+    def update_vad_params(
+        self,
+        threshold: float | None = None,
+        min_silence_ms: int | None = None,
+        min_speech_ms: int | None = None,
+    ) -> None:
+        """Update VAD parameters dynamically.
+
+        Thread-safe: Can be called while the worker is running.
+        Changes take effect immediately for subsequent audio chunks.
+
+        Args:
+            threshold: New speech probability threshold (0.0–1.0).
+            min_silence_ms: New minimum silence duration in ms.
+            min_speech_ms: New minimum speech duration in ms.
+        """
+        self._vad.update_params(
+            threshold=threshold,
+            min_silence_ms=min_silence_ms,
+            min_speech_ms=min_speech_ms,
+        )

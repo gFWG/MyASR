@@ -10,7 +10,6 @@ Main application package. Imported as `from src...`. Entry point: main.py.
 - `main.py`: App entry point. Wires all Qt signals and initializes components.
 - `config.py`: `AppConfig` central frozen dataclass for app-wide settings.
 - `exceptions.py`: `MyASRError` hierarchy (AudioCapture, VAD, ASR, ModelLoad, Preprocessing, Database).
-- `pipeline_legacy.py`: DEPRECATED monolithic pipeline. Use `src/pipeline/` instead.
 
 ### Subpackages
 - `pipeline/`: Orchestrator and QThread workers (VAD, ASR, etc.).
@@ -37,5 +36,4 @@ Main application package. Imported as `from src...`. Entry point: main.py.
 
 ## NOTES
 
-- `pipeline_legacy.py` is kept only for reference during the migration to the modular orchestrator.
 - Database operations are abstracted via the repository pattern in `src/db/`.

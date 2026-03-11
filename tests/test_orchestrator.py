@@ -302,10 +302,23 @@ def test_error_occurred_property_accessible(
     assert len(err) == 2
 
 
-def test_on_config_changed_is_noop(
+def test_on_config_changed_calls_vad_worker_update(
     orchestrator: PipelineOrchestrator,
+    mock_workers: dict[str, MagicMock],
 ) -> None:
-    """on_config_changed() should not raise."""
+    """on_config_changed() should call VadWorker.update_vad_params with config values."""
     from src.config import AppConfig
 
-    orchestrator.on_config_changed(AppConfig())
+    config = AppConfig(
+        vad_threshold=0.7,
+        vad_min_silence_ms=500,
+        vad_min_speech_ms=300,
+    )
+
+    orchestrator.on_config_changed(config)
+
+    mock_workers["vad"].update_vad_params.assert_called_once_with(
+        threshold=0.7,
+        min_silence_ms=500,
+        min_speech_ms=300,
+    )
