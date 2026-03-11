@@ -2,10 +2,10 @@
 
 import pytest
 
-from src.analysis.jlpt_vocab import JLPTVocabLookup
+from src.analysis.jlpt_vocab import JLPTVocabLookup, VocabEntry
 from src.db.models import Token
 
-VOCAB_PATH = "data/jlpt_vocab.json"
+VOCAB_PATH = "data/vocabulary.csv"
 
 
 def test_lookup_returns_correct_level_n5() -> None:
@@ -60,10 +60,10 @@ def test_find_beyond_level_with_positions() -> None:
 def test_find_beyond_level_with_positions_duplicate_tokens() -> None:
     """Test that duplicate tokens get distinct positions."""
     v = JLPTVocabLookup(VOCAB_PATH)
-    text = "概念と概念"
+    text = "概念ん概念"
     tokens = [
         Token("概念", "概念", "名詞"),
-        Token("と", "と", "助詞"),
+        Token("ん", "ん", "助詞"),
         Token("概念", "概念", "名詞"),
     ]
     hits = v.find_beyond_level(tokens, user_level=3, text=text)
@@ -104,10 +104,57 @@ def test_find_beyond_level_empty_tokens() -> None:
     "word,expected",
     [
         ("食べる", 5),
-        ("映画", 4),
+        ("驚く", 4),
         ("概念", 1),
     ],
 )
 def test_lookup_parametrize(word: str, expected: int) -> None:
     v = JLPTVocabLookup(VOCAB_PATH)
     assert v.lookup(word) == expected
+
+
+def test_lookup_entry_returns_vocab_entry() -> None:
+    v = JLPTVocabLookup(VOCAB_PATH)
+    entry = v.lookup_entry("食べる")
+    assert entry is not None
+    assert isinstance(entry, VocabEntry)
+    assert entry.lemma == "食べる"
+    assert entry.level == 5
+    assert entry.pronunciation == "タベル"
+    assert "eat" in entry.definition.lower()
+    assert entry.vocab_id > 0
+
+
+def test_lookup_entry_returns_none_for_unknown() -> None:
+    v = JLPTVocabLookup(VOCAB_PATH)
+    assert v.lookup_entry("xyznotaword") is None
+
+
+def test_find_beyond_level_populates_vocab_entry_fields() -> None:
+    """VocabHit gets vocab_id, pronunciation, definition from VocabEntry."""
+    v = JLPTVocabLookup(VOCAB_PATH)
+    tokens = [Token("概念", "概念", "名詞")]
+    hits = v.find_beyond_level(tokens, user_level=3)
+    assert len(hits) == 1
+    hit = hits[0]
+    assert hit.vocab_id > 0
+    assert hit.pronunciation == "ガイネン"
+    assert "concept" in hit.definition.lower() or "notion" in hit.definition.lower()
+
+
+def test_dash_stripping_in_find_beyond_level() -> None:
+    """Fugashi compound lemmas like '食べる-動詞' are stripped before lookup."""
+    v = JLPTVocabLookup(VOCAB_PATH)
+    # 概念 is N1; simulate fugashi producing a compound lemma
+    tokens = [Token("概念", "概念-名詞", "名詞")]
+    hits = v.find_beyond_level(tokens, user_level=3)
+    assert len(hits) == 1
+    assert hits[0].lemma == "概念-名詞"
+
+
+def test_duplicate_lemma_keeps_easiest_level() -> None:
+    """When same lemma appears at multiple levels, easiest (highest int) wins."""
+    v = JLPTVocabLookup(VOCAB_PATH)
+    # 間 appears as N3 and N4 in CSV; N4(4) > N3(3) so N4 should win
+    result = v.lookup("間")
+    assert result == 4
