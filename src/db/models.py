@@ -24,6 +24,9 @@ class HighlightVocab:
     jlpt_level: int | None
     is_beyond_level: bool
     tooltip_shown: bool
+    vocab_id: int = 0
+    pronunciation: str = ""
+    definition: str = ""
 
 
 @dataclass
@@ -55,6 +58,9 @@ class VocabHit:
     user_level: int
     start_pos: int
     end_pos: int
+    vocab_id: int = 0
+    pronunciation: str = ""
+    definition: str = ""
 
 
 @dataclass
