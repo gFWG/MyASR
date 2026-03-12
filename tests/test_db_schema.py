@@ -66,7 +66,8 @@ def test_init_db_schema_columns(tmp_path: Path) -> None:
     assert "rule_id" in grammar_cols
     assert "pattern" in grammar_cols
     assert "jlpt_level" in grammar_cols
-    assert "confidence_type" in grammar_cols
+    assert "confidence_type" not in grammar_cols
+    assert "word" in grammar_cols
     assert "description" in grammar_cols
     assert "is_beyond_level" in grammar_cols
     assert "tooltip_shown" in grammar_cols

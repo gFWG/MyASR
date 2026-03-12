@@ -35,8 +35,8 @@ class HighlightGrammar:
     sentence_id: int
     rule_id: str
     pattern: str
+    word: str | None
     jlpt_level: int | None
-    confidence_type: str
     description: str | None
     is_beyond_level: bool
     tooltip_shown: bool
@@ -67,8 +67,8 @@ class VocabHit:
 class GrammarHit:
     rule_id: str
     matched_text: str
+    word: str
     jlpt_level: int
-    confidence_type: str
     description: str
     start_pos: int
     end_pos: int

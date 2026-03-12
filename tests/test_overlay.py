@@ -163,7 +163,7 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
         rule_id="te-form",
         matched_text="食べて",
         jlpt_level=4,
-        confidence_type="exact",
+        word="ても",
         description="te-form",
         start_pos=0,
         end_pos=3,

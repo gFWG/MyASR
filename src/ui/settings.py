@@ -132,6 +132,8 @@ class SettingsDialog(QDialog):
 
         self._jlpt_color_buttons: dict[str, QPushButton] = {}
         jlpt_labels = {
+            "n5_vocab": "N5 Vocab",
+            "n5_grammar": "N5 Grammar",
             "n4_vocab": "N4 Vocab",
             "n4_grammar": "N4 Grammar",
             "n3_vocab": "N3 Vocab",

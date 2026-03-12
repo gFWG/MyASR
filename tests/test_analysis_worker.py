@@ -62,7 +62,7 @@ def make_grammar_hit() -> GrammarHit:
         rule_id="N3_te_form",
         matched_text="て",
         jlpt_level=3,
-        confidence_type="definite",
+        word="て",
         description="te-form",
         start_pos=3,
         end_pos=4,

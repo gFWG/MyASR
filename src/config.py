@@ -11,6 +11,8 @@ from src.profiling.config import ProfilingConfig
 logger = logging.getLogger(__name__)
 
 DEFAULT_JLPT_COLORS: dict[str, str] = {
+    "n5_vocab": "#E8F5E9",
+    "n5_grammar": "#81C784",
     "n4_vocab": "#C8E6C9",
     "n4_grammar": "#4CAF50",
     "n3_vocab": "#BBDEFB",

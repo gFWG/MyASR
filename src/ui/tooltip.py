@@ -25,6 +25,7 @@ _MAX_WIDTH = 300
 
 # Grammar background colors from HighlightRenderer.JLPT_COLORS
 _JLPT_GRAMMAR_COLORS: dict[int, str] = {
+    5: "#81C784",
     4: "#4CAF50",
     3: "#1976D2",
     2: "#F9A825",
@@ -179,7 +180,7 @@ class TooltipPopup(QWidget):
         self._word_label.setText(hit.matched_text)
         self._pronunciation_label.hide()
         description = hit.description or "Grammar pattern"
-        self._desc_label.setText(f"{hit.confidence_type}: {description}")
+        self._desc_label.setText(f"{hit.word or hit.matched_text}: {description}")
         self._desc_label.show()
 
         self.adjustSize()

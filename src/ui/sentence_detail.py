@@ -45,7 +45,7 @@ def _make_jlpt_badge(jlpt_level: int | None) -> QLabel:
     """Create a colored JLPT-level pill badge label (e.g. 'N3').
 
     Args:
-        jlpt_level: Integer JLPT level 1–4, or None for unknown.
+        jlpt_level: Integer JLPT level 1–5, or None for unknown.
 
     Returns:
         A QLabel styled as a colored pill badge.
