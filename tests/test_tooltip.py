@@ -28,7 +28,6 @@ def _make_vocab_hit(
         lemma=lemma,
         pos=pos,
         jlpt_level=jlpt_level,
-        user_level=5,
         start_pos=0,
         end_pos=len(surface),
         pronunciation=pronunciation,

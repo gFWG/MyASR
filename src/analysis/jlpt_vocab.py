@@ -137,33 +137,30 @@ class JLPTVocabLookup:
         """
         return self._vocab.get(lemma)
 
-    def find_beyond_level(
-        self, tokens: list[Token], user_level: int, text: str = ""
+    def find_all_vocab(
+        self, tokens: list[Token], text: str = ""
     ) -> list[VocabHit]:
-        """Find tokens that are harder than the user's JLPT level.
+        """Find all JLPT vocabulary in tokens.
 
-        A word is "beyond level" when word_jlpt_level < user_level.
-        Example: user_level=3 (N3), word at N1 → jlpt_level=1 < 3 → beyond level.
-        Example: user_level=3 (N3), word at N5 → jlpt_level=5 > 3 → NOT beyond level.
+        Returns ALL vocab matches with their JLPT levels, without filtering by user level.
+        Display-time filtering should use SentenceResult.get_display_analysis().
 
         Fugashi may produce compound lemmas like '私-代名詞'; the part after '-'
         is stripped before lookup so that the base form is matched in the vocabulary.
 
         Args:
             tokens: List of Token objects to check.
-            user_level: User's current JLPT level (1-5).
             text: Original text for calculating character positions.
 
         Returns:
-            List of VocabHit for words harder than user's level.
-            start_pos and end_pos are set based on text if provided.
+            List of VocabHit for all words found in vocabulary.
         """
         hits: list[VocabHit] = []
         search_start = 0
         for token in tokens:
             clean_lemma = token.lemma.split("-")[0]
             entry = self.lookup_entry(clean_lemma)
-            if entry is not None and entry.level < user_level:
+            if entry is not None:
                 if text:
                     pos = text.find(token.surface, search_start)
                     if pos >= 0:
@@ -182,7 +179,6 @@ class JLPTVocabLookup:
                         lemma=token.lemma,
                         pos=token.pos,
                         jlpt_level=entry.level,
-                        user_level=user_level,
                         start_pos=start_pos,
                         end_pos=end_pos,
                         vocab_id=entry.vocab_id,

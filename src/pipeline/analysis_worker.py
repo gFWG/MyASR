@@ -97,15 +97,15 @@ class AnalysisWorker(QThread):
         )
 
         # Build highlight lists from AnalysisResult
+        # Note: Store ALL vocab/grammar hits, filtering happens at display time
         vocab_highlights = [
             HighlightVocab(
                 id=None,
-                sentence_id=0,  # will be assigned by DB; placeholder
+                sentence_id=0,  # will be assigned by DB
                 surface=hit.surface,
                 lemma=hit.lemma,
                 pos=hit.pos,
                 jlpt_level=hit.jlpt_level,
-                is_beyond_level=hit.jlpt_level > hit.user_level,
                 tooltip_shown=False,
                 vocab_id=hit.vocab_id,
                 pronunciation=hit.pronunciation,
@@ -117,13 +117,12 @@ class AnalysisWorker(QThread):
         grammar_highlights = [
             HighlightGrammar(
                 id=None,
-                sentence_id=0,  # will be assigned by DB; placeholder
+                sentence_id=0,  # will be assigned by DB
                 rule_id=hit.rule_id,
                 pattern=hit.word,
                 word=hit.word,
                 jlpt_level=hit.jlpt_level,
                 description=hit.description,
-                is_beyond_level=True,  # grammar hits are always beyond user level by definition
                 tooltip_shown=False,
             )
             for hit in analysis.grammar_hits

@@ -129,8 +129,8 @@ class LearningRepository:
                     """
                     INSERT INTO highlight_vocab
                         (sentence_id, surface, lemma, pos, jlpt_level,
-                         is_beyond_level, tooltip_shown, vocab_id, pronunciation, definition)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         tooltip_shown, vocab_id, pronunciation, definition)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         sentence_id,
@@ -138,9 +138,8 @@ class LearningRepository:
                         v.lemma,
                         v.pos,
                         v.jlpt_level,
-                        int(v.is_beyond_level),
                         int(v.tooltip_shown),
-                        int(v.vocab_id),
+                        v.vocab_id,
                         v.pronunciation,
                         v.definition,
                     ),
@@ -154,8 +153,8 @@ class LearningRepository:
                     """
                     INSERT INTO highlight_grammar
                         (sentence_id, rule_id, pattern, jlpt_level, word,
-                         description, is_beyond_level, tooltip_shown)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                         description, tooltip_shown)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         sentence_id,
@@ -164,7 +163,6 @@ class LearningRepository:
                         g.jlpt_level,
                         g.word,
                         g.description,
-                        int(g.is_beyond_level),
                         int(g.tooltip_shown),
                     ),
                 )
@@ -575,7 +573,7 @@ class LearningRepository:
         vcursor = self._conn.execute(
             """
             SELECT id, sentence_id, surface, lemma, pos, jlpt_level,
-                   is_beyond_level, tooltip_shown, vocab_id, pronunciation, definition
+                   tooltip_shown, vocab_id, pronunciation, definition
             FROM highlight_vocab
             WHERE sentence_id = ?
             """,
@@ -589,11 +587,10 @@ class LearningRepository:
                 lemma=vrow[3],
                 pos=vrow[4],
                 jlpt_level=vrow[5],
-                is_beyond_level=bool(vrow[6]),
-                tooltip_shown=bool(vrow[7]),
-                vocab_id=int(vrow[8]),
-                pronunciation=str(vrow[9]),
-                definition=str(vrow[10]),
+                tooltip_shown=bool(vrow[6]),
+                vocab_id=int(vrow[7]),
+                pronunciation=str(vrow[8]),
+                definition=str(vrow[9]),
             )
             for vrow in vcursor.fetchall()
         ]
@@ -601,7 +598,7 @@ class LearningRepository:
         gcursor = self._conn.execute(
             """
             SELECT id, sentence_id, rule_id, pattern, jlpt_level, word,
-                   description, is_beyond_level, tooltip_shown
+                   description, tooltip_shown
             FROM highlight_grammar
             WHERE sentence_id = ?
             """,
@@ -616,8 +613,7 @@ class LearningRepository:
                 jlpt_level=grow[4],
                 word=grow[5],
                 description=grow[6],
-                is_beyond_level=bool(grow[7]),
-                tooltip_shown=bool(grow[8]),
+                tooltip_shown=bool(grow[7]),
             )
             for grow in gcursor.fetchall()
         ]

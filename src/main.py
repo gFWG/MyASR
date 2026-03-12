@@ -64,7 +64,7 @@ def main() -> None:
     the Qt event loop.
     """
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
 
@@ -131,6 +131,7 @@ def main() -> None:
 
         overlay.highlight_hovered.connect(_on_highlight_hovered)
         overlay.highlight_left.connect(tooltip.hide_tooltip)
+        overlay.dedup_reset.connect(tooltip.reset_dedup)
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
 
         _settings_dialog: SettingsDialog | None = None

@@ -58,11 +58,11 @@ def test_known_n5_word_returns_entry() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_find_beyond_level_vocab_hit_fields() -> None:
+def test_find_all_vocab_hit_fields() -> None:
     """VocabHit from CSV lookup must have vocab_id, pronunciation, definition."""
     lookup = JLPTVocabLookup(VOCAB_PATH)
     tokens = [Token(surface="概念", lemma="概念", pos="名詞")]
-    hits = lookup.find_beyond_level(tokens, user_level=5, text="概念")
+    hits = lookup.find_all_vocab(tokens, text="概念")
 
     assert len(hits) == 1
     hit = hits[0]
@@ -74,15 +74,17 @@ def test_find_beyond_level_vocab_hit_fields() -> None:
     assert hit.end_pos == 2
 
 
-def test_find_beyond_level_n5_not_beyond_n3() -> None:
-    """N5 word must NOT appear in hits when user_level=3."""
+def test_find_all_vocab_returns_all_levels() -> None:
+    """find_all_vocab returns all vocab matches regardless of level."""
     lookup = JLPTVocabLookup(VOCAB_PATH)
     tokens = [Token(surface="食べ", lemma="食べる", pos="動詞")]
-    hits = lookup.find_beyond_level(tokens, user_level=3)
-    assert hits == []
+    hits = lookup.find_all_vocab(tokens)
+    # 食べる is N5, should be found
+    assert len(hits) == 1
+    assert hits[0].jlpt_level == 5
 
 
-def test_find_beyond_level_multi_token_positions() -> None:
+def test_find_all_vocab_multi_token_positions() -> None:
     """start_pos/end_pos are correct when multiple tokens appear in text."""
     lookup = JLPTVocabLookup(VOCAB_PATH)
     text = "彼は概念を理解した"
@@ -93,7 +95,7 @@ def test_find_beyond_level_multi_token_positions() -> None:
         Token(surface="を", lemma="を", pos="助詞"),
         Token(surface="理解", lemma="理解", pos="名詞"),
     ]
-    hits = lookup.find_beyond_level(tokens, user_level=5, text=text)
+    hits = lookup.find_all_vocab(tokens, text=text)
     concept_hits = [h for h in hits if h.lemma == "概念"]
     assert len(concept_hits) == 1
     ch = concept_hits[0]
@@ -124,7 +126,6 @@ def test_db_roundtrip_pronunciation_definition(tmp_path: pytest.TempPathFactory)
         lemma="概念",
         pos="名詞",
         jlpt_level=1,
-        is_beyond_level=True,
         tooltip_shown=False,
         vocab_id=1652,
         pronunciation="ガイネン",
@@ -149,7 +150,6 @@ def test_db_roundtrip_pronunciation_definition(tmp_path: pytest.TempPathFactory)
     assert hv.pronunciation == "ガイネン"
     assert hv.definition == "general idea, concept, notion"
     assert hv.jlpt_level == 1
-    assert hv.is_beyond_level is True
 
     conn.close()
 
@@ -166,7 +166,7 @@ def test_db_roundtrip_multiple_vocab_hits(tmp_path: pytest.TempPathFactory) -> N
         Token(surface="概念", lemma="概念", pos="名詞"),
         Token(surface="学ぶ", lemma="学ぶ", pos="動詞"),
     ]
-    hits = lookup.find_beyond_level(tokens, user_level=5, text=text)
+    hits = lookup.find_all_vocab(tokens, text=text)
     assert len(hits) >= 1
 
     sentence = SentenceRecord(
@@ -183,7 +183,6 @@ def test_db_roundtrip_multiple_vocab_hits(tmp_path: pytest.TempPathFactory) -> N
             lemma=hit.lemma,
             pos=hit.pos,
             jlpt_level=hit.jlpt_level,
-            is_beyond_level=True,
             tooltip_shown=False,
             vocab_id=hit.vocab_id,
             pronunciation=hit.pronunciation,
@@ -240,7 +239,6 @@ def test_e2e_csv_to_db_export_preserves_pronunciation(
         lemma="概念",
         pos="名詞",
         jlpt_level=entry.level,
-        is_beyond_level=True,
         tooltip_shown=False,
         vocab_id=entry.vocab_id,
         pronunciation=entry.pronunciation,

@@ -71,25 +71,22 @@ class GrammarMatcher:
             )
         logger.info("Loaded %d grammar rules from %s", len(self._rules), rules_path)
 
-    def match(self, text: str, user_level: int) -> list[GrammarHit]:
-        """Find grammar patterns beyond user's JLPT level in text.
+    def match_all(self, text: str) -> list[GrammarHit]:
+        """Find all grammar patterns in text.
 
-        A pattern is "beyond level" when rule.jlpt_level > user_level
-        (i.e. the rule is for a harder level than the user has reached).
+        Returns ALL grammar matches with their JLPT levels, without filtering by user level.
+        Display-time filtering should use SentenceResult.get_display_analysis().
 
         Args:
             text: Japanese text to analyze.
-            user_level: User's current JLPT level (1-5).
 
         Returns:
-            List of GrammarHit for patterns found that are beyond user's level.
+            List of GrammarHit for all patterns found.
         """
         if not text:
             return []
         hits: list[GrammarHit] = []
         for rule in self._rules:
-            if rule.jlpt_level > user_level:
-                continue
             for m in rule.pattern.finditer(text):
                 hits.append(
                     GrammarHit(

@@ -76,11 +76,8 @@ class PipelineOrchestrator:
         )
 
         # ── Analysis worker (ASRResult → SentenceResult with DB persistence) ──
-        # AppConfig-based construction: PreprocessingPipeline needs AppConfig.
-        # We pass config dict; analysis pipeline uses user_jlpt_level.
-        _valid_keys = AppConfig.__dataclass_fields__.keys()
-        _app_config = AppConfig(**{k: v for k, v in config.items() if k in _valid_keys})
-        analysis_pipeline = PreprocessingPipeline(_app_config)
+        # PreprocessingPipeline no longer needs AppConfig - filtering happens at display time.
+        analysis_pipeline = PreprocessingPipeline()
         self._analysis_worker = AnalysisWorker(
             text_queue=self._text_queue,
             analysis_pipeline=analysis_pipeline,

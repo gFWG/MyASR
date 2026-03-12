@@ -45,13 +45,12 @@ def make_mock_pipeline(
     return mock
 
 
-def make_vocab_hit(jlpt_level: int = 3, user_level: int = 3) -> VocabHit:
+def make_vocab_hit(jlpt_level: int = 3) -> VocabHit:
     return VocabHit(
         surface="日本",
         lemma="日本",
         pos="noun",
         jlpt_level=jlpt_level,
-        user_level=user_level,
         start_pos=0,
         end_pos=2,
     )
@@ -170,7 +169,7 @@ def test_sentence_result_has_analysis(
     """SentenceResult contains AnalysisResult from the pipeline."""
     AnalysisWorker = _import_analysis_worker()
 
-    vocab = make_vocab_hit(jlpt_level=3, user_level=3)
+    vocab = make_vocab_hit(jlpt_level=3)
     grammar = make_grammar_hit()
     mock_pipeline = make_mock_pipeline(vocab_hits=[vocab], grammar_hits=[grammar])
 
@@ -214,9 +213,9 @@ def test_is_beyond_level_vocab(
     AnalysisWorker = _import_analysis_worker()
 
     # N2 vocab for N3 user → beyond level
-    vocab_beyond = make_vocab_hit(jlpt_level=2, user_level=3)
+    vocab_beyond = make_vocab_hit(jlpt_level=2)
     # N4 vocab for N3 user → NOT beyond level
-    vocab_within = make_vocab_hit(jlpt_level=4, user_level=3)
+    vocab_within = make_vocab_hit(jlpt_level=4)
     mock_pipeline = make_mock_pipeline(vocab_hits=[vocab_beyond, vocab_within])
 
     worker = AnalysisWorker(

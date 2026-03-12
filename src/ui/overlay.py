@@ -148,6 +148,7 @@ class OverlayWindow(QWidget):
 
     highlight_hovered = Signal(object, object, object)
     highlight_left = Signal()
+    dedup_reset = Signal()
 
     def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -254,6 +255,7 @@ class OverlayWindow(QWidget):
             if self._history.current is not None:
                 self._current_result = self._history.current
                 self._render_result(self._current_result)
+            self.dedup_reset.emit()
 
         self._update_arrow_visibility()
         logger.debug(
@@ -265,6 +267,8 @@ class OverlayWindow(QWidget):
     def _render_in_browser(self, browser: "QTextBrowser", result: SentenceResult) -> None:
         """Render a SentenceResult into the given browser widget.
 
+        Uses SentenceResult.get_display_analysis() as the single source of truth.
+
         Args:
             browser: The QTextBrowser to render into.
             result: The sentence result to render.
@@ -272,20 +276,19 @@ class OverlayWindow(QWidget):
         doc = browser.document()
 
         if result.analysis is not None:
-            filtered_analysis = AnalysisResult(
-                tokens=result.analysis.tokens,
-                vocab_hits=result.analysis.vocab_hits if self._enable_vocab else [],
-                grammar_hits=result.analysis.grammar_hits if self._enable_grammar else [],
+            # Use get_display_analysis() - SINGLE SOURCE OF TRUTH
+            display_analysis = result.get_display_analysis(
+                user_level=self._user_level,
+                enable_vocab=self._enable_vocab,
+                enable_grammar=self._enable_grammar,
             )
-            # Use QTextCharFormat API
             self._renderer.apply_to_document(
                 doc,
                 result.japanese_text,
-                filtered_analysis,
+                display_analysis,
                 user_level=self._user_level,
             )
         else:
-            # No analysis - just show plain text
             doc.setPlainText(result.japanese_text)
 
         # Center align all blocks
@@ -330,20 +333,25 @@ class OverlayWindow(QWidget):
         new_font = _make_font(config.overlay_font_size_jp)
         self._jp_browser.setFont(new_font)
         self._jp_browser.document().setDefaultFont(new_font)
-        # 同时更新 preview browser
         self._preview_browser.setFont(new_font)
         self._preview_browser.document().setDefaultFont(new_font)
-
 
         self._renderer.update_colors(jlpt_colors_to_renderer_format(config.jlpt_colors))
 
         # Resize history capacity
         self._history.resize(config.max_history)
 
+        # Re-render current sentence in main browser
         if self._current_result is not None:
             self._render_result(self._current_result)
-        else:
-            # No current result, just adjust height for current content
+
+        # Re-render latest sentence in preview browser (if in BROWSE mode)
+        # This ensures config changes affect both browsers immediately
+        if self._preview_browser.isVisible() and self._history.latest is not None:
+            self._render_in_browser(self._preview_browser, self._history.latest)
+
+        # Adjust height if no content
+        if self._current_result is None:
             QTimer.singleShot(0, self._adjust_height_to_content)
 
         self._update_arrow_visibility()
@@ -393,6 +401,7 @@ class OverlayWindow(QWidget):
         if not self._history.is_browsing:
             # Returned to LIVE mode
             self._preview_browser.setVisible(False)
+            self.dedup_reset.emit()
 
         if self._history.current is not None:
             self._current_result = self._history.current
@@ -455,6 +464,9 @@ class OverlayWindow(QWidget):
     ) -> None:
         """Emit highlight_hovered for the highlighted word under the cursor.
 
+        Uses SentenceResult.get_display_analysis() as the single source of truth,
+        ensuring consistency with rendering.
+
         Args:
             browser: The browser widget in whose viewport the hover occurred.
             result: The SentenceResult currently displayed in that browser.
@@ -467,15 +479,21 @@ class OverlayWindow(QWidget):
         cursor = browser.cursorForPosition(viewport_pos)
         char_pos = cursor.position()
 
+        # Use get_display_analysis() - SAME DATA SOURCE AS RENDERING
+        display_analysis = result.get_display_analysis(
+            user_level=self._user_level,
+            enable_vocab=self._enable_vocab,
+            enable_grammar=self._enable_grammar,
+        )
+
         hit: VocabHit | GrammarHit | None = self._renderer.get_highlight_at_position(
             char_pos,
-            result.analysis,
+            display_analysis,
         )
         if hit is not None:
             global_pos = browser.viewport().mapToGlobal(viewport_pos)
             self.highlight_hovered.emit(hit, global_pos, result)
         else:
-            # Mouse moved to non-highlighted area, hide tooltip
             self.highlight_left.emit()
 
     def _save_size(self) -> None:

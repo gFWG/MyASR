@@ -23,18 +23,17 @@ def test_lookup_returns_none_for_unknown() -> None:
     assert v.lookup("xyznotaword") is None
 
 
-def test_find_beyond_level_flags_hard_words() -> None:
-    """N1 word (jlpt_level=1) beyond user_level=3."""
+def test_find_all_vocab_returns_all_matches() -> None:
+    """find_all_vocab returns all vocab matches regardless of level."""
     v = JLPTVocabLookup(VOCAB_PATH)
     tokens = [Token("食べ", "食べる", "動詞"), Token("概念", "概念", "名詞")]
-    hits = v.find_beyond_level(tokens, user_level=3)
-    # 概念 is N1 (level=1), 1 < 3 → beyond level
+    hits = v.find_all_vocab(tokens)
+    # Both words should be found
     assert any(h.lemma == "概念" for h in hits)
-    # 食べる is N5 (level=5), 5 > 3 → NOT beyond level
-    assert not any(h.lemma == "食べる" for h in hits)
+    assert any(h.lemma == "食べる" for h in hits)
 
 
-def test_find_beyond_level_with_positions() -> None:
+def test_find_all_vocab_with_positions() -> None:
     """Test that start_pos and end_pos are correctly calculated from text."""
     v = JLPTVocabLookup(VOCAB_PATH)
     text = "彼は概念を持っている"
@@ -47,8 +46,8 @@ def test_find_beyond_level_with_positions() -> None:
         Token("て", "て", "助詞"),
         Token("いる", "いる", "動詞"),
     ]
-    hits = v.find_beyond_level(tokens, user_level=3, text=text)
-    # 概念 is N1 (level=1), 1 < 3 → beyond level
+    hits = v.find_all_vocab(tokens, text=text)
+    # 概念 is N1
     concept_hits = [h for h in hits if h.lemma == "概念"]
     assert len(concept_hits) == 1
     hit = concept_hits[0]
@@ -57,7 +56,7 @@ def test_find_beyond_level_with_positions() -> None:
     assert text[hit.start_pos : hit.end_pos] == hit.surface
 
 
-def test_find_beyond_level_with_positions_duplicate_tokens() -> None:
+def test_find_all_vocab_with_positions_duplicate_tokens() -> None:
     """Test that duplicate tokens get distinct positions."""
     v = JLPTVocabLookup(VOCAB_PATH)
     text = "概念ん概念"
@@ -66,38 +65,31 @@ def test_find_beyond_level_with_positions_duplicate_tokens() -> None:
         Token("ん", "ん", "助詞"),
         Token("概念", "概念", "名詞"),
     ]
-    hits = v.find_beyond_level(tokens, user_level=3, text=text)
+    hits = v.find_all_vocab(tokens, text=text)
     # Both 概念 tokens should be found with different positions
-    assert len(hits) == 2
-    assert hits[0].start_pos == 0
-    assert hits[0].end_pos == 2
-    assert hits[1].start_pos == 3
-    assert hits[1].end_pos == 5
-    assert text[hits[0].start_pos : hits[0].end_pos] == "概念"
-    assert text[hits[1].start_pos : hits[1].end_pos] == "概念"
+    concept_hits = [h for h in hits if h.lemma == "概念"]
+    assert len(concept_hits) == 2
+    assert concept_hits[0].start_pos == 0
+    assert concept_hits[0].end_pos == 2
+    assert concept_hits[1].start_pos == 3
+    assert concept_hits[1].end_pos == 5
+    assert text[concept_hits[0].start_pos : concept_hits[0].end_pos] == "概念"
+    assert text[concept_hits[1].start_pos : concept_hits[1].end_pos] == "概念"
 
 
-def test_find_beyond_level_without_text_returns_zeros() -> None:
+def test_find_all_vocab_without_text_returns_zeros() -> None:
     """Test that positions are 0 when text is not provided."""
     v = JLPTVocabLookup(VOCAB_PATH)
     tokens = [Token("概念", "概念", "名詞")]
-    hits = v.find_beyond_level(tokens, user_level=3)
+    hits = v.find_all_vocab(tokens)
     assert len(hits) == 1
     assert hits[0].start_pos == 0
     assert hits[0].end_pos == 0
 
 
-def test_find_beyond_level_user_level_1_no_hits() -> None:
-    """N1 user sees nothing as beyond level."""
+def test_find_all_vocab_empty_tokens() -> None:
     v = JLPTVocabLookup(VOCAB_PATH)
-    tokens = [Token("概念", "概念", "名詞")]  # N1 word
-    hits = v.find_beyond_level(tokens, user_level=1)
-    assert hits == []  # 1 < 1 is False
-
-
-def test_find_beyond_level_empty_tokens() -> None:
-    v = JLPTVocabLookup(VOCAB_PATH)
-    assert v.find_beyond_level([], user_level=3) == []
+    assert v.find_all_vocab([]) == []
 
 
 @pytest.mark.parametrize(
@@ -130,11 +122,11 @@ def test_lookup_entry_returns_none_for_unknown() -> None:
     assert v.lookup_entry("xyznotaword") is None
 
 
-def test_find_beyond_level_populates_vocab_entry_fields() -> None:
+def test_find_all_vocab_populates_vocab_entry_fields() -> None:
     """VocabHit gets vocab_id, pronunciation, definition from VocabEntry."""
     v = JLPTVocabLookup(VOCAB_PATH)
     tokens = [Token("概念", "概念", "名詞")]
-    hits = v.find_beyond_level(tokens, user_level=3)
+    hits = v.find_all_vocab(tokens)
     assert len(hits) == 1
     hit = hits[0]
     assert hit.vocab_id > 0
@@ -142,12 +134,12 @@ def test_find_beyond_level_populates_vocab_entry_fields() -> None:
     assert "concept" in hit.definition.lower() or "notion" in hit.definition.lower()
 
 
-def test_dash_stripping_in_find_beyond_level() -> None:
+def test_dash_stripping_in_find_all_vocab() -> None:
     """Fugashi compound lemmas like '食べる-動詞' are stripped before lookup."""
     v = JLPTVocabLookup(VOCAB_PATH)
     # 概念 is N1; simulate fugashi producing a compound lemma
     tokens = [Token("概念", "概念-名詞", "名詞")]
-    hits = v.find_beyond_level(tokens, user_level=3)
+    hits = v.find_all_vocab(tokens)
     assert len(hits) == 1
     assert hits[0].lemma == "概念-名詞"
 

@@ -5,13 +5,12 @@ import time
 import pytest
 
 from src.analysis.pipeline import PreprocessingPipeline
-from src.config import AppConfig
 from src.db.models import AnalysisResult
 
 
 @pytest.fixture(scope="module")
 def pipeline() -> PreprocessingPipeline:
-    return PreprocessingPipeline(AppConfig())
+    return PreprocessingPipeline()
 
 
 def test_pipeline_returns_analysis_result(pipeline: PreprocessingPipeline) -> None:

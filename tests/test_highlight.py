@@ -32,7 +32,6 @@ def _make_vocab(surface: str, start: int, end: int, level: int = 3) -> VocabHit:
         lemma=surface,
         pos="動詞",
         jlpt_level=level,
-        user_level=4,
         start_pos=start,
         end_pos=end,
     )

@@ -32,8 +32,8 @@ def app_config() -> AppConfig:
 
 
 @pytest.fixture()
-def analysis_pipeline(app_config: AppConfig) -> PreprocessingPipeline:
-    return PreprocessingPipeline(app_config)
+def analysis_pipeline() -> PreprocessingPipeline:
+    return PreprocessingPipeline()
 
 
 @pytest.fixture()

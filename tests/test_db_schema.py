@@ -53,7 +53,7 @@ def test_init_db_schema_columns(tmp_path: Path) -> None:
     assert "lemma" in vocab_cols
     assert "pos" in vocab_cols
     assert "jlpt_level" in vocab_cols
-    assert "is_beyond_level" in vocab_cols
+    assert "is_beyond_level" not in vocab_cols  # Removed in refactor
     assert "tooltip_shown" in vocab_cols
     assert "vocab_id" in vocab_cols
     assert "pronunciation" in vocab_cols
@@ -69,7 +69,7 @@ def test_init_db_schema_columns(tmp_path: Path) -> None:
     assert "confidence_type" not in grammar_cols
     assert "word" in grammar_cols
     assert "description" in grammar_cols
-    assert "is_beyond_level" in grammar_cols
+    assert "is_beyond_level" not in grammar_cols  # Removed in refactor
     assert "tooltip_shown" in grammar_cols
 
     cur = conn.execute("PRAGMA table_info(app_settings)")
@@ -149,3 +149,5 @@ def test_init_db_migrates_old_database(tmp_path: Path) -> None:
     assert "vocab_id" in cols
     assert "pronunciation" in cols
     assert "definition" in cols
+    # Migration should remove is_beyond_level
+    assert "is_beyond_level" not in cols

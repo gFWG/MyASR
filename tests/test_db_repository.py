@@ -37,7 +37,6 @@ def make_vocab(
     lemma: str = "猫",
     pos: str = "名詞",
     jlpt_level: int | None = 5,
-    is_beyond_level: bool = False,
     tooltip_shown: bool = False,
     vocab_id: int = 0,
     pronunciation: str = "",
@@ -50,7 +49,6 @@ def make_vocab(
         lemma=lemma,
         pos=pos,
         jlpt_level=jlpt_level,
-        is_beyond_level=is_beyond_level,
         tooltip_shown=tooltip_shown,
         vocab_id=vocab_id,
         pronunciation=pronunciation,
@@ -66,7 +64,6 @@ def make_grammar(
     jlpt_level: int | None = 4,
     word: str | None = "ながら",
     description: str | None = "Past tense",
-    is_beyond_level: bool = False,
     tooltip_shown: bool = False,
 ) -> HighlightGrammar:
     return HighlightGrammar(
@@ -77,7 +74,6 @@ def make_grammar(
         jlpt_level=jlpt_level,
         word=word,
         description=description,
-        is_beyond_level=is_beyond_level,
         tooltip_shown=tooltip_shown,
     )
 
@@ -555,7 +551,6 @@ def test_highlight_vocab_new_fields_default_values() -> None:
         lemma="猫",
         pos="名詞",
         jlpt_level=5,
-        is_beyond_level=False,
         tooltip_shown=False,
     )
     assert vocab.vocab_id == 0
@@ -571,7 +566,6 @@ def test_highlight_vocab_new_fields_explicit_values() -> None:
         lemma="猫",
         pos="名詞",
         jlpt_level=5,
-        is_beyond_level=False,
         tooltip_shown=False,
         vocab_id=42,
         pronunciation="ねこ",
@@ -591,7 +585,6 @@ def test_highlight_vocab_new_fields_roundtrip(repo: LearningRepository) -> None:
             lemma="猫",
             pos="名詞",
             jlpt_level=5,
-            is_beyond_level=False,
             tooltip_shown=False,
             vocab_id=99,
             pronunciation="ねこ",

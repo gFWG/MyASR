@@ -134,7 +134,6 @@ def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWin
         lemma="食べる",
         pos="動詞",
         jlpt_level=4,
-        user_level=3,
         start_pos=0,
         end_pos=2,
     )
