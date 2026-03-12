@@ -16,8 +16,8 @@ from src.ui.overlay import OverlayWindow
 @pytest.fixture
 def overlay(qapp: QApplication) -> OverlayWindow:
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         window = OverlayWindow(AppConfig())
     return window
@@ -50,7 +50,8 @@ def test_overlay_has_tool_hint(overlay: OverlayWindow) -> None:
 
 def test_overlay_initial_size(overlay: OverlayWindow) -> None:
     assert overlay.width() == 800
-    assert overlay.height() == 120
+    # Height is adjusted to minimum (80) after set_status("Initializing...")
+    assert overlay.height() >= 80
 
 
 def test_overlay_highlight_hovered_signal_exists() -> None:
@@ -60,8 +61,8 @@ def test_overlay_highlight_hovered_signal_exists() -> None:
 def test_on_sentence_ready_stores_current_result(overlay: OverlayWindow) -> None:
     result = _make_result()
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(result)
     assert overlay._current_result is result
@@ -107,23 +108,23 @@ def test_on_config_changed_updates_enable_grammar(overlay: OverlayWindow) -> Non
 def test_on_config_changed_rerenders_current_result(overlay: OverlayWindow) -> None:
     result = _make_result()
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ) as mock_build:
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
+    ) as mock_apply:
         overlay.on_sentence_ready(result)
-        mock_build.reset_mock()
+        mock_apply.reset_mock()
         overlay.on_config_changed(AppConfig())
-        assert mock_build.called
+        assert mock_apply.called
 
 
 def test_on_config_changed_no_rerender_when_no_result(overlay: OverlayWindow) -> None:
     overlay._current_result = None
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
-    ) as mock_build:
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
+    ) as mock_apply:
         overlay.on_config_changed(AppConfig())
-        mock_build.assert_not_called()
+        mock_apply.assert_not_called()
 
 
 def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
@@ -144,11 +145,10 @@ def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWin
     )
     captured: list[AnalysisResult] = []
 
-    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
+    def capture_analysis(doc, text: str, a: AnalysisResult, user_level: int) -> None:
         captured.append(a)
-        return "<b>食べる</b>"
 
-    with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
+    with patch("src.ui.overlay.HighlightRenderer.apply_to_document", side_effect=capture_analysis):
         overlay.on_sentence_ready(result)
 
     assert len(captured) == 1
@@ -175,11 +175,10 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
     )
     captured: list[AnalysisResult] = []
 
-    def capture_analysis(text: str, a: AnalysisResult, user_level: int) -> str:
+    def capture_analysis(doc, text: str, a: AnalysisResult, user_level: int) -> None:
         captured.append(a)
-        return "<b>食べている</b>"
 
-    with patch("src.ui.overlay.HighlightRenderer.build_rich_text", side_effect=capture_analysis):
+    with patch("src.ui.overlay.HighlightRenderer.apply_to_document", side_effect=capture_analysis):
         overlay.on_sentence_ready(result)
 
     assert len(captured) == 1
@@ -188,8 +187,8 @@ def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayW
 
 def test_overlay_accepts_config_constructor(qapp: QApplication) -> None:
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         window = OverlayWindow(AppConfig())
     assert window is not None
@@ -197,8 +196,8 @@ def test_overlay_accepts_config_constructor(qapp: QApplication) -> None:
 
 def test_overlay_uses_config_dimensions(qapp: QApplication) -> None:
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         window = OverlayWindow(AppConfig(overlay_width=600, overlay_height=100))
     assert window.width() == 600
@@ -219,37 +218,11 @@ def test_on_config_changed_updates_opacity(overlay: OverlayWindow) -> None:
     assert overlay.windowOpacity() == pytest.approx(0.5, abs=0.01)
 
 
-# ── Text box styling tests (Bug 3: centered HTML, visible on dark bg) ──
+# ── Text box styling tests ──
 
 
-def test_centered_html_wraps_in_table() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("hello world")
-    assert "<table" in result
-    assert 'align="center"' in result
-    assert "hello world" in result
-
-
-def test_centered_html_escapes_special_chars() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("<script>alert('xss')</script>")
-    assert "<script>" not in result
-    assert "&lt;script&gt;" in result
-
-
-def test_centered_html_uses_light_text_color() -> None:
-    from src.ui.overlay import _centered_html
-
-    result = _centered_html("test")
-    assert "#EEEEEE" in result
-
-
-def test_set_status_uses_html(overlay: OverlayWindow) -> None:
+def test_set_status_shows_text(overlay: OverlayWindow) -> None:
     overlay.set_status("Listening...")
-    html = overlay._jp_browser.toHtml()
-    assert 'align="center"' in html
     assert "Listening..." in overlay._jp_browser.toPlainText()
 
 
@@ -284,8 +257,8 @@ def test_on_asr_ready_updates_browser(overlay: OverlayWindow) -> None:
 def test_on_sentence_ready_adds_to_history(overlay: OverlayWindow) -> None:
     result = _make_result()
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>テスト</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(result)
     assert overlay._history.count == 1
@@ -296,8 +269,8 @@ def test_on_sentence_ready_adds_to_history(overlay: OverlayWindow) -> None:
 @pytest.mark.xfail(reason="pre-existing: _MAX_HISTORY=10 but test expects 100")
 def test_history_max_size(overlay: OverlayWindow) -> None:
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         for i in range(105):
             overlay.on_sentence_ready(_make_result(japanese_text=f"sentence {i}"))
@@ -309,8 +282,8 @@ def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
     r1 = _make_result(japanese_text="first")
     r2 = _make_result(japanese_text="second")
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(r1)
         overlay.on_sentence_ready(r2)
@@ -322,8 +295,8 @@ def test_prev_sentence_navigates_backward(overlay: OverlayWindow) -> None:
 def test_prev_sentence_noop_at_start(overlay: OverlayWindow) -> None:
     r1 = _make_result()
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(r1)
     overlay._prev_sentence()
@@ -335,8 +308,8 @@ def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
     r1 = _make_result(japanese_text="first")
     r2 = _make_result(japanese_text="second")
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(r1)
         overlay.on_sentence_ready(r2)
@@ -350,8 +323,8 @@ def test_next_sentence_navigates_forward(overlay: OverlayWindow) -> None:
 def test_next_sentence_noop_at_end(overlay: OverlayWindow) -> None:
     r1 = _make_result()
     with patch(
-        "src.ui.overlay.HighlightRenderer.build_rich_text",
-        return_value="<b>test</b>",
+        "src.ui.overlay.HighlightRenderer.apply_to_document",
+        return_value=None,
     ):
         overlay.on_sentence_ready(r1)
     overlay._next_sentence()

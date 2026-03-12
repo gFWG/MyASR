@@ -36,6 +36,5 @@ PySide6 UI layer — transparent frameless overlay, hover tooltips, settings, tr
 
 ## NOTES
 
-- `HighlightRenderer` is pure Python (no Qt deps) to facilitate testing.
 - UI state (width, height) is persisted to `config.json` via `QTimer` on resize.
 - `TooltipPopup` performs deduplication to avoid redundant database records.

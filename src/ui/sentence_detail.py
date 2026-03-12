@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextBlockFormat, QTextCursor
 from PySide6.QtWidgets import (
     QDialog,
     QGroupBox,
@@ -22,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.db.models import AnalysisResult, HighlightGrammar, HighlightVocab, SentenceRecord
+from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord
 from src.ui.highlight import HighlightRenderer
 
 logger = logging.getLogger(__name__)
@@ -31,8 +32,6 @@ _JLPT_COLORS = HighlightRenderer.JLPT_COLORS
 _DEFAULT_BADGE_COLOR = "#9E9E9E"
 
 _FONT_FAMILIES = "Segoe UI, Yu Gothic UI, Noto Sans CJK JP, sans-serif"
-
-_EMPTY_ANALYSIS = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[])
 
 
 def _badge_color(jlpt_level: int | None) -> str:
@@ -139,12 +138,17 @@ class SentenceDetailDialog(QDialog):
         browser.setStyleSheet(f"font-family: {_FONT_FAMILIES}; font-size: 18px;")
         browser.setFixedHeight(60)
         browser.setOpenLinks(False)
-        html_text = HighlightRenderer().build_rich_text(
-            self._sentence.japanese_text,
-            _EMPTY_ANALYSIS,
-            user_level=5,
-        )
-        browser.setHtml(html_text)
+
+        # Set plain text with center alignment
+        doc = browser.document()
+        doc.setPlainText(self._sentence.japanese_text)
+
+        cursor = QTextCursor(doc)
+        cursor.select(QTextCursor.SelectionType.Document)
+        block_fmt = QTextBlockFormat()
+        block_fmt.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cursor.setBlockFormat(block_fmt)
+
         return browser
 
     def _build_vocab_group(self) -> QGroupBox:

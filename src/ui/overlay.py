@@ -18,6 +18,8 @@ from PySide6.QtGui import (
     QPainter,
     QPaintEvent,
     QResizeEvent,
+    QTextBlockFormat,
+    QTextCursor,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -85,16 +87,29 @@ def _make_browser(font_size: int) -> QTextBrowser:
     return browser
 
 
-def _centered_html(text: str, color: str = "#EEEEEE") -> str:
-    """Wrap plain text in centered HTML for QTextBrowser display."""
-    import html as _h
+def _set_centered_plain_text(
+    browser: QTextBrowser, text: str, color: str = "#EEEEEE"
+) -> None:
+    """Set plain text with center alignment in a QTextBrowser.
 
-    escaped = _h.escape(text)
-    return (
-        '<table align="center" width="95%">'
-        f'<tr><td align="center" style="color: {color};">{escaped}</td></tr>'
-        "</table>"
-    )
+    Args:
+        browser: The QTextBrowser to update.
+        text: The plain text to display.
+        color: Foreground color as hex string (default: #EEEEEE).
+    """
+    doc = browser.document()
+    doc.setPlainText(text)
+
+    # Set default text color via stylesheet
+    browser.setStyleSheet(f"background: transparent; border: none; color: {color};")
+
+    # Center align all blocks
+    cursor = QTextCursor(doc)
+    cursor.select(QTextCursor.SelectionType.Document)
+
+    block_fmt = QTextBlockFormat()
+    block_fmt.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    cursor.setBlockFormat(block_fmt)
 
 
 def _make_arrow_button(text: str) -> QPushButton:
@@ -254,21 +269,31 @@ class OverlayWindow(QWidget):
             browser: The QTextBrowser to render into.
             result: The sentence result to render.
         """
+        doc = browser.document()
+
         if result.analysis is not None:
             filtered_analysis = AnalysisResult(
                 tokens=result.analysis.tokens,
                 vocab_hits=result.analysis.vocab_hits if self._enable_vocab else [],
                 grammar_hits=result.analysis.grammar_hits if self._enable_grammar else [],
             )
-            rich_text = self._renderer.build_rich_text(
+            # Use QTextCharFormat API
+            self._renderer.apply_to_document(
+                doc,
                 result.japanese_text,
                 filtered_analysis,
                 user_level=self._user_level,
             )
         else:
-            rich_text = _centered_html(result.japanese_text)
+            # No analysis - just show plain text
+            doc.setPlainText(result.japanese_text)
 
-        browser.setHtml(rich_text)
+        # Center align all blocks
+        cursor = QTextCursor(doc)
+        cursor.select(QTextCursor.SelectionType.Document)
+        block_fmt = QTextBlockFormat()
+        block_fmt.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cursor.setBlockFormat(block_fmt)
 
     def _render_result(self, result: SentenceResult) -> None:
         """Render a result into the active browser and schedule height adjustment."""
@@ -283,9 +308,9 @@ class OverlayWindow(QWidget):
             result: ASR output containing Japanese text.
         """
         if self._history.is_browsing:
-            self._preview_browser.setHtml(_centered_html(result.text))
+            _set_centered_plain_text(self._preview_browser, result.text)
         else:
-            self._jp_browser.setHtml(_centered_html(result.text))
+            _set_centered_plain_text(self._jp_browser, result.text)
         QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
 
@@ -340,7 +365,7 @@ class OverlayWindow(QWidget):
         Args:
             text: Status string to display in the JP browser.
         """
-        self._jp_browser.setHtml(_centered_html(text))
+        _set_centered_plain_text(self._jp_browser, text)
         QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug("set_status: %s", text)
 

@@ -1,12 +1,13 @@
-"""HTML highlight renderer for JLPT vocabulary and grammar annotations.
+"""JLPT vocabulary and grammar highlight renderer using QTextCharFormat.
 
-Pure Python — no Qt/PySide6 imports. Produces HTML span markup with JLPT-level
-colors. Grammar spans take priority over overlapping vocab spans.
+Renders highlighted Japanese text directly to QTextDocument, ensuring
+cursor positions align perfectly with VocabHit/GrammarHit offsets.
 """
 
-import html
 import logging
 from typing import TypeAlias
+
+from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument
 
 from src.db.models import AnalysisResult, GrammarHit, VocabHit
 
@@ -19,13 +20,13 @@ _Span: TypeAlias = tuple[int, int, str, str]
 
 
 class HighlightRenderer:
-    """Renders Japanese text as HTML with JLPT-level color highlights.
+    """Renders Japanese text with JLPT-level color highlights using QTextCharFormat.
 
     Grammar highlights take priority over overlapping vocab highlights.
-    All text is HTML-escaped to prevent XSS.
+    Works directly with QTextDocument to ensure position alignment.
 
     Attributes:
-        JLPT_COLORS: Default mapping from JLPT level (1–4) to vocab/grammar hex colors.
+        JLPT_COLORS: Default mapping from JLPT level (1–5) to vocab/grammar hex colors.
     """
 
     JLPT_COLORS: dict[int, dict[str, str]] = {
@@ -43,7 +44,7 @@ class HighlightRenderer:
         """Update the JLPT color mapping at runtime.
 
         Args:
-            jlpt_colors: Mapping from JLPT level (1–4) to vocab/grammar hex colors.
+            jlpt_colors: Mapping from JLPT level (1–5) to vocab/grammar hex colors.
         """
         self._colors = jlpt_colors
 
@@ -51,32 +52,31 @@ class HighlightRenderer:
     # Public API                                                           #
     # ------------------------------------------------------------------ #
 
-    def build_rich_text(
+    def apply_to_document(
         self,
+        document: QTextDocument,
         japanese_text: str,
         analysis: AnalysisResult,
         user_level: int,
-    ) -> str:
-        """Build HTML string with JLPT-colored spans for the given text.
+    ) -> None:
+        """Apply JLPT highlights directly to a QTextDocument using QTextCharFormat.
 
-        Grammar spans have priority: a vocab span fully covered by a grammar
-        span is dropped. Partial overlaps are NOT split — the vocab span is
-        kept as-is if not *fully* covered by any single grammar span.
+        This method bypasses HTML entirely, ensuring that cursor positions
+        align perfectly with VocabHit/GrammarHit start_pos/end_pos values.
 
         Args:
+            document: The QTextDocument to format.
             japanese_text: The raw Japanese string to render.
             analysis: Pipeline analysis result containing vocab and grammar hits.
-            user_level: The user's current JLPT level (1–5). Unused by the
-                renderer itself but accepted for forward-compatibility.
-
-        Returns:
-            HTML string with ``<span>`` elements for highlighted regions, or
-            ``""`` for empty input, or plain HTML-escaped text when no hits
-            exist.
+            user_level: The user's current JLPT level (1–5). Unused but kept for API parity.
         """
-        if not japanese_text:
-            return ""
+        # Set plain text first - this ensures position alignment
+        document.setPlainText(japanese_text)
 
+        if not japanese_text:
+            return
+
+        # Build spans list
         grammar_spans: list[_Span] = []
         for gh in analysis.grammar_hits:
             color = self._grammar_color(gh.jlpt_level)
@@ -94,23 +94,28 @@ class HighlightRenderer:
             color = self._vocab_color(vh.jlpt_level)
             vocab_spans.append((vh.start_pos, vh.end_pos, color, _TYPE_VOCAB))
 
-        all_spans: list[_Span] = grammar_spans + vocab_spans
-        all_spans.sort(key=lambda s: s[0])
+        # Apply formatting via QTextCursor
+        # Process grammar first (higher priority), then vocab
+        # Sort by start position, but grammar comes before vocab at same position
+        def _sort_key(span: _Span) -> tuple[int, int]:
+            start, _end, _color, span_type = span
+            # Grammar has priority 0, vocab has priority 1
+            type_priority = 0 if span_type == _TYPE_GRAMMAR else 1
+            return (start, type_priority)
 
-        if not all_spans:
-            escaped_text = html.escape(japanese_text)
-            return (
-                '<table align="center" width="95%">'
-                f'<tr><td align="center">{escaped_text}</td></tr>'
-                "</table>"
-            )
+        all_spans = grammar_spans + vocab_spans
+        all_spans.sort(key=_sort_key)
 
-        rendered = self._render_spans(japanese_text, all_spans)
-        return (
-            '<table align="center" width="95%">'
-            f'<tr><td align="center">{rendered}</td></tr>'
-            "</table>"
-        )
+        cursor = QTextCursor(document)
+
+        for start, end, color, _span_type in all_spans:
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+
+            fmt = QTextCharFormat()
+            fmt.setForeground(QColor(color))
+            fmt.setFontWeight(QFont.Weight.Bold)
+            cursor.setCharFormat(fmt)
 
     def get_highlight_at_position(
         self,
@@ -160,31 +165,3 @@ class HighlightRenderer:
             if gs_start <= start and end <= gs_end:
                 return True
         return False
-
-    @staticmethod
-    def _render_spans(
-        text: str,
-        spans: list[_Span],
-    ) -> str:
-        """Assemble HTML from sorted, non-necessarily-contiguous spans.
-
-        Characters outside all spans are emitted as plain HTML-escaped text.
-        """
-        parts: list[str] = []
-        cursor = 0
-
-        for start, end, color, _span_type in spans:
-            # Text before this span
-            if cursor < start:
-                parts.append(html.escape(text[cursor:start]))
-
-            # The span itself
-            span_text = html.escape(text[start:end])
-            parts.append(f'<span style="color: {color}; font-weight: bold;">{span_text}</span>')
-            cursor = end
-
-        # Trailing plain text
-        if cursor < len(text):
-            parts.append(html.escape(text[cursor:]))
-
-        return "".join(parts)

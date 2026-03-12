@@ -1,9 +1,8 @@
 """Tests for src/ui/highlight.py — HighlightRenderer."""
 
-import html
-from html.parser import HTMLParser
-
 import pytest
+from PySide6.QtGui import QColor, QFont, QTextCursor
+from PySide6.QtWidgets import QApplication, QTextBrowser
 
 from src.db.models import AnalysisResult, GrammarHit, VocabHit
 from src.ui.highlight import HighlightRenderer
@@ -12,6 +11,14 @@ from src.ui.highlight import HighlightRenderer
 @pytest.fixture
 def renderer() -> HighlightRenderer:
     return HighlightRenderer()
+
+
+@pytest.fixture
+def qtextbrowser(qapp: QApplication) -> QTextBrowser:
+    """Create a QTextBrowser for testing with proper Qt application context."""
+    browser = QTextBrowser()
+    yield browser
+    browser.deleteLater()
 
 
 @pytest.fixture
@@ -43,24 +50,6 @@ def _make_grammar(rule_id: str, text: str, start: int, end: int, level: int = 2)
     )
 
 
-class _HTMLValidator(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.errors: list[str] = []
-
-    def handle_error(self, message: str) -> None:
-        self.errors.append(message)
-
-
-def _is_valid_html(fragment: str) -> bool:
-    validator = _HTMLValidator()
-    try:
-        validator.feed(fragment)
-    except Exception:
-        return False
-    return len(validator.errors) == 0
-
-
 # ------------------------------------------------------------------ #
 # JLPT_COLORS structure                                               #
 # ------------------------------------------------------------------ #
@@ -85,138 +74,6 @@ def test_jlpt_colors_exact_values(renderer: HighlightRenderer) -> None:
     assert renderer.JLPT_COLORS[2]["grammar"] == "#F9A825"
     assert renderer.JLPT_COLORS[1]["vocab"] == "#FFCDD2"
     assert renderer.JLPT_COLORS[1]["grammar"] == "#D32F2F"
-
-
-# ------------------------------------------------------------------ #
-# build_rich_text — edge cases                                        #
-# ------------------------------------------------------------------ #
-
-
-def test_build_rich_text_empty_text_returns_empty_string(
-    renderer: HighlightRenderer, empty_analysis: AnalysisResult
-) -> None:
-    result = renderer.build_rich_text("", empty_analysis, user_level=3)
-    assert result == ""
-
-
-def test_build_rich_text_no_hits_returns_escaped_plain_text(
-    renderer: HighlightRenderer, empty_analysis: AnalysisResult
-) -> None:
-    result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
-    # Output is wrapped in a centering table; the escaped text appears inside it
-    assert html.escape("食べる") in result
-    assert "<span" not in result
-
-
-def test_build_rich_text_html_escapes_special_chars(
-    renderer: HighlightRenderer, empty_analysis: AnalysisResult
-) -> None:
-    result = renderer.build_rich_text("<script>alert(1)</script>", empty_analysis, user_level=3)
-    assert "<script>" not in result
-    assert "&lt;script&gt;" in result
-
-
-# ------------------------------------------------------------------ #
-# build_rich_text — grammar-over-vocab priority                       #
-# ------------------------------------------------------------------ #
-
-
-def test_build_rich_text_grammar_suppresses_fully_covered_vocab(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("食べ", 0, 2, level=3)]
-    grammar = [_make_grammar("g1", "食べている", 0, 5, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("食べている", analysis, user_level=4)
-
-    # Grammar color (N2) present
-    assert "#F9A825" in result
-    # Vocab color (N3) absent — suppressed by grammar
-    assert "#BBDEFB" not in result
-
-
-def test_build_rich_text_non_overlapping_hits_both_colors_present(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("猫", 0, 1, level=4)]
-    grammar = [_make_grammar("g1", "食べている", 1, 6, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("猫食べている", analysis, user_level=4)
-
-    # Both colors should be present
-    assert "#C8E6C9" in result  # N4 vocab
-    assert "#F9A825" in result  # N2 grammar
-
-
-def test_build_rich_text_partial_overlap_vocab_not_suppressed(
-    renderer: HighlightRenderer,
-) -> None:
-    # Vocab at (0,3), grammar only covers (1,3) — NOT a full cover
-    vocab = [_make_vocab("食べて", 0, 3, level=3)]
-    grammar = [_make_grammar("g1", "べて", 1, 3, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("食べている", analysis, user_level=4)
-
-    # Vocab color should be present (partial overlap, not suppressed)
-    assert "#BBDEFB" in result
-    assert "#F9A825" in result
-
-
-def test_build_rich_text_grammar_exactly_equals_vocab_range_suppresses(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("食べ", 0, 2, level=3)]
-    grammar = [_make_grammar("g1", "食べ", 0, 2, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("食べる", analysis, user_level=4)
-
-    assert "#F9A825" in result  # grammar N2
-    assert "#BBDEFB" not in result  # vocab N3 suppressed
-
-
-def test_build_rich_text_grammar_larger_than_vocab_suppresses(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("食べ", 1, 3, level=3)]
-    grammar = [_make_grammar("g1", "て食べている", 0, 6, level=1)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("て食べている", analysis, user_level=4)
-
-    assert "#D32F2F" in result  # grammar N1
-    assert "#BBDEFB" not in result  # vocab N3 suppressed
-
-
-# ------------------------------------------------------------------ #
-# build_rich_text — HTML structure                                    #
-# ------------------------------------------------------------------ #
-
-
-def test_build_rich_text_output_is_valid_html(renderer: HighlightRenderer) -> None:
-    vocab = [_make_vocab("猫", 0, 1, level=4)]
-    grammar = [_make_grammar("g1", "食べている", 1, 6, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
-    result = renderer.build_rich_text("猫食べている", analysis, user_level=4)
-    assert _is_valid_html(result)
-
-
-def test_build_rich_text_contains_span_with_font_weight_bold(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("猫", 0, 1, level=4)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("猫", analysis, user_level=4)
-    assert "font-weight: bold" in result
-
-
-def test_build_rich_text_plain_text_outside_spans_is_escaped(
-    renderer: HighlightRenderer,
-) -> None:
-    vocab = [_make_vocab("猫", 2, 3, level=4)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("AB猫CD", analysis, user_level=4)
-    assert "AB" in result
-    assert "CD" in result
-    assert "font-weight: bold" in result
 
 
 # ------------------------------------------------------------------ #
@@ -297,79 +154,238 @@ def test_get_highlight_at_position_grammar_at_pos_with_no_vocab(
 
 
 # ------------------------------------------------------------------ #
-# Multiple vocab hits with no grammar                                 #
+# apply_to_document — QTextCharFormat API                           #
 # ------------------------------------------------------------------ #
 
 
-def test_build_rich_text_multiple_vocab_hits_all_colored(
-    renderer: HighlightRenderer,
+def test_apply_to_document_empty_text(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
 ) -> None:
+    """Test that empty text results in empty document."""
+    doc = qtextbrowser.document()
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[])
+
+    renderer.apply_to_document(doc, "", analysis, user_level=3)
+
+    assert doc.toPlainText() == ""
+
+
+def test_apply_to_document_plain_text_no_hits(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that text without hits is set as plain text."""
+    doc = qtextbrowser.document()
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[])
+
+    renderer.apply_to_document(doc, "食べる", analysis, user_level=3)
+
+    assert doc.toPlainText() == "食べる"
+
+
+def test_apply_to_document_vocab_highlight(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that vocab hits get highlighted with correct color."""
+    doc = qtextbrowser.document()
+    vocab = [_make_vocab("猫", 0, 1, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
+
+    renderer.apply_to_document(doc, "猫", analysis, user_level=4)
+
+    # Verify text content
+    assert doc.toPlainText() == "猫"
+
+    # Verify formatting at position 0
+    cursor = QTextCursor(doc)
+    cursor.setPosition(0)
+    char_fmt = cursor.charFormat()
+    assert char_fmt.fontWeight() == QFont.Weight.Bold
+
+
+def test_apply_to_document_position_alignment(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that cursor positions align with start_pos/end_pos.
+
+    This is the core fix for the hover detection bug.
+    """
+    doc = qtextbrowser.document()
+
+    # Create a sentence with known vocab positions
+    vocab = [_make_vocab("猫", 0, 1, level=4)]  # position 0-1
+    grammar = [_make_grammar("g1", "食べている", 1, 6, level=2)]  # position 1-6
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    text = "猫食べている"
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    # Verify document length matches original text length
+    assert len(doc.toPlainText()) == len(text)
+
+    # Verify that position 0 is vocab
+    hit = renderer.get_highlight_at_position(0, analysis)
+    assert isinstance(hit, VocabHit)
+
+    # Verify that position 2 is grammar
+    hit = renderer.get_highlight_at_position(2, analysis)
+    assert isinstance(hit, GrammarHit)
+
+
+def test_apply_to_document_grammar_suppresses_vocab(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that grammar suppresses fully covered vocab."""
+    doc = qtextbrowser.document()
+    vocab = [_make_vocab("食べ", 0, 2, level=3)]
+    grammar = [_make_grammar("g1", "食べている", 0, 5, level=2)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, "食べている", analysis, user_level=4)
+
+    # Document should have grammar color at position 0
+    cursor = QTextCursor(doc)
+    cursor.setPosition(0)
+    char_fmt = cursor.charFormat()
+    # Grammar N2 color is #F9A825
+    expected_color = QColor("#F9A825")
+    assert char_fmt.foreground().color().name() == expected_color.name()
+
+
+def test_apply_to_document_non_overlapping_both_highlighted(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that non-overlapping vocab and grammar both get highlighted."""
+    doc = qtextbrowser.document()
+    vocab = [_make_vocab("猫", 0, 1, level=4)]
+    grammar = [_make_grammar("g1", "食べている", 1, 6, level=2)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, "猫食べている", analysis, user_level=4)
+
+    # charFormat() returns format of character BEFORE cursor position.
+    # To get format at position N, move cursor to N+1.
+    cursor = QTextCursor(doc)
+
+    # Position 0 should have vocab color (N4: #C8E6C9)
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    vocab_color = QColor("#C8E6C9")
+    assert cursor.charFormat().foreground().color().name() == vocab_color.name()
+
+    # Position 1 should have grammar color (N2: #F9A825)
+    cursor.setPosition(2)  # charFormat() returns format of char at position 1
+    grammar_color = QColor("#F9A825")
+    assert cursor.charFormat().foreground().color().name() == grammar_color.name()
+
+
+def test_apply_to_document_multiple_vocab_hits(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that multiple vocab hits all get highlighted."""
+    doc = qtextbrowser.document()
     vocab = [
         _make_vocab("猫", 0, 1, level=4),
         _make_vocab("犬", 1, 2, level=3),
     ]
     analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("猫犬", analysis, user_level=4)
 
-    assert "#C8E6C9" in result  # N4 vocab
-    assert "#BBDEFB" in result  # N3 vocab
+    renderer.apply_to_document(doc, "猫犬", analysis, user_level=4)
 
+    # charFormat() returns format of character BEFORE cursor position.
+    cursor = QTextCursor(doc)
 
-# ------------------------------------------------------------------ #
-# build_rich_text — centering table wrapper                           #
-# ------------------------------------------------------------------ #
+    # Position 0 should have N4 vocab color
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    vocab_n4_color = QColor("#C8E6C9")
+    assert cursor.charFormat().foreground().color().name() == vocab_n4_color.name()
 
-
-def test_build_rich_text_contains_centering_table(
-    renderer: HighlightRenderer, empty_analysis: AnalysisResult
-) -> None:
-    result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
-    assert "<table" in result
-
-
-def test_build_rich_text_no_inline_block(
-    renderer: HighlightRenderer, empty_analysis: AnalysisResult
-) -> None:
-    result = renderer.build_rich_text("食べる", empty_analysis, user_level=3)
-    assert "inline-block" not in result
+    # Position 1 should have N3 vocab color
+    cursor.setPosition(2)  # charFormat() returns format of char at position 1
+    vocab_n3_color = QColor("#BBDEFB")
+    assert cursor.charFormat().foreground().color().name() == vocab_n3_color.name()
 
 
-# ------------------------------------------------------------------ #
-# Custom colors via constructor and update_colors                     #
-# ------------------------------------------------------------------ #
+def test_apply_to_document_custom_colors(qtextbrowser: QTextBrowser) -> None:
+    """Test that custom colors are applied correctly."""
+    doc = qtextbrowser.document()
 
-
-def test_renderer_accepts_custom_colors() -> None:
     custom_colors = {
         4: {"vocab": "#FF0000", "grammar": "#00FF00"},
-        3: {"vocab": "#0000FF", "grammar": "#FFFF00"},
     }
     renderer = HighlightRenderer(jlpt_colors=custom_colors)
+
     vocab = [_make_vocab("猫", 0, 1, level=4)]
     analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("猫", analysis, user_level=4)
-    assert "#FF0000" in result
+
+    renderer.apply_to_document(doc, "猫", analysis, user_level=4)
+
+    # charFormat() returns format of character BEFORE cursor position.
+    cursor = QTextCursor(doc)
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    expected_color = QColor("#FF0000")
+    assert cursor.charFormat().foreground().color().name() == expected_color.name()
 
 
-def test_update_colors_changes_rendering() -> None:
+def test_apply_to_document_update_colors(qtextbrowser: QTextBrowser) -> None:
+    """Test that update_colors changes subsequent rendering."""
+    doc = qtextbrowser.document()
+
     renderer = HighlightRenderer()
     new_colors = {
         4: {"vocab": "#AABBCC", "grammar": "#DDEEFF"},
-        3: {"vocab": "#112233", "grammar": "#445566"},
-        2: {"vocab": "#778899", "grammar": "#AABBDD"},
-        1: {"vocab": "#CCDDEE", "grammar": "#FFEEDD"},
     }
     renderer.update_colors(new_colors)
+
     vocab = [_make_vocab("猫", 0, 1, level=4)]
     analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("猫", analysis, user_level=4)
-    assert "#AABBCC" in result
-    assert "#C8E6C9" not in result  # default N4 vocab color should NOT be present
+
+    renderer.apply_to_document(doc, "猫", analysis, user_level=4)
+
+    # charFormat() returns format of character BEFORE cursor position.
+    cursor = QTextCursor(doc)
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    expected_color = QColor("#AABBCC")
+    assert cursor.charFormat().foreground().color().name() == expected_color.name()
 
 
-def test_default_renderer_uses_jlpt_colors() -> None:
+def test_apply_to_document_default_colors(qtextbrowser: QTextBrowser) -> None:
+    """Test that default renderer uses default JLPT colors."""
+    doc = qtextbrowser.document()
+
     renderer = HighlightRenderer()
     vocab = [_make_vocab("猫", 0, 1, level=4)]
     analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=[])
-    result = renderer.build_rich_text("猫", analysis, user_level=4)
-    assert "#C8E6C9" in result  # default N4 vocab color
+
+    renderer.apply_to_document(doc, "猫", analysis, user_level=4)
+
+    # charFormat() returns format of character BEFORE cursor position.
+    cursor = QTextCursor(doc)
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    expected_color = QColor("#C8E6C9")  # default N4 vocab color
+    assert cursor.charFormat().foreground().color().name() == expected_color.name()
+
+
+def test_apply_to_document_partial_overlap_both_present(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Test that partial overlap results in both vocab and grammar highlighted."""
+    doc = qtextbrowser.document()
+
+    # Vocab at (0,3), grammar only covers (1,3) — NOT a full cover
+    vocab = [_make_vocab("食べて", 0, 3, level=3)]
+    grammar = [_make_grammar("g1", "べて", 1, 3, level=2)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, "食べている", analysis, user_level=4)
+
+    # charFormat() returns format of character BEFORE cursor position.
+    cursor = QTextCursor(doc)
+
+    # Position 0 should have vocab color (not suppressed)
+    cursor.setPosition(1)  # charFormat() returns format of char at position 0
+    vocab_color = QColor("#BBDEFB")  # N3 vocab
+    assert cursor.charFormat().foreground().color().name() == vocab_color.name()
+
+    # Position 1 should have grammar color
+    cursor.setPosition(2)  # charFormat() returns format of char at position 1
+    grammar_color = QColor("#F9A825")  # N2 grammar
+    assert cursor.charFormat().foreground().color().name() == grammar_color.name()
