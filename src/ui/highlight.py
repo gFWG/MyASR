@@ -29,6 +29,7 @@ class HighlightRenderer:
     """
 
     JLPT_COLORS: dict[int, dict[str, str]] = {
+        5: {"vocab": "#E8F5E9", "grammar": "#81C784"},
         4: {"vocab": "#C8E6C9", "grammar": "#4CAF50"},
         3: {"vocab": "#BBDEFB", "grammar": "#1976D2"},
         2: {"vocab": "#FFF9C4", "grammar": "#F9A825"},
