@@ -118,8 +118,10 @@ def test_on_save_does_not_close_dialog(qapp: QApplication) -> None:
 
 
 def test_jlpt_color_buttons_exist(dialog: SettingsDialog) -> None:
-    assert len(dialog._jlpt_color_buttons) == 8
+    assert len(dialog._jlpt_color_buttons) == 10
     expected_keys = {
+        "n5_vocab",
+        "n5_grammar",
         "n4_vocab",
         "n4_grammar",
         "n3_vocab",

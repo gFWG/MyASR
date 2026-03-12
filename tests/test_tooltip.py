@@ -39,14 +39,14 @@ def _make_vocab_hit(
 def _make_grammar_hit(
     matched_text: str = "ながら",
     jlpt_level: int = 3,
-    confidence_type: str = "exact",
+    word: str = "ても",
     description: str = "while doing",
 ) -> GrammarHit:
     return GrammarHit(
         rule_id="N3_nagara",
         matched_text=matched_text,
         jlpt_level=jlpt_level,
-        confidence_type=confidence_type,
+        word=word,
         description=description,
         start_pos=0,
         end_pos=len(matched_text),
@@ -147,9 +147,8 @@ def test_show_for_grammar_sets_level_label(tooltip: TooltipPopup) -> None:
 
 
 def test_show_for_grammar_sets_desc_label(tooltip: TooltipPopup) -> None:
-    hit = _make_grammar_hit(confidence_type="exact", description="while doing")
+    hit = _make_grammar_hit(word="ても", description="while doing")
     tooltip.show_for_grammar(hit, QPoint(100, 100), sentence_id=1, highlight_id=22)
-    assert "exact" in tooltip._desc_label.text()
     assert "while doing" in tooltip._desc_label.text()
     assert not tooltip._desc_label.isHidden()
     assert tooltip._pronunciation_label.isHidden()

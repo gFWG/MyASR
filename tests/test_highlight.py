@@ -36,7 +36,7 @@ def _make_grammar(rule_id: str, text: str, start: int, end: int, level: int = 2)
         rule_id=rule_id,
         matched_text=text,
         jlpt_level=level,
-        confidence_type="high",
+        word="ながら",
         description="test grammar",
         start_pos=start,
         end_pos=end,
@@ -66,8 +66,8 @@ def _is_valid_html(fragment: str) -> bool:
 # ------------------------------------------------------------------ #
 
 
-def test_jlpt_colors_has_all_four_levels(renderer: HighlightRenderer) -> None:
-    assert set(renderer.JLPT_COLORS.keys()) == {1, 2, 3, 4}
+def test_jlpt_colors_has_all_five_levels(renderer: HighlightRenderer) -> None:
+    assert set(renderer.JLPT_COLORS.keys()) == {1, 2, 3, 4, 5}
 
 
 def test_jlpt_colors_each_level_has_vocab_and_grammar_keys(renderer: HighlightRenderer) -> None:
