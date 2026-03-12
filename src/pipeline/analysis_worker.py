@@ -119,9 +119,9 @@ class AnalysisWorker(QThread):
                 id=None,
                 sentence_id=0,  # will be assigned by DB; placeholder
                 rule_id=hit.rule_id,
-                pattern=hit.rule_id,  # store rule_id as pattern identifier
+                pattern=hit.word,
+                word=hit.word,
                 jlpt_level=hit.jlpt_level,
-                confidence_type=hit.confidence_type,
                 description=hit.description,
                 is_beyond_level=True,  # grammar hits are always beyond user level by definition
                 tooltip_shown=False,

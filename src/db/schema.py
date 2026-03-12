@@ -2,6 +2,7 @@
 
 import logging
 import sqlite3
+from sqlite3 import OperationalError
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS highlight_grammar (
     rule_id TEXT NOT NULL,
     pattern TEXT NOT NULL,
     jlpt_level INTEGER,
-    confidence_type TEXT NOT NULL,
+    word TEXT,
     description TEXT,
     is_beyond_level INTEGER NOT NULL DEFAULT 0,
     tooltip_shown INTEGER NOT NULL DEFAULT 0
@@ -77,5 +78,22 @@ def init_db(db_path: str) -> sqlite3.Connection:
 
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+
+    # Versioned migrations using PRAGMA user_version.
+    cursor = conn.execute("PRAGMA user_version")
+    user_version: int = cursor.fetchone()[0]
+
+    if user_version < 1:
+        try:
+            conn.execute("ALTER TABLE highlight_grammar DROP COLUMN confidence_type")
+        except OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE highlight_grammar ADD COLUMN word TEXT")
+        except OperationalError:
+            pass
+        conn.execute("PRAGMA user_version = 1")
+        conn.commit()
+
     logger.info("Database initialized at %s", db_path)
     return conn

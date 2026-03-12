@@ -153,7 +153,7 @@ class LearningRepository:
                 gcursor = self._conn.execute(
                     """
                     INSERT INTO highlight_grammar
-                        (sentence_id, rule_id, pattern, jlpt_level, confidence_type,
+                        (sentence_id, rule_id, pattern, jlpt_level, word,
                          description, is_beyond_level, tooltip_shown)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
@@ -162,7 +162,7 @@ class LearningRepository:
                         g.rule_id,
                         g.pattern,
                         g.jlpt_level,
-                        g.confidence_type,
+                        g.word,
                         g.description,
                         int(g.is_beyond_level),
                         int(g.tooltip_shown),
@@ -600,7 +600,7 @@ class LearningRepository:
 
         gcursor = self._conn.execute(
             """
-            SELECT id, sentence_id, rule_id, pattern, jlpt_level, confidence_type,
+            SELECT id, sentence_id, rule_id, pattern, jlpt_level, word,
                    description, is_beyond_level, tooltip_shown
             FROM highlight_grammar
             WHERE sentence_id = ?
@@ -614,7 +614,7 @@ class LearningRepository:
                 rule_id=grow[2],
                 pattern=grow[3],
                 jlpt_level=grow[4],
-                confidence_type=grow[5],
+                word=grow[5],
                 description=grow[6],
                 is_beyond_level=bool(grow[7]),
                 tooltip_shown=bool(grow[8]),
