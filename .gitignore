@@ -15,6 +15,7 @@ venv/
 .vscode/
 
 temp/
+data/
 
 # Large binary files
 *.onnx

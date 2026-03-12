@@ -127,9 +127,12 @@ class OverlayWindow(QWidget):
             word or grammar pattern. Arguments are the hit
             (VocabHit | GrammarHit), the global cursor position, and the
             SentenceResult that contains the highlighted text.
+        highlight_left: Emitted when the cursor leaves the browser viewport,
+            indicating the tooltip should be hidden.
     """
 
     highlight_hovered = Signal(object, object, object)
+    highlight_left = Signal()
 
     def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -433,6 +436,7 @@ class OverlayWindow(QWidget):
             viewport_pos: Mouse position in viewport-local coordinates.
         """
         if result is None or result.analysis is None:
+            self.highlight_left.emit()
             return
 
         cursor = browser.cursorForPosition(viewport_pos)
@@ -445,6 +449,9 @@ class OverlayWindow(QWidget):
         if hit is not None:
             global_pos = browser.viewport().mapToGlobal(viewport_pos)
             self.highlight_hovered.emit(hit, global_pos, result)
+        else:
+            # Mouse moved to non-highlighted area, hide tooltip
+            self.highlight_left.emit()
 
     def _save_size(self) -> None:
         self._config.overlay_width = self.width()
@@ -607,6 +614,10 @@ class OverlayWindow(QWidget):
                     if event.button() == Qt.MouseButton.LeftButton:
                         self._drag_pos = None
                         return True
+
+        # Handle Leave event to hide tooltip when mouse exits viewport
+        if is_browser_viewport and event.type() == QEvent.Type.Leave:
+            self.highlight_left.emit()
 
         return super().eventFilter(watched, event)
 

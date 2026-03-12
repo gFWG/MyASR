@@ -130,6 +130,7 @@ def main() -> None:
                 tooltip.show_for_grammar(hit, point, sentence_id, highlight_id)
 
         overlay.highlight_hovered.connect(_on_highlight_hovered)
+        overlay.highlight_left.connect(tooltip.hide_tooltip)
         tooltip.record_triggered.connect(repo.mark_tooltip_shown)
 
         _settings_dialog: SettingsDialog | None = None
