@@ -11,14 +11,22 @@ from src.db.models import GrammarHit
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class _CompiledRule:
-    """Internal: a grammar rule with pre-compiled regex."""
+    """Internal: a grammar rule with pre-compiled regex.
+
+    Attributes:
+        rule_id: Unique identifier for the rule.
+        word: The grammar word/form being matched.
+        pattern: Pre-compiled regex for matching.
+        jlpt_level: JLPT level as integer 1-5 (lower = harder).
+        description: Human-readable description of the grammar point.
+    """
 
     rule_id: str
+    word: str
     pattern: re.Pattern[str]
     jlpt_level: int
-    confidence_type: str
     description: str
 
 
@@ -30,6 +38,7 @@ class GrammarMatcher:
 
         Args:
             rules_path: Path to JSON file with grammar rules array.
+                Each rule must have keys: id, re, word, description, level.
 
         Raises:
             FileNotFoundError: If the file doesn't exist.
@@ -41,12 +50,22 @@ class GrammarMatcher:
             raw_rules: list[dict[str, object]] = json.load(f)
         self._rules: list[_CompiledRule] = []
         for rule in raw_rules:
+            try:
+                compiled = re.compile(str(rule["re"]))
+            except re.error as exc:
+                logger.warning(
+                    "Skipping rule id=%s (invalid regex %r): %s",
+                    rule.get("id"),
+                    rule.get("re"),
+                    exc,
+                )
+                continue
             self._rules.append(
                 _CompiledRule(
-                    rule_id=str(rule["rule_id"]),
-                    pattern=re.compile(str(rule["pattern_regex"])),
-                    jlpt_level=int(str(rule["jlpt_level"])),
-                    confidence_type=str(rule["confidence_type"]),
+                    rule_id=str(rule["id"]),
+                    word=str(rule["word"]),
+                    pattern=compiled,
+                    jlpt_level=int(str(rule["level"])[1:]),
                     description=str(rule["description"]),
                 )
             )
@@ -55,29 +74,29 @@ class GrammarMatcher:
     def match(self, text: str, user_level: int) -> list[GrammarHit]:
         """Find grammar patterns beyond user's JLPT level in text.
 
-        A pattern is "beyond level" when rule.jlpt_level < user_level.
-        Returns all matching patterns that are beyond user's level.
+        A pattern is "beyond level" when rule.jlpt_level > user_level
+        (i.e. the rule is for a harder level than the user has reached).
 
         Args:
             text: Japanese text to analyze.
             user_level: User's current JLPT level (1-5).
 
         Returns:
-            List of GrammarHit for patterns found AND beyond user's level.
+            List of GrammarHit for patterns found that are beyond user's level.
         """
         if not text:
             return []
         hits: list[GrammarHit] = []
         for rule in self._rules:
-            if rule.jlpt_level >= user_level:
+            if rule.jlpt_level > user_level:
                 continue
             for m in rule.pattern.finditer(text):
                 hits.append(
                     GrammarHit(
                         rule_id=rule.rule_id,
+                        word=rule.word,
                         matched_text=m.group(),
                         jlpt_level=rule.jlpt_level,
-                        confidence_type=rule.confidence_type,
                         description=rule.description,
                         start_pos=m.start(),
                         end_pos=m.end(),
