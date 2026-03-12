@@ -196,7 +196,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
 ## TODOs
 
-- [ ] 1. Fix malformed regex patterns in grammar.json
+- [x] 1. Fix malformed regex patterns in grammar.json
 
   **What to do**:
   - Fix ID 101: Replace full-width `）` with ASCII `)` in the `re` field
@@ -280,7 +280,7 @@ Max Concurrent: 4 (Waves 2 & 3)
   - Files: `data/grammar.json`
   - Pre-commit: `python3 -c "import json,re; [re.compile(r['re']) for r in json.load(open('data/grammar.json', encoding='utf-8'))]"`
 
-- [ ] 2. Update GrammarHit + HighlightGrammar dataclasses
+- [x] 2. Update GrammarHit + HighlightGrammar dataclasses
 
   **What to do**:
   - In `src/db/models.py`, modify `GrammarHit` frozen dataclass:
@@ -372,7 +372,7 @@ Max Concurrent: 4 (Waves 2 & 3)
   - Files: `src/db/models.py`
   - Pre-commit: `ruff check src/db/models.py`
 
-- [ ] 3. Add N5 grammar colors to config
+- [x] 3. Add N5 grammar colors to config
 
   **What to do**:
   - In `src/config.py`, add N5 color entries to `DEFAULT_JLPT_COLORS` dict:
@@ -445,7 +445,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 5 (UI changes)
 
-- [ ] 4. Rewrite GrammarMatcher for new grammar.json schema
+- [x] 4. Rewrite GrammarMatcher for new grammar.json schema
 
   **What to do**:
   - Rewrite `_CompiledRule` dataclass to match new JSON fields:
@@ -600,7 +600,7 @@ Max Concurrent: 4 (Waves 2 & 3)
   - Files: `src/analysis/grammar.py`, `src/analysis/pipeline.py`
   - Pre-commit: `python3 -c "from src.analysis.grammar import GrammarMatcher; gm=GrammarMatcher('data/grammar.json'); print(f'{len(gm._rules)} rules loaded')"`
 
-- [ ] 5. DB schema migration + repository update
+- [x] 5. DB schema migration + repository update
 
   **What to do**:
   - In `src/db/schema.py`:
@@ -717,7 +717,7 @@ Max Concurrent: 4 (Waves 2 & 3)
   - Files: `src/db/schema.py`, `src/db/repository.py`
   - Pre-commit: `python3 -c "from src.db.schema import init_db; c=init_db(':memory:'); print('DB OK')"`
 
-- [ ] 6. Update analysis_worker GrammarHit→HighlightGrammar mapping
+- [x] 6. Update analysis_worker GrammarHit→HighlightGrammar mapping
 
   **What to do**:
   - In `src/pipeline/analysis_worker.py`, update the code that converts `GrammarHit` to `HighlightGrammar`:
@@ -778,7 +778,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 4 (DB changes)
 
-- [ ] 7. Update pipeline.py grammar file path
+- [x] 7. Update pipeline.py grammar file path
 
   **What to do**:
   - In `src/analysis/pipeline.py` line ~30, change:
@@ -821,7 +821,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 3 (GrammarMatcher rewrite)
 
-- [ ] 8. Update tooltip.py grammar display
+- [x] 8. Update tooltip.py grammar display
 
   **What to do**:
   - In `src/ui/tooltip.py`, method `show_for_grammar()`:
@@ -885,7 +885,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 5 (UI changes)
 
-- [ ] 9. Update sentence_detail.py + highlight.py for N5
+- [x] 9. Update sentence_detail.py + highlight.py for N5
 
   **What to do**:
   - In `src/ui/sentence_detail.py`:
@@ -945,7 +945,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 5 (UI changes)
 
-- [ ] 10. Delete old grammar_rules.json
+- [x] 10. Delete old grammar_rules.json
 
   **What to do**:
   - Delete `data/grammar_rules.json` from the repository
@@ -993,7 +993,7 @@ Max Concurrent: 4 (Waves 2 & 3)
   - Files: `data/grammar_rules.json` (deletion)
   - Pre-commit: `grep -r grammar_rules src/ tests/` exits with code 1 (no matches)
 
-- [ ] 11. Rewrite test_grammar.py for new schema
+- [x] 11. Rewrite test_grammar.py for new schema
 
   **What to do**:
   - Completely rewrite `tests/test_grammar.py` to test against `data/grammar.json`:
@@ -1066,7 +1066,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 6 (test updates)
 
-- [ ] 12. Update 6 remaining test files with factory helpers
+- [x] 12. Update 6 remaining test files with factory helpers
 
   **What to do**:
   - Update ALL test files that construct `GrammarHit` or `HighlightGrammar` objects:
@@ -1148,7 +1148,7 @@ Max Concurrent: 4 (Waves 2 & 3)
 
   **Commit**: Groups with commit 6 (test updates)
 
-- [ ] 13. Run full test suite + lint + type check
+- [x] 13. Run full test suite + lint + type check
 
   **What to do**:
   - Run the complete verification suite:
