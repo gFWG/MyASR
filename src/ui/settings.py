@@ -6,17 +6,20 @@ import logging
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
+    QComboBox,
     QDialog,
     QFormLayout,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -57,15 +60,40 @@ class SettingsDialog(QDialog):
 
         self._build_general_tab()
         self._build_appearance_tab()
+        self._build_resource_tab()
 
         button_bar = QHBoxLayout()
+        self._reset_btn = QPushButton("Reset")
+        self._reset_btn.setObjectName("resetButton")
         self._save_btn = QPushButton("Save")
         self._cancel_btn = QPushButton("Cancel")
+        button_bar.addWidget(self._reset_btn)
         button_bar.addStretch()
         button_bar.addWidget(self._save_btn)
         button_bar.addWidget(self._cancel_btn)
         main_layout.addLayout(button_bar)
 
+        # Windows 11 style for reset button (red accent, theme-aware)
+        self._reset_btn.setStyleSheet(
+            "QPushButton#resetButton {"
+            "  background-color: palette(highlight);"
+            "  color: palette(highlighted-text);"
+            "  border: 1px solid transparent;"
+            "  border-radius: 4px;"
+            "  padding: 6px 16px;"
+            "  min-width: 80px;"
+            "}"
+            "QPushButton#resetButton:hover {"
+            "  background-color: #D42B1C;"
+            "  color: white;"
+            "}"
+            "QPushButton#resetButton:pressed {"
+            "  background-color: #A8261A;"
+            "  color: white;"
+            "}"
+        )
+
+        self._reset_btn.clicked.connect(self._on_reset)
         self._save_btn.clicked.connect(self._on_save)
         self._cancel_btn.clicked.connect(self.close)
 
@@ -183,6 +211,132 @@ class SettingsDialog(QDialog):
 
         self._tabs.addTab(widget, "Appearance")
 
+    def _build_resource_tab(self) -> None:
+        """Build the Resource tab with ASR Model selection and availability check."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+
+        # ASR Model selection row
+        model_row = QHBoxLayout()
+        model_label = QLabel("ASR Model")
+        self._asr_model_combo = QComboBox()
+        self._asr_model_combo.addItem("Qwen-ASR-0.6B", "Qwen/Qwen3-ASR-0.6B")
+        self._asr_model_combo.addItem("Qwen-ASR-1.7B", "Qwen/Qwen3-ASR-1.7B")
+        self._asr_model_combo.setMinimumWidth(200)
+        model_row.addWidget(model_label)
+        model_row.addWidget(self._asr_model_combo)
+
+        # Restart needed warning label
+        self._restart_label = QLabel("Restart Required!")
+        self._restart_label.setStyleSheet("color: #D32F2F; font-weight: bold;")
+        model_row.addWidget(self._restart_label)
+
+        # Refresh button
+        model_row.addStretch()
+        self._refresh_model_btn = QPushButton("Refresh")
+        self._refresh_model_btn.clicked.connect(self._on_refresh_model)
+        model_row.addWidget(self._refresh_model_btn)
+
+        layout.addLayout(model_row)
+
+        # Result text box for model availability status
+        self._model_status_text = QTextEdit()
+        self._model_status_text.setReadOnly(True)
+        self._model_status_text.setMaximumHeight(150)
+        self._model_status_text.setPlaceholderText("Click 'Refresh' to check model availability...")
+        layout.addWidget(self._model_status_text)
+
+        layout.addStretch()
+
+        self._tabs.addTab(widget, "Resource")
+
+    def _on_refresh_model(self) -> None:
+        """Check if the selected ASR model is available and display the result."""
+        model_name = self._asr_model_combo.currentData()
+        model_display = self._asr_model_combo.currentText()
+        self._model_status_text.clear()
+
+        # Try to check model availability
+        try:
+            import os
+
+            import torch
+
+            # Check CUDA availability
+            if not torch.cuda.is_available():
+                self._append_status(
+                    f"❌ CUDA not available - GPU required for ASR model", is_error=True
+                )
+                return
+
+            # Check if model path exists locally
+            # Check common HuggingFace cache locations
+            hf_cache = os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
+            hub_cache = os.environ.get("HUGGINGFACE_HUB_CACHE", os.path.join(hf_cache, "hub"))
+
+            # Normalize model name for cache path
+            model_folder_name = "models--" + model_name.replace("/", "--")
+            cache_path = os.path.join(hub_cache, model_folder_name)
+
+            if os.path.exists(cache_path):
+                self._append_status(f"✅ Model found in cache: {cache_path}", is_error=False)
+                # Check for model files
+                snapshots_path = os.path.join(cache_path, "snapshots")
+                if os.path.exists(snapshots_path):
+                    snapshots = os.listdir(snapshots_path)
+                    if snapshots:
+                        self._append_status(f"   Snapshot: {snapshots[0]}", is_error=False)
+            else:
+                self._append_status(
+                    f"⚠️ Model not found in cache: {model_display}", is_error=True
+                )
+                self._append_status(f"   Expected path: {cache_path}", is_error=False)
+                self._append_status(
+                    "   Please download the model or ensure offline mode has the model.",
+                    is_error=False,
+                )
+                return
+
+            # Check VRAM (rough estimate)
+            if torch.cuda.is_available():
+                gpu_name = torch.cuda.get_device_name(0)
+                total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+                self._append_status(f"✅ GPU: {gpu_name}", is_error=False)
+                self._append_status(f"   VRAM: {total_vram:.1f} GB", is_error=False)
+
+                # Model size estimates (approximate)
+                model_vram_req = 1.5 if "0.6B" in model_display else 4.0
+                if total_vram < model_vram_req:
+                    self._append_status(
+                        f"⚠️ VRAM may be insufficient (need ~{model_vram_req:.1f} GB)",
+                        is_error=True,
+                    )
+                else:
+                    self._append_status(
+                        f"✅ VRAM sufficient for {model_display}", is_error=False
+                    )
+
+            self._append_status(f"\n✅ {model_display} is available", is_error=False)
+
+        except ImportError as e:
+            self._append_status(f"❌ Import error: {e}", is_error=True)
+        except Exception as e:
+            self._append_status(f"❌ Error checking model: {e}", is_error=True)
+
+    def _append_status(self, text: str, is_error: bool = False) -> None:
+        """Append text to the status area with optional red highlighting for errors."""
+        cursor = self._model_status_text.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+
+        format = QTextCharFormat()
+        if is_error:
+            format.setForeground(QColor("#D32F2F"))  # Red color for errors
+            format.setFontWeight(700)  # Bold
+
+        cursor.insertText(text + "\n", format)
+        self._model_status_text.setTextCursor(cursor)
+        self._model_status_text.ensureCursorVisible()
+
     def _make_color_callback(self, key: str) -> Callable[[], None]:
         """Create a callback that opens a color dialog for the given JLPT color key."""
 
@@ -217,6 +371,13 @@ class SettingsDialog(QDialog):
         self._vocab_highlight_check.setChecked(config.enable_vocab_highlight)
         self._grammar_highlight_check.setChecked(config.enable_grammar_highlight)
 
+        # Set ASR model combo box
+        asr_model = config.asr_model
+        for i in range(self._asr_model_combo.count()):
+            if self._asr_model_combo.itemData(i) == asr_model:
+                self._asr_model_combo.setCurrentIndex(i)
+                break
+
         for key, btn in self._jlpt_color_buttons.items():
             hex_color = config.jlpt_colors.get(key, DEFAULT_JLPT_COLORS.get(key, "#FFFFFF"))
             btn.setProperty("hex_color", hex_color)
@@ -235,6 +396,7 @@ class SettingsDialog(QDialog):
             overlay_font_size_jp=self._font_size_jp.value(),
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
+            asr_model=self._asr_model_combo.currentData(),
             sample_rate=self._config.sample_rate,
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
@@ -249,3 +411,45 @@ class SettingsDialog(QDialog):
         save_config(new_config)
         self.config_changed.emit(new_config)
         logger.info("SettingsDialog: config saved and signal emitted")
+
+    def _on_reset(self) -> None:
+        """Reset all settings to default values after confirmation."""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Reset Settings")
+        msg_box.setText("Are you sure you want to reset all settings to default values?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Reset | QMessageBox.StandardButton.Cancel
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
+
+        # Style the message box buttons for Windows 11 consistency (theme-aware)
+        msg_box.setStyleSheet(
+            "QMessageBox {"
+            "  font-family: 'Segoe UI', sans-serif;"
+            "}"
+            "QPushButton {"
+            "  min-width: 80px;"
+            "  padding: 6px 16px;"
+            "  border-radius: 4px;"
+            "  border: 1px solid palette(mid);"
+            "  background-color: palette(button);"
+            "  color: palette(button-text);"
+            "}"
+            "QPushButton:hover {"
+            "  background-color: palette(highlight);"
+            "  color: palette(highlighted-text);"
+            "  border-color: palette(highlight);"
+            "}"
+            "QPushButton:pressed {"
+            "  background-color: palette(dark);"
+            "  color: palette(button-text);"
+            "}"
+        )
+
+        result = msg_box.exec()
+        if result == QMessageBox.StandardButton.Reset:
+            default_config = AppConfig()
+            self._populate_from_config(default_config)
+            logger.info("SettingsDialog: settings reset to defaults")
