@@ -205,7 +205,6 @@ class SettingsDialog(QDialog):
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
             sample_rate=self._config.sample_rate,
-            db_path=self._config.db_path,
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
             audio_device_id=self._config.audio_device_id,

@@ -17,7 +17,6 @@ def test_appconfig_defaults() -> None:
     assert c.vad_threshold == 0.5
     assert c.vad_min_silence_ms == 300
     assert c.vad_min_speech_ms == 400
-    assert c.db_path == "data/myasr.db"
 
 
 def test_load_config_missing_file(tmp_path: Path) -> None:

@@ -16,7 +16,6 @@ import pytest
 from src.analysis.pipeline import PreprocessingPipeline
 from src.config import AppConfig
 from src.db.models import SentenceResult
-from src.db.schema import init_db
 from src.pipeline.analysis_worker import AnalysisWorker
 from src.pipeline.types import ASRResult
 from src.ui.overlay import OverlayWindow
@@ -37,14 +36,6 @@ def analysis_pipeline() -> PreprocessingPipeline:
 
 
 @pytest.fixture()
-def db_path(tmp_path: Any) -> str:
-    db_file = tmp_path / "integration.db"
-    conn = init_db(str(db_file))
-    conn.close()
-    return str(db_file)
-
-
-@pytest.fixture()
 def text_queue() -> queue.Queue[ASRResult]:
     return queue.Queue(maxsize=50)
 
@@ -58,12 +49,10 @@ def overlay(qapp: Any, app_config: AppConfig) -> OverlayWindow:
 def worker(
     text_queue: queue.Queue[ASRResult],
     analysis_pipeline: PreprocessingPipeline,
-    db_path: str,
 ) -> AnalysisWorker:
     return AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=analysis_pipeline,
-        db_path=db_path,
         config={},
     )
 
@@ -112,9 +101,6 @@ def test_pipeline_produces_sentence_result(
     sr = results[0]
     assert sr.japanese_text == "日本語のテストです"
     assert sr.analysis is not None
-    assert sr.sentence_id is not None and sr.sentence_id > 0
-    assert sr.highlight_vocab_ids is not None
-    assert sr.highlight_grammar_ids is not None
 
 
 # ---------------------------------------------------------------------------

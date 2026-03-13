@@ -39,8 +39,7 @@ class PipelineOrchestrator:
             ``AppConfig`` fields plus worker-specific overrides:
             ``"sample_rate"`` (int, default 16000),
             ``"asr_batch_size"`` (int, default 4),
-            ``"asr_flush_timeout_ms"`` (int, default 500),
-            ``"db_path"`` (str, default ``":memory:"``).
+            ``"asr_flush_timeout_ms"`` (int, default 500).
     """
 
     def __init__(self, config: dict[str, Any]) -> None:
@@ -75,13 +74,12 @@ class PipelineOrchestrator:
             config=config,
         )
 
-        # ── Analysis worker (ASRResult → SentenceResult with DB persistence) ──
+        # ── Analysis worker (ASRResult → SentenceResult) ──
         # PreprocessingPipeline no longer needs AppConfig - filtering happens at display time.
         analysis_pipeline = PreprocessingPipeline()
         self._analysis_worker = AnalysisWorker(
             text_queue=self._text_queue,
             analysis_pipeline=analysis_pipeline,
-            db_path=config.get("db_path", ":memory:"),
             config=config,
         )
 

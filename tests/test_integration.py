@@ -41,7 +41,6 @@ def _pipeline_config() -> dict[str, Any]:
         "sample_rate": 16000,
         "asr_batch_size": 4,
         "asr_flush_timeout_ms": 200,
-        "db_path": ":memory:",
         "ollama_url": "http://localhost:11434",
         "ollama_model": "qwen3.5:4b",
     }

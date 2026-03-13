@@ -30,7 +30,7 @@ class ASRResult:
         text: Transcribed text.
         segment_id: ID of the audio segment that was transcribed.
         elapsed_ms: Processing time in milliseconds.
-        db_row_id: Database row ID assigned after ``insert_partial()``, or None
+        db_row_id: Database row ID assigned after persistence, or None
             if the record has not been persisted yet.
     """
 

@@ -1,43 +1,9 @@
-"""Data models for MyASR database and pipeline."""
+"""Data models for MyASR pipeline and UI."""
 
 from dataclasses import dataclass, field
 from datetime import datetime
 
 import numpy as np
-
-
-@dataclass
-class SentenceRecord:
-    id: int | None
-    japanese_text: str
-    source_context: str | None
-    created_at: str
-
-
-@dataclass
-class HighlightVocab:
-    id: int | None
-    sentence_id: int
-    surface: str
-    lemma: str
-    pos: str
-    jlpt_level: int | None
-    tooltip_shown: bool
-    vocab_id: int = 0
-    pronunciation: str = ""
-    definition: str = ""
-
-
-@dataclass
-class HighlightGrammar:
-    id: int | None
-    sentence_id: int
-    rule_id: str
-    pattern: str
-    word: str | None
-    jlpt_level: int | None
-    description: str | None
-    tooltip_shown: bool
 
 
 @dataclass
@@ -83,9 +49,6 @@ class SentenceResult:
     japanese_text: str
     analysis: AnalysisResult
     created_at: datetime = field(default_factory=datetime.now)
-    sentence_id: int | None = None
-    highlight_vocab_ids: list[int] | None = None
-    highlight_grammar_ids: list[int] | None = None
 
     def get_display_analysis(
         self,

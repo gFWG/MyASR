@@ -15,9 +15,7 @@ class SystemTrayManager(QObject):
     """System tray manager with programmatic icon and context menu."""
 
     settings_requested = Signal()
-    history_requested = Signal()
     review_requested = Signal()
-    quick_export_requested = Signal()
     toggle_overlay = Signal()
     quit_requested = Signal()
 
@@ -55,12 +53,6 @@ class SystemTrayManager(QObject):
     def _setup_menu(self) -> None:
         settings_action = self._menu.addAction("Settings")
         settings_action.triggered.connect(self.settings_requested.emit)
-
-        history_action = self._menu.addAction("Learning History")
-        history_action.triggered.connect(self.history_requested.emit)
-
-        quick_export_action = self._menu.addAction("Quick Export")
-        quick_export_action.triggered.connect(self.quick_export_requested.emit)
 
         self._review_action = self._menu.addAction("Review (coming soon)")
         self._review_action.setEnabled(False)

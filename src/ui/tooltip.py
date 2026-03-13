@@ -1,14 +1,13 @@
 """Frameless floating tooltip widget for JLPT vocabulary and grammar info.
 
-Shows vocabulary or grammar hit details on hover, emits a deduplication signal
-to track which items have been recorded per sentence.
+Shows vocabulary or grammar hit details on hover.
 """
 
 from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
@@ -48,16 +47,8 @@ class TooltipPopup(QWidget):
     """Frameless floating tooltip for JLPT vocabulary and grammar hits.
 
     Shows level badge, word/pattern, and description in a semi-transparent
-    rounded-corner popup. Emits ``record_triggered`` once per unique
-    (sentence_id, type, highlight_id) tuple to support deduplication.
-
-    Signals:
-        record_triggered: Emitted when a new highlight is shown for the first
-            time in a sentence context. Arguments are the type string
-            ('vocab' or 'grammar') and the highlight_id integer.
+    rounded-corner popup.
     """
-
-    record_triggered = Signal(str, int)  # ('vocab'|'grammar', highlight_id)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -70,8 +61,6 @@ class TooltipPopup(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setMaximumWidth(_MAX_WIDTH)
-
-        self._shown: set[tuple[int | None, str, int]] = set()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 8, 10, 8)
@@ -98,28 +87,13 @@ class TooltipPopup(QWidget):
         self,
         hit: VocabHit,
         position: QPoint,
-        sentence_id: int | None,
-        highlight_id: int,
     ) -> None:
         """Show the tooltip for a vocabulary hit.
 
         Args:
             hit: The VocabHit to display.
             position: Global screen position to anchor the tooltip near.
-            sentence_id: Current sentence ID for deduplication tracking.
-            highlight_id: Unique ID for this highlight entry.
         """
-        key: tuple[int | None, str, int] = (sentence_id, "vocab", highlight_id)
-
-        if key not in self._shown:
-            self._shown.add(key)
-            self.record_triggered.emit("vocab", highlight_id)
-            logger.debug(
-                "record_triggered: vocab highlight_id=%d sentence_id=%s",
-                highlight_id,
-                sentence_id,
-            )
-
         level_color = _JLPT_GRAMMAR_COLORS.get(hit.jlpt_level, _DEFAULT_LEVEL_COLOR)
         self._level_label.setText(f"N{hit.jlpt_level}")
         self._level_label.setStyleSheet(
@@ -150,28 +124,13 @@ class TooltipPopup(QWidget):
         self,
         hit: GrammarHit,
         position: QPoint,
-        sentence_id: int | None,
-        highlight_id: int,
     ) -> None:
         """Show the tooltip for a grammar hit.
 
         Args:
             hit: The GrammarHit to display.
             position: Global screen position to anchor the tooltip near.
-            sentence_id: Current sentence ID for deduplication tracking.
-            highlight_id: Unique ID for this highlight entry.
         """
-        key: tuple[int | None, str, int] = (sentence_id, "grammar", highlight_id)
-
-        if key not in self._shown:
-            self._shown.add(key)
-            self.record_triggered.emit("grammar", highlight_id)
-            logger.debug(
-                "record_triggered: grammar highlight_id=%d sentence_id=%s",
-                highlight_id,
-                sentence_id,
-            )
-
         level_color = _JLPT_GRAMMAR_COLORS.get(hit.jlpt_level, _DEFAULT_LEVEL_COLOR)
         self._level_label.setText(f"N{hit.jlpt_level}")
         self._level_label.setStyleSheet(
@@ -192,9 +151,8 @@ class TooltipPopup(QWidget):
         self.hide()
 
     def reset_dedup(self) -> None:
-        """Clear the deduplication set so signals fire again on next show."""
-        self._shown.clear()
-        logger.debug("reset_dedup: cleared deduplication set")
+        """Reset deduplication state (no-op now, kept for API compatibility)."""
+        pass
 
     # ------------------------------------------------------------------ #
     # Private helpers                                                      #

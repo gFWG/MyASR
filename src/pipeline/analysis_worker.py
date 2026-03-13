@@ -7,20 +7,17 @@ from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
-from src.db.models import HighlightGrammar, HighlightVocab, SentenceRecord, SentenceResult
-from src.db.repository import LearningRepository
+from src.db.models import SentenceResult
 from src.pipeline.types import ASRResult
 
 logger = logging.getLogger(__name__)
 
 
 class AnalysisWorker(QThread):
-    """QThread that consumes ASRResult objects, runs analysis, persists to DB, emits
-    SentenceResult.
+    """QThread that consumes ASRResult objects, runs analysis, emits SentenceResult.
 
     Reads from ``text_queue``, processes each result through ``PreprocessingPipeline``,
-    persists the sentence and highlights to SQLite via ``LearningRepository``, and emits
-    ``sentence_ready`` with the resulting ``SentenceResult``.
+    and emits ``sentence_ready`` with the resulting ``SentenceResult``.
 
     Signals:
         sentence_ready: Emitted with each ``SentenceResult`` produced by analysis.
@@ -30,7 +27,6 @@ class AnalysisWorker(QThread):
     Args:
         text_queue: Input queue of ``ASRResult`` objects from ASR worker.
         analysis_pipeline: Initialised ``PreprocessingPipeline`` instance (injected).
-        db_path: Filesystem path (or ``":memory:"``) to the SQLite database.
         config: Worker configuration dict (currently unused but reserved for future options).
     """
 
@@ -41,114 +37,55 @@ class AnalysisWorker(QThread):
         self,
         text_queue: queue.Queue[ASRResult],
         analysis_pipeline: Any,
-        db_path: str,
         config: dict[str, Any],
     ) -> None:
         super().__init__()
         self._text_queue = text_queue
         self._analysis_pipeline = analysis_pipeline
-        self._db_path = db_path
         self._config = config
         self._running: bool = False
 
     def run(self) -> None:
         """Main analysis loop.
 
-        Creates a thread-local ``LearningRepository`` (DB connections must be opened in the
-        thread that uses them), then reads ``ASRResult`` objects from ``_text_queue`` in a
-        loop with a 0.1 s timeout.  Each result is analysed, persisted, and emitted as a
-        ``SentenceResult`` via ``sentence_ready``.
+        Reads ``ASRResult`` objects from ``_text_queue`` in a loop with a 0.1 s timeout.
+        Each result is analysed and emitted as a ``SentenceResult`` via ``sentence_ready``.
         """
-        # Thread-local DB connection (thread-safety: must be created in this thread)
-        db_repo = LearningRepository(db_path=self._db_path)
         self._running = True
 
-        try:
-            while self._running:
-                try:
-                    asr_result = self._text_queue.get(timeout=0.1)
-                except queue.Empty:
-                    continue
+        while self._running:
+            try:
+                asr_result = self._text_queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
 
-                try:
-                    self._process_one(asr_result, db_repo)
-                except Exception as exc:  # noqa: BLE001  # broad catch — must not crash worker
-                    logger.error("Analysis failed for segment %s: %s", asr_result.segment_id, exc)
-                    self.error_occurred.emit(str(exc))
-        finally:
-            db_repo.close()
+            try:
+                self._process_one(asr_result)
+            except Exception as exc:  # noqa: BLE001  # broad catch — must not crash worker
+                logger.error("Analysis failed for segment %s: %s", asr_result.segment_id, exc)
+                self.error_occurred.emit(str(exc))
 
-    def _process_one(self, asr_result: ASRResult, db_repo: LearningRepository) -> None:
-        """Process a single ASRResult: analyse, persist, emit.
+    def _process_one(self, asr_result: ASRResult) -> None:
+        """Process a single ASRResult: analyse and emit.
 
         Args:
             asr_result: The transcription result to process.
-            db_repo: Thread-local repository for DB persistence.
         """
 
         analysis = self._analysis_pipeline.process(asr_result.text)
-
-        # Build SentenceRecord — created_at as ISO string
-        record = SentenceRecord(
-            id=None,
-            japanese_text=asr_result.text,
-            source_context=asr_result.segment_id,
-            created_at=datetime.now().isoformat(),
-        )
-
-        # Build highlight lists from AnalysisResult
-        # Note: Store ALL vocab/grammar hits, filtering happens at display time
-        vocab_highlights = [
-            HighlightVocab(
-                id=None,
-                sentence_id=0,  # will be assigned by DB
-                surface=hit.surface,
-                lemma=hit.lemma,
-                pos=hit.pos,
-                jlpt_level=hit.jlpt_level,
-                tooltip_shown=False,
-                vocab_id=hit.vocab_id,
-                pronunciation=hit.pronunciation,
-                definition=hit.definition,
-            )
-            for hit in analysis.vocab_hits
-        ]
-
-        grammar_highlights = [
-            HighlightGrammar(
-                id=None,
-                sentence_id=0,  # will be assigned by DB
-                rule_id=hit.rule_id,
-                pattern=hit.word,
-                word=hit.word,
-                jlpt_level=hit.jlpt_level,
-                description=hit.description,
-                tooltip_shown=False,
-            )
-            for hit in analysis.grammar_hits
-        ]
-
-        # Persist and get auto-assigned IDs
-        sentence_id, vocab_ids, grammar_ids = db_repo.insert_sentence(
-            record, vocab_highlights, grammar_highlights
-        )
 
         # Emit SentenceResult
         sentence_result = SentenceResult(
             japanese_text=asr_result.text,
             analysis=analysis,
             created_at=datetime.now(),
-            sentence_id=sentence_id,
-            highlight_vocab_ids=vocab_ids,
-            highlight_grammar_ids=grammar_ids,
         )
         self.sentence_ready.emit(sentence_result)
         logger.debug(
-            "Analysis complete for segment %s: sentence_id=%d, vocab=%d, grammar=%d",
+            "Analysis complete for segment %s: vocab=%d, grammar=%d",
             asr_result.segment_id,
-            sentence_id,
-            len(vocab_ids),
-            len(grammar_ids),
+            len(analysis.vocab_hits),
+            len(analysis.grammar_hits),
         )
 
     def stop(self) -> None:

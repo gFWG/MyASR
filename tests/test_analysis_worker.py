@@ -4,12 +4,10 @@ Tests cover:
 - sentence_ready signal emitted with SentenceResult for each ASRResult
 - stop() terminates the loop cleanly within 2 seconds
 - error_occurred signal emitted when processing raises, worker continues
-- DB is populated: sentence_id, vocab_ids, grammar_ids set on SentenceResult
 - Empty vocab/grammar hits produce empty lists (no crash)
 """
 
 import queue
-import sqlite3
 import time
 from typing import Any
 from unittest.mock import MagicMock
@@ -17,8 +15,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.db.models import AnalysisResult, GrammarHit, SentenceResult, Token, VocabHit
-from src.db.repository import LearningRepository
-from src.db.schema import init_db
 from src.pipeline.types import ASRResult
 
 # ---------------------------------------------------------------------------
@@ -83,21 +79,6 @@ def config() -> dict[str, Any]:
     return {}
 
 
-@pytest.fixture()
-def in_memory_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(":memory:")
-    init_db(conn)
-    return conn
-
-
-@pytest.fixture()
-def db_path(tmp_path: Any) -> str:
-    db_file = tmp_path / "test.db"
-    conn = init_db(str(db_file))
-    conn.close()
-    return str(db_file)
-
-
 # ---------------------------------------------------------------------------
 # Import guard
 # ---------------------------------------------------------------------------
@@ -123,7 +104,6 @@ def test_import() -> None:
 def test_sentence_ready_emitted(
     qapp: Any,
     text_queue: queue.Queue[ASRResult],
-    db_path: str,
     config: dict[str, Any],
 ) -> None:
     """sentence_ready is emitted once per ASRResult processed."""
@@ -133,7 +113,6 @@ def test_sentence_ready_emitted(
     worker = AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=mock_pipeline,
-        db_path=db_path,
         config=config,
     )
 
@@ -156,14 +135,11 @@ def test_sentence_ready_emitted(
     assert len(results) == 1
     sr = results[0]
     assert sr.japanese_text == "日本語テスト"
-    assert sr.sentence_id is not None
-    assert isinstance(sr.sentence_id, int)
 
 
 def test_sentence_result_has_analysis(
     qapp: Any,
     text_queue: queue.Queue[ASRResult],
-    db_path: str,
     config: dict[str, Any],
 ) -> None:
     """SentenceResult contains AnalysisResult from the pipeline."""
@@ -176,7 +152,6 @@ def test_sentence_result_has_analysis(
     worker = AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=mock_pipeline,
-        db_path=db_path,
         config=config,
     )
 
@@ -197,59 +172,11 @@ def test_sentence_result_has_analysis(
     sr = results[0]
     assert len(sr.analysis.vocab_hits) == 1
     assert len(sr.analysis.grammar_hits) == 1
-    assert sr.highlight_vocab_ids is not None
-    assert len(sr.highlight_vocab_ids) == 1
-    assert sr.highlight_grammar_ids is not None
-    assert len(sr.highlight_grammar_ids) == 1
-
-
-def test_is_beyond_level_vocab(
-    qapp: Any,
-    text_queue: queue.Queue[ASRResult],
-    db_path: str,
-    config: dict[str, Any],
-) -> None:
-    """is_beyond_level is derived from vocab hit jlpt_level > user_level."""
-    AnalysisWorker = _import_analysis_worker()
-
-    # N2 vocab for N3 user → beyond level
-    vocab_beyond = make_vocab_hit(jlpt_level=2)
-    # N4 vocab for N3 user → NOT beyond level
-    vocab_within = make_vocab_hit(jlpt_level=4)
-    mock_pipeline = make_mock_pipeline(vocab_hits=[vocab_beyond, vocab_within])
-
-    worker = AnalysisWorker(
-        text_queue=text_queue,
-        analysis_pipeline=mock_pipeline,
-        db_path=db_path,
-        config=config,
-    )
-
-    results: list[SentenceResult] = []
-    worker.sentence_ready.connect(results.append)
-    text_queue.put_nowait(make_asr_result())
-
-    worker.start()
-    deadline = time.monotonic() + 3.0
-    while len(results) == 0 and time.monotonic() < deadline:
-        qapp.processEvents()
-        time.sleep(0.05)
-
-    worker.stop()
-    worker.wait(3000)
-
-    assert len(results) == 1
-    # Verify DB stored correct is_beyond_level (check via repo)
-    conn = sqlite3.connect(db_path)
-    repo = LearningRepository(conn=conn)
-    sentences = repo.get_sentences(limit=10, offset=0)
-    assert len(sentences) == 1
 
 
 def test_stop_terminates_within_two_seconds(
     qapp: Any,
     text_queue: queue.Queue[ASRResult],
-    db_path: str,
     config: dict[str, Any],
 ) -> None:
     """stop() terminates the worker loop cleanly within 2 seconds."""
@@ -259,7 +186,6 @@ def test_stop_terminates_within_two_seconds(
     worker = AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=mock_pipeline,
-        db_path=db_path,
         config=config,
     )
 
@@ -277,7 +203,6 @@ def test_stop_terminates_within_two_seconds(
 def test_error_occurred_emitted_on_exception(
     qapp: Any,
     text_queue: queue.Queue[ASRResult],
-    db_path: str,
     config: dict[str, Any],
 ) -> None:
     """error_occurred signal fires when pipeline raises; worker continues processing."""
@@ -289,7 +214,6 @@ def test_error_occurred_emitted_on_exception(
     worker = AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=mock_pipeline,
-        db_path=db_path,
         config=config,
     )
 
@@ -313,7 +237,6 @@ def test_error_occurred_emitted_on_exception(
 def test_empty_analysis_no_crash(
     qapp: Any,
     text_queue: queue.Queue[ASRResult],
-    db_path: str,
     config: dict[str, Any],
 ) -> None:
     """Empty vocab/grammar hits produce SentenceResult with empty lists, no crash."""
@@ -323,7 +246,6 @@ def test_empty_analysis_no_crash(
     worker = AnalysisWorker(
         text_queue=text_queue,
         analysis_pipeline=mock_pipeline,
-        db_path=db_path,
         config=config,
     )
 
@@ -342,5 +264,5 @@ def test_empty_analysis_no_crash(
 
     assert len(results) == 1
     sr = results[0]
-    assert sr.highlight_vocab_ids == []
-    assert sr.highlight_grammar_ids == []
+    assert sr.analysis.vocab_hits == []
+    assert sr.analysis.grammar_hits == []

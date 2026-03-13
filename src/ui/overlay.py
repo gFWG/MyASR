@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
-from src.db.models import AnalysisResult, GrammarHit, SentenceResult, VocabHit
+from src.db.models import GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult
 from src.ui.highlight import HighlightRenderer
 from src.ui.history import HistoryManager
@@ -259,8 +259,8 @@ class OverlayWindow(QWidget):
 
         self._update_arrow_visibility()
         logger.debug(
-            "on_sentence_ready: sentence_id=%s is_browsing=%s",
-            result.sentence_id,
+            "on_sentence_ready: text=%s is_browsing=%s",
+            result.japanese_text[:20] if result.japanese_text else "",
             self._history.is_browsing,
         )
 

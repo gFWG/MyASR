@@ -98,10 +98,9 @@ def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
 
 
 def test_collect_config_preserves_non_ui_fields(qapp: QApplication) -> None:
-    config = AppConfig(db_path="/custom/path.db", audio_device_id=5)
+    config = AppConfig(audio_device_id=5)
     d = SettingsDialog(config)
     collected = d._collect_config()
-    assert collected.db_path == "/custom/path.db"
     assert collected.audio_device_id == 5
 
 

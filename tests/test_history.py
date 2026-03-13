@@ -9,13 +9,12 @@ from src.db.models import AnalysisResult, SentenceResult
 from src.ui.history import HistoryManager
 
 
-def _make_result(text: str, sentence_id: int = 0) -> SentenceResult:
+def _make_result(text: str) -> SentenceResult:
     """Create a minimal SentenceResult for testing."""
     return SentenceResult(
         japanese_text=text,
         analysis=AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=[]),
         created_at=datetime.now(),
-        sentence_id=sentence_id,
     )
 
 
@@ -184,7 +183,7 @@ class TestHistoryManagerBrowse:
         """Return a history with 5 entries in LIVE mode."""
         h = HistoryManager(10)
         for i in range(5):
-            h.add(_make_result(f"text{i}", sentence_id=i))
+            h.add(_make_result(f"text{i}"))
         return h
 
     def test_go_prev_enters_browse_mode(self, history: HistoryManager) -> None:
