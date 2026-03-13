@@ -11,19 +11,18 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QDialog,
-    QDoubleSpinBox,
     QFormLayout,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSlider,
-    QSpinBox,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from src.config import DEFAULT_JLPT_COLORS, AppConfig, save_config
+from src.ui.widgets import JlptLevelSelector, SliderDoubleSpinBox, SliderSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ class SettingsDialog(QDialog):
         self._config = config
 
         self.setWindowTitle("Settings")
-        self.setMinimumSize(480, 400)
+        self.setMinimumSize(560, 400)
 
         main_layout = QVBoxLayout(self)
 
@@ -78,32 +77,35 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QFormLayout(widget)
 
-        self._jlpt_level_spin = QSpinBox()
-        self._jlpt_level_spin.setRange(1, 5)
-        layout.addRow("JLPT Level", self._jlpt_level_spin)
+        # JLPT Level - segmented control (N1-N5)
+        self._jlpt_level = JlptLevelSelector()
+        layout.addRow("JLPT Level", self._jlpt_level)
 
-        self._vad_threshold_spin = QDoubleSpinBox()
-        self._vad_threshold_spin.setRange(0.1, 0.95)
-        self._vad_threshold_spin.setSingleStep(0.05)
-        self._vad_threshold_spin.setDecimals(2)
-        layout.addRow("VAD Threshold", self._vad_threshold_spin)
+        # VAD Threshold - float slider + spinbox
+        self._vad_threshold = SliderDoubleSpinBox(decimals=2)
+        self._vad_threshold.setRange(0.1, 0.95)
+        self._vad_threshold.setSingleStep(0.05)
+        layout.addRow("VAD Threshold", self._vad_threshold)
 
-        self._vad_min_silence_spin = QSpinBox()
-        self._vad_min_silence_spin.setRange(100, 2000)
-        self._vad_min_silence_spin.setSingleStep(50)
-        self._vad_min_silence_spin.setSuffix(" ms")
-        layout.addRow("VAD Min Silence", self._vad_min_silence_spin)
+        # VAD Min Silence - integer slider + spinbox
+        self._vad_min_silence = SliderSpinBox()
+        self._vad_min_silence.setRange(100, 2000)
+        self._vad_min_silence.setSingleStep(50)
+        self._vad_min_silence.setSuffix(" ms")
+        layout.addRow("VAD Min Silence", self._vad_min_silence)
 
-        self._vad_min_speech_spin = QSpinBox()
-        self._vad_min_speech_spin.setRange(100, 2000)
-        self._vad_min_speech_spin.setSingleStep(50)
-        self._vad_min_speech_spin.setSuffix(" ms")
-        layout.addRow("VAD Min Speech", self._vad_min_speech_spin)
+        # VAD Min Speech - integer slider + spinbox
+        self._vad_min_speech = SliderSpinBox()
+        self._vad_min_speech.setRange(100, 2000)
+        self._vad_min_speech.setSingleStep(50)
+        self._vad_min_speech.setSuffix(" ms")
+        layout.addRow("VAD Min Speech", self._vad_min_speech)
 
-        self._max_history_spin = QSpinBox()
-        self._max_history_spin.setRange(1, 50)
-        self._max_history_spin.setSingleStep(1)
-        layout.addRow("Max Sentence History", self._max_history_spin)
+        # Max Sentence History - integer slider + spinbox
+        self._max_history = SliderSpinBox()
+        self._max_history.setRange(1, 50)
+        self._max_history.setSingleStep(1)
+        layout.addRow("Max Sentence History", self._max_history)
 
         self._tabs.addTab(widget, "General")
 
@@ -111,18 +113,18 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QFormLayout(widget)
 
-        opacity_row = QHBoxLayout()
-        self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
-        self._opacity_slider.setRange(10, 100)
-        self._opacity_label = QLabel("78%")
-        opacity_row.addWidget(self._opacity_slider)
-        opacity_row.addWidget(self._opacity_label)
-        self._opacity_slider.valueChanged.connect(lambda v: self._opacity_label.setText(f"{v}%"))
-        layout.addRow("Overlay Opacity", opacity_row)
+        # Overlay Opacity - integer slider + spinbox (percentage)
+        self._opacity = SliderSpinBox()
+        self._opacity.setRange(10, 100)
+        self._opacity.setSingleStep(1)
+        self._opacity.setSuffix("%")
+        layout.addRow("Overlay Opacity", self._opacity)
 
-        self._font_size_jp_spin = QSpinBox()
-        self._font_size_jp_spin.setRange(8, 48)
-        layout.addRow("Japanese Font Size", self._font_size_jp_spin)
+        # Japanese Font Size - integer slider + spinbox
+        self._font_size_jp = SliderSpinBox()
+        self._font_size_jp.setRange(8, 48)
+        self._font_size_jp.setSingleStep(1)
+        layout.addRow("Japanese Font Size", self._font_size_jp)
 
         self._vocab_highlight_check = QCheckBox("Show vocabulary highlights")
         layout.addRow("", self._vocab_highlight_check)
@@ -130,25 +132,54 @@ class SettingsDialog(QDialog):
         self._grammar_highlight_check = QCheckBox("Show grammar highlights")
         layout.addRow("", self._grammar_highlight_check)
 
+        # JLPT color table: 3 rows x 6 columns grid
+        # Row 0: Header (JLPT, N1, N2, N3, N4, N5)
+        # Row 1: Grammar color buttons
+        # Row 2: Vocab color buttons
+        color_grid = QGridLayout()
+        color_grid.setSpacing(8)
+
+        # Header row
+        headers = ["JLPT", "N1", "N2", "N3", "N4", "N5"]
+        for col, text in enumerate(headers):
+            label = QLabel(text)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            color_grid.addWidget(label, 0, col)
+
+        # Row labels
+        grammar_label = QLabel("Grammar")
+        grammar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        color_grid.addWidget(grammar_label, 1, 0)
+
+        vocab_label = QLabel("Vocab")
+        vocab_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        color_grid.addWidget(vocab_label, 2, 0)
+
+        # Color buttons (square)
         self._jlpt_color_buttons: dict[str, QPushButton] = {}
-        jlpt_labels = {
-            "n5_vocab": "N5 Vocab",
-            "n5_grammar": "N5 Grammar",
-            "n4_vocab": "N4 Vocab",
-            "n4_grammar": "N4 Grammar",
-            "n3_vocab": "N3 Vocab",
-            "n3_grammar": "N3 Grammar",
-            "n2_vocab": "N2 Vocab",
-            "n2_grammar": "N2 Grammar",
-            "n1_vocab": "N1 Vocab",
-            "n1_grammar": "N1 Grammar",
-        }
-        for key, label in jlpt_labels.items():
-            btn = QPushButton()
-            btn.setFixedSize(60, 24)
-            btn.clicked.connect(self._make_color_callback(key))
-            self._jlpt_color_buttons[key] = btn
-            layout.addRow(label, btn)
+        button_size = 32
+        levels = ["n1", "n2", "n3", "n4", "n5"]
+
+        for col, level in enumerate(levels, start=1):
+            # Grammar button
+            g_key = f"{level}_grammar"
+            g_btn = QPushButton()
+            g_btn.setFixedSize(button_size, button_size)
+            g_btn.clicked.connect(self._make_color_callback(g_key))
+            self._jlpt_color_buttons[g_key] = g_btn
+            color_grid.addWidget(g_btn, 1, col, Qt.AlignmentFlag.AlignCenter)
+
+            # Vocab button
+            v_key = f"{level}_vocab"
+            v_btn = QPushButton()
+            v_btn.setFixedSize(button_size, button_size)
+            v_btn.clicked.connect(self._make_color_callback(v_key))
+            self._jlpt_color_buttons[v_key] = v_btn
+            color_grid.addWidget(v_btn, 2, col, Qt.AlignmentFlag.AlignCenter)
+
+        # Add label and grid on separate rows
+        layout.addRow("", QLabel(""))
+        layout.addRow(color_grid)
 
         self._tabs.addTab(widget, "Appearance")
 
@@ -173,16 +204,16 @@ class SettingsDialog(QDialog):
         )
 
     def _populate_from_config(self, config: AppConfig) -> None:
-        self._jlpt_level_spin.setValue(config.user_jlpt_level)
+        self._jlpt_level.setValue(config.user_jlpt_level)
 
-        self._vad_threshold_spin.setValue(config.vad_threshold)
-        self._vad_min_silence_spin.setValue(config.vad_min_silence_ms)
-        self._vad_min_speech_spin.setValue(config.vad_min_speech_ms)
-        self._max_history_spin.setValue(config.max_history)
+        self._vad_threshold.setValue(config.vad_threshold)
+        self._vad_min_silence.setValue(config.vad_min_silence_ms)
+        self._vad_min_speech.setValue(config.vad_min_speech_ms)
+        self._max_history.setValue(config.max_history)
 
         opacity_pct = round(config.overlay_opacity * 100)
-        self._opacity_slider.setValue(max(10, min(100, opacity_pct)))
-        self._font_size_jp_spin.setValue(config.overlay_font_size_jp)
+        self._opacity.setValue(max(10, min(100, opacity_pct)))
+        self._font_size_jp.setValue(config.overlay_font_size_jp)
         self._vocab_highlight_check.setChecked(config.enable_vocab_highlight)
         self._grammar_highlight_check.setChecked(config.enable_grammar_highlight)
 
@@ -195,13 +226,13 @@ class SettingsDialog(QDialog):
 
     def _collect_config(self) -> AppConfig:
         return AppConfig(
-            user_jlpt_level=self._jlpt_level_spin.value(),
-            vad_threshold=self._vad_threshold_spin.value(),
-            vad_min_silence_ms=self._vad_min_silence_spin.value(),
-            vad_min_speech_ms=self._vad_min_speech_spin.value(),
-            max_history=self._max_history_spin.value(),
-            overlay_opacity=self._opacity_slider.value() / 100.0,
-            overlay_font_size_jp=self._font_size_jp_spin.value(),
+            user_jlpt_level=self._jlpt_level.value(),
+            vad_threshold=self._vad_threshold.value(),
+            vad_min_silence_ms=self._vad_min_silence.value(),
+            vad_min_speech_ms=self._vad_min_speech.value(),
+            max_history=self._max_history.value(),
+            overlay_opacity=self._opacity.value() / 100.0,
+            overlay_font_size_jp=self._font_size_jp.value(),
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
             sample_rate=self._config.sample_rate,

@@ -37,14 +37,14 @@ def test_widgets_populate_from_config(qapp: QApplication) -> None:
         vad_min_speech_ms=500,
     )
     d = SettingsDialog(config)
-    assert d._jlpt_level_spin.value() == 2
-    assert d._opacity_slider.value() == 50
-    assert d._font_size_jp_spin.value() == 20
+    assert d._jlpt_level.value() == 2
+    assert d._opacity.value() == 50
+    assert d._font_size_jp.value() == 20
     assert d._vocab_highlight_check.isChecked() is False
     assert d._grammar_highlight_check.isChecked() is False
-    assert d._vad_threshold_spin.value() == 0.6
-    assert d._vad_min_silence_spin.value() == 400
-    assert d._vad_min_speech_spin.value() == 500
+    assert d._vad_threshold.value() == pytest.approx(0.6)
+    assert d._vad_min_silence.value() == 400
+    assert d._vad_min_speech.value() == 500
 
 
 def test_save_emits_config_changed(qapp: QApplication, tmp_path: object) -> None:
@@ -67,29 +67,32 @@ def test_cancel_does_not_emit_signal(dialog: SettingsDialog) -> None:
     assert len(received) == 0
 
 
-def test_jlpt_level_spinbox_range(dialog: SettingsDialog) -> None:
-    assert dialog._jlpt_level_spin.minimum() == 1
-    assert dialog._jlpt_level_spin.maximum() == 5
+def test_jlpt_level_selector_range(dialog: SettingsDialog) -> None:
+    """JlptLevelSelector should accept values 1-5 (N1-N5)."""
+    # Test all valid values
+    for level in [1, 2, 3, 4, 5]:
+        dialog._jlpt_level.setValue(level)
+        assert dialog._jlpt_level.value() == level
 
 
-def test_opacity_slider_range(dialog: SettingsDialog) -> None:
-    assert dialog._opacity_slider.minimum() == 10
-    assert dialog._opacity_slider.maximum() == 100
+def test_opacity_range(dialog: SettingsDialog) -> None:
+    assert dialog._opacity._slider.minimum() == 10
+    assert dialog._opacity._slider.maximum() == 100
 
 
-def test_vad_threshold_spinbox_range(dialog: SettingsDialog) -> None:
-    assert dialog._vad_threshold_spin.minimum() == 0.1
-    assert dialog._vad_threshold_spin.maximum() == 0.95
+def test_vad_threshold_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_threshold._spinbox.minimum() == pytest.approx(0.1)
+    assert dialog._vad_threshold._spinbox.maximum() == pytest.approx(0.95)
 
 
-def test_vad_min_silence_spinbox_range(dialog: SettingsDialog) -> None:
-    assert dialog._vad_min_silence_spin.minimum() == 100
-    assert dialog._vad_min_silence_spin.maximum() == 2000
+def test_vad_min_silence_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_min_silence._slider.minimum() == 100
+    assert dialog._vad_min_silence._slider.maximum() == 2000
 
 
-def test_vad_min_speech_spinbox_range(dialog: SettingsDialog) -> None:
-    assert dialog._vad_min_speech_spin.minimum() == 100
-    assert dialog._vad_min_speech_spin.maximum() == 2000
+def test_vad_min_speech_range(dialog: SettingsDialog) -> None:
+    assert dialog._vad_min_speech._slider.minimum() == 100
+    assert dialog._vad_min_speech._slider.maximum() == 2000
 
 
 def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
@@ -152,3 +155,35 @@ def test_collect_config_includes_jlpt_colors(dialog: SettingsDialog) -> None:
     dialog._jlpt_color_buttons["n4_vocab"].setProperty("hex_color", "#123456")
     collected = dialog._collect_config()
     assert collected.jlpt_colors["n4_vocab"] == "#123456"
+
+
+# ── Composite widget integration tests ──
+
+
+def test_vad_threshold_slider_spinbox_sync(qapp: QApplication) -> None:
+    """Test that moving the slider syncs with the spinbox for VAD threshold."""
+    config = AppConfig(vad_threshold=0.5)
+    d = SettingsDialog(config)
+    # Move slider - slider uses integer scale (0.5 * 100 = 50)
+    d._vad_threshold._slider.setValue(70)  # Should become 0.70
+    assert d._vad_threshold.value() == pytest.approx(0.70)
+
+
+def test_opacity_slider_spinbox_sync(qapp: QApplication) -> None:
+    """Test that opacity slider and spinbox stay synchronized."""
+    config = AppConfig(overlay_opacity=0.78)
+    d = SettingsDialog(config)
+    # Move slider
+    d._opacity._slider.setValue(60)
+    assert d._opacity.value() == 60
+    assert d._opacity._spinbox.value() == 60
+
+
+def test_max_history_slider_spinbox_sync(qapp: QApplication) -> None:
+    """Test that max history slider and spinbox stay synchronized."""
+    config = AppConfig(max_history=10)
+    d = SettingsDialog(config)
+    # Change via spinbox
+    d._max_history._spinbox.setValue(25)
+    assert d._max_history._slider.value() == 25
+    assert d._max_history.value() == 25
