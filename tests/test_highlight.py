@@ -4,7 +4,7 @@ import pytest
 from PySide6.QtGui import QColor, QFont, QTextCursor
 from PySide6.QtWidgets import QApplication, QTextBrowser
 
-from src.db.models import AnalysisResult, GrammarHit, VocabHit
+from src.models import AnalysisResult, GrammarHit, VocabHit
 from src.ui.highlight import HighlightRenderer
 
 

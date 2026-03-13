@@ -11,7 +11,7 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from src.db.models import GrammarHit, VocabHit
+from src.models import GrammarHit, VocabHit
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import logging
 
 import fugashi
 
-from src.db.models import Token
+from src.models import Token
 
 logger = logging.getLogger(__name__)
 

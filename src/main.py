@@ -12,7 +12,7 @@ from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
 
 from src.config import AppConfig, load_config
-from src.db.models import GrammarHit, SentenceResult, VocabHit
+from src.models import GrammarHit, SentenceResult, VocabHit
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.ui.overlay import OverlayWindow
 from src.ui.settings import SettingsDialog

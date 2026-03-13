@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.config import AppConfig
-from src.db.models import AnalysisResult, SentenceResult, VocabHit
+from src.models import AnalysisResult, SentenceResult, VocabHit
 from src.ui.overlay import OverlayWindow
 
 
@@ -155,7 +155,7 @@ def test_on_sentence_ready_vocab_hits_filtered_when_disabled(overlay: OverlayWin
 
 
 def test_on_sentence_ready_grammar_hits_filtered_when_disabled(overlay: OverlayWindow) -> None:
-    from src.db.models import GrammarHit
+    from src.models import GrammarHit
 
     overlay._enable_grammar = False
     grammar_hit = GrammarHit(

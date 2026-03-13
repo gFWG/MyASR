@@ -6,7 +6,7 @@ import time
 from src.analysis.grammar import GrammarMatcher
 from src.analysis.jlpt_vocab import JLPTVocabLookup
 from src.analysis.tokenizer import FugashiTokenizer
-from src.db.models import AnalysisResult
+from src.models import AnalysisResult
 
 logger = logging.getLogger(__name__)
 

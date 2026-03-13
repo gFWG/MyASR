@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pytest
 
-from src.db.models import AnalysisResult, SentenceResult
+from src.models import AnalysisResult, SentenceResult
 from src.ui.history import HistoryManager
 
 

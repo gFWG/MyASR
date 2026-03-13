@@ -7,7 +7,7 @@ JLPT lookup with pronunciation/definition.
 import pytest
 
 from src.analysis.jlpt_vocab import JLPTVocabLookup
-from src.db.models import Token
+from src.models import Token
 
 VOCAB_PATH = "data/vocabulary.csv"
 

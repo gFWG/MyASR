@@ -6,7 +6,7 @@ import pytest
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
 
-from src.db.models import GrammarHit, VocabHit
+from src.models import GrammarHit, VocabHit
 from src.ui.tooltip import TooltipPopup
 
 

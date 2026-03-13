@@ -9,7 +9,7 @@ from typing import TypeAlias
 
 from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument
 
-from src.db.models import AnalysisResult, GrammarHit, VocabHit
+from src.models import AnalysisResult, GrammarHit, VocabHit
 
 logger = logging.getLogger(__name__)
 

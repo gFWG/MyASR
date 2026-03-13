@@ -16,7 +16,7 @@ from src.analysis.pipeline import PreprocessingPipeline
 from src.asr.qwen_asr import QwenASR
 from src.audio.backends import WasapiLoopbackCapture
 from src.config import AppConfig
-from src.db.models import SentenceResult
+from src.models import SentenceResult
 from src.pipeline.analysis_worker import AnalysisWorker
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.types import ASRResult, SpeechSegment

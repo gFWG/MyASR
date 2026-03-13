@@ -3,7 +3,7 @@
 import pytest
 
 from src.analysis.jlpt_vocab import JLPTVocabLookup, VocabEntry
-from src.db.models import Token
+from src.models import Token
 
 VOCAB_PATH = "data/vocabulary.csv"
 

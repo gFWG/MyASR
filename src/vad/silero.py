@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from silero_vad import VADIterator, load_silero_vad
 
-from src.db.models import AudioSegment
 from src.exceptions import VADError
+from src.models import AudioSegment
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ import time
 import pytest
 
 from src.analysis.pipeline import PreprocessingPipeline
-from src.db.models import AnalysisResult
+from src.models import AnalysisResult
 
 
 @pytest.fixture(scope="module")

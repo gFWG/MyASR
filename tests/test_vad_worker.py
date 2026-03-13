@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from src.db.models import AudioSegment
+from src.models import AudioSegment
 from src.pipeline.types import SpeechSegment
 from src.pipeline.vad_worker import VadWorker
 

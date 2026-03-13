@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.db.models import AnalysisResult, GrammarHit, SentenceResult, Token, VocabHit
+from src.models import AnalysisResult, GrammarHit, SentenceResult, Token, VocabHit
 from src.pipeline.types import ASRResult
 
 # ---------------------------------------------------------------------------

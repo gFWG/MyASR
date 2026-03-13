@@ -7,7 +7,7 @@ from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
-from src.db.models import SentenceResult
+from src.models import SentenceResult
 from src.pipeline.types import ASRResult
 
 logger = logging.getLogger(__name__)

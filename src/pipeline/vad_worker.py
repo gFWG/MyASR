@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 from PySide6.QtCore import QThread, Signal
 
-from src.db.models import AudioSegment
+from src.models import AudioSegment
 from src.pipeline.perf import StageTimer
 from src.pipeline.types import SpeechSegment
 from src.vad.silero import SileroVAD

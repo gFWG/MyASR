@@ -1,7 +1,7 @@
 """Tests for FugashiTokenizer."""
 
 from src.analysis.tokenizer import FugashiTokenizer
-from src.db.models import Token
+from src.models import Token
 
 
 def test_tokenize_known_sentence_returns_tokens() -> None:

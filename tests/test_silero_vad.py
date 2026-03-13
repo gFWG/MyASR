@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from src.db.models import AudioSegment
+from src.models import AudioSegment
 
 SAMPLE_RATE = 16000
 CHUNK_SAMPLES = 512

@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from src.db.models import AudioSegment
+from src.models import AudioSegment
 from src.pipeline.types import SpeechSegment
 from src.vad.silero import SileroVAD
 
@@ -65,7 +65,7 @@ def _mock_audio_segment(n_samples: int = 512) -> AudioSegment:
 
 def test_vad_worker_processes_chunks_to_queue(qt_app: Any) -> None:
     """VadWorker: audio chunks → SpeechSegments on segment_queue via mock VAD."""
-    from src.db.models import AudioSegment as DBAudioSegment
+    from src.models import AudioSegment as DBAudioSegment
     from src.pipeline.vad_worker import VadWorker
 
     audio_q: queue.Queue[np.ndarray] = queue.Queue(maxsize=100)
@@ -97,7 +97,7 @@ def test_vad_worker_processes_chunks_to_queue(qt_app: Any) -> None:
 
 def test_vad_worker_throughput_100_chunks(qt_app: Any) -> None:
     """VadWorker: 100 chunks processed < 2s (pure overhead, no GPU)."""
-    from src.db.models import AudioSegment as DBAudioSegment
+    from src.models import AudioSegment as DBAudioSegment
     from src.pipeline.vad_worker import VadWorker
 
     audio_q: queue.Queue[np.ndarray] = queue.Queue(maxsize=200)

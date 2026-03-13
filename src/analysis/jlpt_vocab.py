@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.db.models import Token, VocabHit
+from src.models import Token, VocabHit
 
 logger = logging.getLogger(__name__)
 

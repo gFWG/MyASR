@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.config import AppConfig, jlpt_colors_to_renderer_format, save_config
-from src.db.models import GrammarHit, SentenceResult, VocabHit
+from src.models import GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult
 from src.ui.highlight import HighlightRenderer
 from src.ui.history import HistoryManager

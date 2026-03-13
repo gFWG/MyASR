@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.db.models import GrammarHit
+from src.models import GrammarHit
 
 logger = logging.getLogger(__name__)
 
