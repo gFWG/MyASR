@@ -97,11 +97,12 @@ def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
     assert isinstance(config, AppConfig)
 
 
-def test_collect_config_preserves_non_ui_fields(qapp: QApplication) -> None:
-    config = AppConfig(audio_device_id=5)
+def test_collect_config_preserves_sample_rate(qapp: QApplication) -> None:
+    """Test that non-UI fields like sample_rate are preserved in _collect_config."""
+    config = AppConfig(sample_rate=48000)
     d = SettingsDialog(config)
     collected = d._collect_config()
-    assert collected.audio_device_id == 5
+    assert collected.sample_rate == 48000
 
 
 def test_on_save_does_not_close_dialog(qapp: QApplication) -> None:

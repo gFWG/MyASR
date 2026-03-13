@@ -207,7 +207,6 @@ class SettingsDialog(QDialog):
             sample_rate=self._config.sample_rate,
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
-            audio_device_id=self._config.audio_device_id,
             jlpt_colors={
                 key: btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
                 for key, btn in self._jlpt_color_buttons.items()

@@ -62,10 +62,8 @@ def test_config_new_fields_have_defaults() -> None:
     assert c.overlay_width == 800
     assert c.overlay_height == 120
     assert c.overlay_font_size_jp == 16
-    assert c.overlay_font_size_cn == 14
     assert c.enable_vocab_highlight is True
     assert c.enable_grammar_highlight is True
-    assert c.audio_device_id is None
 
 
 def test_config_backward_compat_unknown_keys_filtered(tmp_path: Path) -> None:

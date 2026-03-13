@@ -37,10 +37,8 @@ class AppConfig:
     overlay_width: int = 800
     overlay_height: int = 120
     overlay_font_size_jp: int = 16
-    overlay_font_size_cn: int = 14
     enable_vocab_highlight: bool = True
     enable_grammar_highlight: bool = True
-    audio_device_id: int | None = None
     max_history: int = 10
     jlpt_colors: dict[str, str] = dataclasses.field(
         default_factory=lambda: dict(DEFAULT_JLPT_COLORS)

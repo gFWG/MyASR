@@ -59,6 +59,9 @@ def main() -> None:
             "sample_rate": config.sample_rate,
             "asr_batch_size": 4,
             "asr_flush_timeout_ms": 500,
+            "vad_threshold": config.vad_threshold,
+            "vad_min_silence_ms": config.vad_min_silence_ms,
+            "vad_min_speech_ms": config.vad_min_speech_ms,
         }
         pipeline = PipelineOrchestrator(config=pipeline_config)
         tray = SystemTrayManager()
@@ -101,9 +104,17 @@ def main() -> None:
             _settings_dialog.config_changed.connect(_on_config_changed)
             _settings_dialog.show()
 
-        tray.quit_requested.connect(app.quit)
-        tray.toggle_overlay.connect(lambda: overlay.setVisible(not overlay.isVisible()))
-        tray.settings_requested.connect(_open_settings)
+        def _toggle_overlay() -> None:
+            """Toggle overlay visibility and update tray menu state."""
+            new_visible = not overlay.isVisible()
+            overlay.setVisible(new_visible)
+            tray.update_overlay_visibility(new_visible)
+
+        # Connect signals from both tray and overlay using shared handlers
+        for source in (tray, overlay):
+            source.quit_requested.connect(app.quit)
+            source.toggle_overlay.connect(_toggle_overlay)
+            source.settings_requested.connect(_open_settings)
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline))

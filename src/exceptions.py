@@ -23,7 +23,3 @@ class ModelLoadError(ASRError):
 
 class PreprocessingError(MyASRError):
     """Error during text preprocessing/analysis."""
-
-
-class DatabaseError(MyASRError):
-    """Error during database operations."""

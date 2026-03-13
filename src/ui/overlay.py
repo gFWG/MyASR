@@ -12,6 +12,7 @@ from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QCloseEvent,
     QColor,
+    QContextMenuEvent,
     QCursor,
     QFont,
     QMouseEvent,
@@ -35,6 +36,7 @@ from src.models import GrammarHit, SentenceResult, VocabHit
 from src.pipeline.types import ASRResult
 from src.ui.highlight import HighlightRenderer
 from src.ui.history import HistoryManager
+from src.ui.menu_factory import create_context_menu
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,9 @@ def _make_browser(font_size: int) -> QTextBrowser:
     browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     browser.setStyleSheet("background: transparent; border: none; color: #EEEEEE;")
     browser.setOpenLinks(False)
+    # Disable default context menu and text selection
+    browser.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+    browser.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
     return browser
 
 
@@ -144,11 +149,17 @@ class OverlayWindow(QWidget):
             SentenceResult that contains the highlighted text.
         highlight_left: Emitted when the cursor leaves the browser viewport,
             indicating the tooltip should be hidden.
+        settings_requested: Emitted when user requests to open settings dialog.
+        toggle_overlay: Emitted when user requests to toggle overlay visibility.
+        quit_requested: Emitted when user requests to quit the application.
     """
 
     highlight_hovered = Signal(object, object, object)
     highlight_left = Signal()
     dedup_reset = Signal()
+    settings_requested = Signal()
+    toggle_overlay = Signal()
+    quit_requested = Signal()
 
     def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -187,7 +198,7 @@ class OverlayWindow(QWidget):
         outer_layout.addStretch(1)
 
         # Preview browser: shown when browsing history, displays the latest result
-        self._preview_browser = _make_browser(_JP_FONT_SIZE)
+        self._preview_browser = _make_browser(config.overlay_font_size_jp)
         self._preview_browser.setVisible(False)
         outer_layout.addWidget(self._preview_browser)
 
@@ -198,7 +209,7 @@ class OverlayWindow(QWidget):
         self._prev_btn = _make_arrow_button("◀")
         self._prev_btn.clicked.connect(self._prev_sentence)
 
-        self._jp_browser = _make_browser(_JP_FONT_SIZE)
+        self._jp_browser = _make_browser(config.overlay_font_size_jp)
 
         self._next_btn = _make_arrow_button("▶")
         self._next_btn.clicked.connect(self._next_sentence)
@@ -662,7 +673,31 @@ class OverlayWindow(QWidget):
         if is_browser_viewport and event.type() == QEvent.Type.Leave:
             self.highlight_left.emit()
 
+        # Handle context menu for browser viewports
+        if is_browser_viewport and event.type() == QEvent.Type.ContextMenu:
+            assert isinstance(event, QContextMenuEvent)
+            menu = create_context_menu(
+                parent=self,
+                on_settings=self.settings_requested.emit,
+                on_toggle=self.toggle_overlay.emit,
+                on_quit=self.quit_requested.emit,
+                overlay_visible=self.isVisible(),
+            )
+            menu.exec(event.globalPos())
+            return True
+
         return super().eventFilter(watched, event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         super().closeEvent(event)
+
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:  # noqa: F821
+        """Show context menu with settings, toggle, and quit actions."""
+        menu = create_context_menu(
+            parent=self,
+            on_settings=self.settings_requested.emit,
+            on_toggle=self.toggle_overlay.emit,
+            on_quit=self.quit_requested.emit,
+            overlay_visible=self.isVisible(),
+        )
+        menu.exec(event.globalPos())

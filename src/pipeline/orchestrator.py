@@ -196,7 +196,7 @@ class PipelineOrchestrator:
         - vad_min_silence_ms
         - vad_min_speech_ms
 
-        Note: Some config changes (sample_rate, db_path, model_path) require
+        Note: Some config changes (sample_rate, model_path) require
         a full pipeline restart and cannot be hot-reloaded.
 
         Args:

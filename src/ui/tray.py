@@ -6,16 +6,23 @@ import logging
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QSystemTrayIcon
+
+from src.ui.menu_factory import create_context_menu
 
 logger = logging.getLogger(__name__)
 
 
 class SystemTrayManager(QObject):
-    """System tray manager with programmatic icon and context menu."""
+    """System tray manager with programmatic icon and context menu.
+
+    Signals:
+        settings_requested: Emitted when user requests to open settings dialog.
+        toggle_overlay: Emitted when user requests to toggle overlay visibility.
+        quit_requested: Emitted when user requests to quit the application.
+    """
 
     settings_requested = Signal()
-    review_requested = Signal()
     toggle_overlay = Signal()
     quit_requested = Signal()
 
@@ -29,8 +36,14 @@ class SystemTrayManager(QObject):
         self._icon_pixmap = self._create_icon_pixmap()
         self._tray.setIcon(QIcon(self._icon_pixmap))
 
-        self._menu = QMenu()
-        self._setup_menu()
+        self._overlay_visible = True
+        self._menu = create_context_menu(
+            parent=None,
+            on_settings=self.settings_requested.emit,
+            on_toggle=self.toggle_overlay.emit,
+            on_quit=self.quit_requested.emit,
+            overlay_visible=self._overlay_visible,
+        )
 
         self._tray.setContextMenu(self._menu)
         self._tray.show()
@@ -50,24 +63,18 @@ class SystemTrayManager(QObject):
 
         return pixmap
 
-    def _setup_menu(self) -> None:
-        settings_action = self._menu.addAction("Settings")
-        settings_action.triggered.connect(self.settings_requested.emit)
+    def update_overlay_visibility(self, visible: bool) -> None:
+        """Update the overlay visibility state and rebuild the menu.
 
-        self._review_action = self._menu.addAction("Review (coming soon)")
-        self._review_action.setEnabled(False)
-
-        self._menu.addSeparator()
-
-        toggle_action = self._menu.addAction("Show/Hide Overlay")
-        toggle_action.triggered.connect(self.toggle_overlay.emit)
-
-        quit_action = self._menu.addAction("Quit")
-        quit_action.triggered.connect(self.quit_requested.emit)
-
-    def update_review_badge(self, count: int) -> None:
-        if count > 0:
-            self._review_action.setText(f"Review ({count} due)")
-        else:
-            self._review_action.setText("Review (coming soon)")
-        self._review_action.setEnabled(False)
+        Args:
+            visible: Current overlay visibility state.
+        """
+        self._overlay_visible = visible
+        self._menu = create_context_menu(
+            parent=None,
+            on_settings=self.settings_requested.emit,
+            on_toggle=self.toggle_overlay.emit,
+            on_quit=self.quit_requested.emit,
+            overlay_visible=self._overlay_visible,
+        )
+        self._tray.setContextMenu(self._menu)
