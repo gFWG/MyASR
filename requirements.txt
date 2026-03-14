@@ -11,6 +11,7 @@ requests
 numpy
 scipy
 qwen-asr
+huggingface-hub
 PyAudioWPatch; platform_system == "Windows"
 soundfile>=0.13.1
 soxr>=1.0.0

@@ -21,5 +21,9 @@ class ModelLoadError(ASRError):
     """Failed to load a model (ASR, VAD, etc.)."""
 
 
+class ModelResourceError(MyASRError):
+    """Error related to local model resource management."""
+
+
 class PreprocessingError(MyASRError):
     """Error during text preprocessing/analysis."""

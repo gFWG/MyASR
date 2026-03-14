@@ -34,11 +34,12 @@ def test_load_config_malformed_json(tmp_path: Path) -> None:
 
 def test_save_and_load_roundtrip(tmp_path: Path) -> None:
     path = str(tmp_path / "config.json")
-    original = AppConfig(user_jlpt_level=1)
+    original = AppConfig(user_jlpt_level=1, asr_model_local_path=str(tmp_path / "models"))
     save_config(original, path)
     loaded = load_config(path)
     assert loaded.user_jlpt_level == 1
     assert loaded.sample_rate == 16000
+    assert loaded.asr_model_local_path == str(tmp_path / "models")
 
 
 def test_load_config_partial_json(tmp_path: Path) -> None:
@@ -80,11 +81,18 @@ def test_config_backward_compat_unknown_keys_filtered(tmp_path: Path) -> None:
 
 
 def test_defaults_new_config_fields() -> None:
-    AppConfig()  # simply verify construction succeeds
+    config = AppConfig()
+    assert config.asr_model == "Qwen/Qwen3-ASR-0.6B"
+    assert config.asr_model_local_path == ""
 
 
 def test_save_load_roundtrip_new_fields(tmp_path: Path) -> None:
-    config = AppConfig()
+    config = AppConfig(
+        asr_model="Qwen/Qwen3-ASR-1.7B",
+        asr_model_local_path=str(tmp_path / "custom-model"),
+    )
     path = str(tmp_path / "config.json")
     save_config(config, path)
-    load_config(path)  # verify round-trip does not raise
+    loaded = load_config(path)
+    assert loaded.asr_model == "Qwen/Qwen3-ASR-1.7B"
+    assert loaded.asr_model_local_path == str(tmp_path / "custom-model")

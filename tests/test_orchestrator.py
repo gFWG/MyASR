@@ -12,6 +12,7 @@ Tests cover:
 - _running flag updated on start/stop
 """
 
+from collections.abc import Iterator
 from typing import Any
 from unittest.mock import MagicMock, call, patch
 
@@ -40,20 +41,21 @@ def _config() -> dict[str, Any]:
 
 @pytest.fixture()
 def mock_workers() -> dict[str, MagicMock]:
-    """Pre-built mock workers (VAD / ASR)."""
     vad_worker = MagicMock()
     asr_worker = MagicMock()
-    for worker in (vad_worker, asr_worker):
+    analysis_worker = MagicMock()
+    for worker in (vad_worker, asr_worker, analysis_worker):
         worker.error_occurred = MagicMock()
     asr_worker.asr_ready = MagicMock()
-    return {"vad": vad_worker, "asr": asr_worker}
+    analysis_worker.sentence_ready = MagicMock()
+    return {"vad": vad_worker, "asr": asr_worker, "analysis": analysis_worker}
 
 
 @pytest.fixture()
 def orchestrator(
     qt_app: Any,
     mock_workers: dict[str, MagicMock],
-) -> PipelineOrchestrator:
+) -> Iterator[PipelineOrchestrator]:
     """PipelineOrchestrator with all GPU models and workers replaced by mocks."""
     mock_vad_model = MagicMock()
     mock_asr_model = MagicMock()
@@ -74,9 +76,15 @@ def orchestrator(
             "src.pipeline.orchestrator.AsrWorker",
             return_value=mock_workers["asr"],
         ),
+        patch(
+            "src.pipeline.orchestrator.AnalysisWorker",
+            return_value=mock_workers["analysis"],
+        ),
     ):
         orch = PipelineOrchestrator(config=_config())
-    return orch
+    yield orch
+    if orch._running:
+        orch.stop()
 
 
 # ---------------------------------------------------------------------------
@@ -124,12 +132,23 @@ def test_orchestrator_instantiates_workers(
         patch(
             "src.pipeline.orchestrator.AsrWorker",
         ) as MockAsrWorker,
+        patch(
+            "src.pipeline.orchestrator.AnalysisWorker",
+        ) as MockAnalysisWorker,
     ):
-        for MockWorker in (MockVadWorker, MockAsrWorker):
-            instance = MagicMock()
-            instance.error_occurred = MagicMock()
-            instance.asr_ready = MagicMock()
-            MockWorker.return_value = instance
+        vad_instance = MagicMock()
+        vad_instance.error_occurred = MagicMock()
+        MockVadWorker.return_value = vad_instance
+
+        asr_instance = MagicMock()
+        asr_instance.error_occurred = MagicMock()
+        asr_instance.asr_ready = MagicMock()
+        MockAsrWorker.return_value = asr_instance
+
+        analysis_instance = MagicMock()
+        analysis_instance.error_occurred = MagicMock()
+        analysis_instance.sentence_ready = MagicMock()
+        MockAnalysisWorker.return_value = analysis_instance
 
         orch = PipelineOrchestrator(config=_config())
 
@@ -145,6 +164,41 @@ def test_orchestrator_instantiates_workers(
             asr_call.args and asr_call.args[0] is orch._segment_queue
         )
 
+        analysis_call = MockAnalysisWorker.call_args
+        assert analysis_call.kwargs.get("text_queue") is orch._text_queue or (
+            analysis_call.args and analysis_call.args[0] is orch._text_queue
+        )
+
+
+def test_orchestrator_passes_model_path_to_qwen_asr(qt_app: Any) -> None:
+    model_path = "/tmp/qwen-model"
+
+    with (
+        patch("src.pipeline.orchestrator.SileroVAD"),
+        patch("src.pipeline.orchestrator.QwenASR") as MockQwenASR,
+        patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
+        patch("src.pipeline.orchestrator.VadWorker") as MockVadWorker,
+        patch("src.pipeline.orchestrator.AsrWorker") as MockAsrWorker,
+        patch("src.pipeline.orchestrator.AnalysisWorker") as MockAnalysisWorker,
+    ):
+        vad_instance = MagicMock()
+        vad_instance.error_occurred = MagicMock()
+        MockVadWorker.return_value = vad_instance
+
+        asr_instance = MagicMock()
+        asr_instance.error_occurred = MagicMock()
+        asr_instance.asr_ready = MagicMock()
+        MockAsrWorker.return_value = asr_instance
+
+        analysis_instance = MagicMock()
+        analysis_instance.error_occurred = MagicMock()
+        analysis_instance.sentence_ready = MagicMock()
+        MockAnalysisWorker.return_value = analysis_instance
+
+        PipelineOrchestrator(config={**_config(), "model_path": model_path})
+
+    MockQwenASR.assert_called_once_with(model_path=model_path)
+
 
 # ---------------------------------------------------------------------------
 # start() ordering
@@ -155,16 +209,17 @@ def test_start_calls_workers_in_order(
     orchestrator: PipelineOrchestrator,
     mock_workers: dict[str, MagicMock],
 ) -> None:
-    """start() must call VAD.start() first, then ASR."""
     manager = MagicMock()
     manager.attach_mock(mock_workers["vad"].start, "vad_start")
     manager.attach_mock(mock_workers["asr"].start, "asr_start")
+    manager.attach_mock(mock_workers["analysis"].start, "analysis_start")
 
     orchestrator.start()
 
     assert manager.mock_calls == [
         call.vad_start(),
         call.asr_start(),
+        call.analysis_start(),
     ]
 
 
@@ -185,16 +240,17 @@ def test_stop_calls_workers_in_reverse_order(
     orchestrator: PipelineOrchestrator,
     mock_workers: dict[str, MagicMock],
 ) -> None:
-    """stop() must call ASR.stop() first, then VAD."""
     orchestrator.start()
 
     manager = MagicMock()
     manager.attach_mock(mock_workers["vad"].stop, "vad_stop")
     manager.attach_mock(mock_workers["asr"].stop, "asr_stop")
+    manager.attach_mock(mock_workers["analysis"].stop, "analysis_stop")
 
     orchestrator.stop()
 
     assert manager.mock_calls == [
+        call.analysis_stop(),
         call.asr_stop(),
         call.vad_stop(),
     ]
@@ -204,10 +260,10 @@ def test_stop_calls_wait_on_each_worker(
     orchestrator: PipelineOrchestrator,
     mock_workers: dict[str, MagicMock],
 ) -> None:
-    """stop() must call .wait(3000) on each worker."""
     orchestrator.start()
     orchestrator.stop()
 
+    mock_workers["analysis"].wait.assert_called_once_with(3000)
     mock_workers["vad"].wait.assert_called_once_with(3000)
     mock_workers["asr"].wait.assert_called_once_with(3000)
 

@@ -4,18 +4,21 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QCloseEvent, QColor, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QComboBox,
     QDialog,
+    QFileDialog,
     QFormLayout,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QTabWidget,
@@ -24,31 +27,87 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.asr.model_resources import (
+    default_model_directory,
+    delete_model_artifacts,
+    download_model_snapshot,
+    find_hf_cache_snapshot,
+    resolve_model_directory,
+    validate_model_directory,
+)
 from src.config import DEFAULT_JLPT_COLORS, AppConfig, save_config
+from src.exceptions import ModelResourceError
 from src.ui.widgets import JlptLevelSelector, SliderDoubleSpinBox, SliderSpinBox
 
 logger = logging.getLogger(__name__)
 
+_MESSAGE_BOX_STYLESHEET = (
+    "QMessageBox {"
+    "  font-family: 'Segoe UI', sans-serif;"
+    "}"
+    "QPushButton {"
+    "  min-width: 80px;"
+    "  padding: 6px 16px;"
+    "  border-radius: 4px;"
+    "  border: 1px solid palette(mid);"
+    "  background-color: palette(button);"
+    "  color: palette(button-text);"
+    "}"
+    "QPushButton:hover {"
+    "  background-color: palette(highlight);"
+    "  color: palette(highlighted-text);"
+    "  border-color: palette(highlight);"
+    "}"
+    "QPushButton:pressed {"
+    "  background-color: palette(dark);"
+    "  color: palette(button-text);"
+    "}"
+)
+
+
+class _DownloadWorker(QThread):
+    progress = Signal(str)
+    finished_ok = Signal(str, str)
+    finished_err = Signal(str)
+
+    def __init__(self, repo_id: str, target_directory: str) -> None:
+        super().__init__()
+        self._repo_id = repo_id
+        self._target_directory = target_directory
+
+    def run(self) -> None:
+        try:
+            download_model_snapshot(
+                repo_id=self._repo_id,
+                target_directory=self._target_directory,
+                progress_callback=self.progress.emit,
+            )
+        except ModelResourceError as exc:
+            self.finished_err.emit(str(exc))
+            return
+        except Exception as exc:
+            self.finished_err.emit(f"Unexpected download failure: {exc}")
+            return
+
+        self.finished_ok.emit(self._repo_id, self._target_directory)
+
 
 class SettingsDialog(QDialog):
-    """Non-modal settings dialog for configuring MyASR application.
-
-    Presents configuration options across two tabs: General and Appearance.
-    Emits config_changed when the user saves.
-
-    Args:
-        config: Current application configuration to populate widgets from.
-        parent: Optional parent widget.
-
-    Signals:
-        config_changed: Emitted with the new AppConfig when settings are saved.
-    """
-
     config_changed = Signal(object)
 
-    def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        parent: QWidget | None = None,
+        runtime_config: AppConfig | None = None,
+        active_model_directory: str = "",
+    ) -> None:
         super().__init__(parent)
         self._config = config
+        self._runtime_config = runtime_config or config
+        self._active_model_directory = self._normalize_path_for_compare(active_model_directory)
+        self._download_worker: _DownloadWorker | None = None
+        self._resource_state_requires_restart = False
 
         self.setWindowTitle("Settings")
         self.setMinimumSize(560, 400)
@@ -100,6 +159,19 @@ class SettingsDialog(QDialog):
         self._populate_from_config(config)
 
         logger.debug("SettingsDialog initialized")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._download_worker is not None and self._download_worker.isRunning():
+            self._show_resource_message(
+                title="Download In Progress",
+                text="Wait for the ASR model download to finish before closing Settings.",
+                informative_text="MyASR is still writing model files to disk.",
+                icon=QMessageBox.Icon.Warning,
+            )
+            event.ignore()
+            return
+
+        super().closeEvent(event)
 
     def _build_general_tab(self) -> None:
         widget = QWidget()
@@ -212,116 +284,375 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(widget, "Appearance")
 
     def _build_resource_tab(self) -> None:
-        """Build the Resource tab with ASR Model selection and availability check."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setSpacing(12)
 
-        # ASR Model selection row
+        description = QLabel(
+            "Manage the local Qwen ASR files used for startup, downloads, and cleanup. "
+            "Leave the path blank to use MyASR's default model directory."
+        )
+        description.setWordWrap(True)
+        description.setStyleSheet("color: palette(mid);")
+        layout.addWidget(description)
+
         model_row = QHBoxLayout()
         model_label = QLabel("ASR Model")
         self._asr_model_combo = QComboBox()
         self._asr_model_combo.addItem("Qwen-ASR-0.6B", "Qwen/Qwen3-ASR-0.6B")
         self._asr_model_combo.addItem("Qwen-ASR-1.7B", "Qwen/Qwen3-ASR-1.7B")
-        self._asr_model_combo.setMinimumWidth(200)
+        self._asr_model_combo.setMinimumWidth(220)
         model_row.addWidget(model_label)
-        model_row.addWidget(self._asr_model_combo)
-
-        # Restart needed warning label
-        self._restart_label = QLabel("Restart Required!")
-        self._restart_label.setStyleSheet("color: #D32F2F; font-weight: bold;")
-        model_row.addWidget(self._restart_label)
-
-        # Refresh button
-        model_row.addStretch()
-        self._refresh_model_btn = QPushButton("Refresh")
-        self._refresh_model_btn.clicked.connect(self._on_refresh_model)
-        model_row.addWidget(self._refresh_model_btn)
-
+        model_row.addWidget(self._asr_model_combo, 1)
         layout.addLayout(model_row)
 
-        # Result text box for model availability status
+        self._restart_label = QLabel("Restart required to apply ASR resource changes.")
+        self._restart_label.setStyleSheet("color: #D32F2F; font-weight: 600;")
+        self._restart_label.hide()
+        layout.addWidget(self._restart_label)
+
+        path_row = QHBoxLayout()
+        path_label = QLabel("Model Directory")
+        self._model_path_edit = QLineEdit()
+        self._model_path_edit.setClearButtonEnabled(True)
+        self._model_path_edit.setMinimumWidth(320)
+        self._select_path_btn = QPushButton("Select File Path")
+        self._select_path_btn.clicked.connect(self._on_select_file_path)
+        path_row.addWidget(path_label)
+        path_row.addWidget(self._model_path_edit, 1)
+        path_row.addWidget(self._select_path_btn)
+        layout.addLayout(path_row)
+
+        self._default_path_label = QLabel()
+        self._default_path_label.setWordWrap(True)
+        self._default_path_label.setStyleSheet("color: palette(mid);")
+        layout.addWidget(self._default_path_label)
+
+        action_row = QHBoxLayout()
+        action_row.addStretch()
+        self._download_model_btn = QPushButton("Download")
+        self._delete_model_btn = QPushButton("Delete")
+        self._refresh_model_btn = QPushButton("Refresh")
+        self._download_model_btn.clicked.connect(self._on_download_model)
+        self._delete_model_btn.clicked.connect(self._on_delete_model)
+        self._refresh_model_btn.clicked.connect(self._on_refresh_model)
+        action_row.addWidget(self._download_model_btn)
+        action_row.addWidget(self._delete_model_btn)
+        action_row.addWidget(self._refresh_model_btn)
+        layout.addLayout(action_row)
+
         self._model_status_text = QTextEdit()
         self._model_status_text.setReadOnly(True)
-        self._model_status_text.setMaximumHeight(150)
-        self._model_status_text.setPlaceholderText("Click 'Refresh' to check model availability...")
+        self._model_status_text.setMaximumHeight(180)
+        self._model_status_text.setPlaceholderText(
+            "Use Refresh to inspect the selected model directory."
+        )
         layout.addWidget(self._model_status_text)
 
         layout.addStretch()
 
+        self._resource_tab = widget
+        self._asr_model_combo.currentIndexChanged.connect(self._on_resource_inputs_changed)
+        self._model_path_edit.textChanged.connect(self._on_resource_inputs_changed)
         self._tabs.addTab(widget, "Resource")
 
-    def _on_refresh_model(self) -> None:
-        """Check if the selected ASR model is available and display the result."""
-        model_name = self._asr_model_combo.currentData()
-        model_display = self._asr_model_combo.currentText()
-        self._model_status_text.clear()
+    def _on_resource_inputs_changed(self, _value: object | None = None) -> None:
+        self._update_resource_path_placeholder()
+        self._update_restart_label()
 
-        # Try to check model availability
+    def _current_model_repo_id(self) -> str:
+        repo_id = self._asr_model_combo.currentData()
+        if not isinstance(repo_id, str):
+            raise ModelResourceError("No ASR model is currently selected.")
+        return repo_id
+
+    def _current_custom_model_path(self) -> str:
+        return self._model_path_edit.text().strip()
+
+    def _current_target_directory(self) -> Path:
+        return (
+            resolve_model_directory(
+                self._current_model_repo_id(),
+                self._current_custom_model_path(),
+            )
+            .expanduser()
+            .resolve(strict=False)
+        )
+
+    def _update_resource_path_placeholder(self) -> None:
+        default_path = default_model_directory(self._current_model_repo_id()).resolve(strict=False)
+        self._model_path_edit.setPlaceholderText(str(default_path))
+        self._default_path_label.setText(f"Default directory: {default_path}")
+
+    def _normalize_path_for_compare(self, path_value: str) -> str:
+        stripped_value = path_value.strip()
+        if not stripped_value:
+            return ""
+
+        normalized_path = Path(stripped_value).expanduser()
         try:
-            import os
+            normalized_path = normalized_path.resolve(strict=False)
+        except OSError:
+            pass
+        return str(normalized_path).casefold()
 
-            import torch
+    def _update_restart_label(self) -> None:
+        model_changed = self._current_model_repo_id() != self._runtime_config.asr_model
+        path_changed = self._normalize_path_for_compare(
+            self._current_custom_model_path()
+        ) != self._normalize_path_for_compare(self._runtime_config.asr_model_local_path)
+        self._restart_label.setVisible(
+            model_changed or path_changed or self._resource_state_requires_restart
+        )
 
-            # Check CUDA availability
-            if not torch.cuda.is_available():
-                self._append_status(
-                    f"❌ CUDA not available - GPU required for ASR model", is_error=True
-                )
-                return
+    def _set_resource_controls_enabled(self, enabled: bool) -> None:
+        self._asr_model_combo.setEnabled(enabled)
+        self._model_path_edit.setEnabled(enabled)
+        self._select_path_btn.setEnabled(enabled)
+        self._download_model_btn.setEnabled(enabled)
+        self._delete_model_btn.setEnabled(enabled)
+        self._refresh_model_btn.setEnabled(enabled)
+        self._reset_btn.setEnabled(enabled)
+        self._save_btn.setEnabled(enabled)
+        self._cancel_btn.setEnabled(enabled)
 
-            # Check if model path exists locally
-            # Check common HuggingFace cache locations
-            hf_cache = os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
-            hub_cache = os.environ.get("HUGGINGFACE_HUB_CACHE", os.path.join(hf_cache, "hub"))
+    def _show_resource_message(
+        self,
+        title: str,
+        text: str,
+        informative_text: str,
+        icon: QMessageBox.Icon,
+    ) -> None:
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+        if informative_text:
+            msg_box.setInformativeText(informative_text)
+        msg_box.setIcon(icon)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.setStyleSheet(_MESSAGE_BOX_STYLESHEET)
+        msg_box.exec()
 
-            # Normalize model name for cache path
-            model_folder_name = "models--" + model_name.replace("/", "--")
-            cache_path = os.path.join(hub_cache, model_folder_name)
+    def _confirm_delete_model(self, target_directory: Path) -> bool:
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Delete Model")
+        msg_box.setText(f"Delete the selected ASR model files from {target_directory}?")
+        msg_box.setInformativeText(
+            "MyASR only removes files it manages for Qwen ASR. Other files in this "
+            "directory will be left untouched."
+        )
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel
+        )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        msg_box.setStyleSheet(_MESSAGE_BOX_STYLESHEET)
+        return msg_box.exec() == QMessageBox.StandardButton.Yes
 
-            if os.path.exists(cache_path):
-                self._append_status(f"✅ Model found in cache: {cache_path}", is_error=False)
-                # Check for model files
-                snapshots_path = os.path.join(cache_path, "snapshots")
-                if os.path.exists(snapshots_path):
-                    snapshots = os.listdir(snapshots_path)
-                    if snapshots:
-                        self._append_status(f"   Snapshot: {snapshots[0]}", is_error=False)
-            else:
-                self._append_status(
-                    f"⚠️ Model not found in cache: {model_display}", is_error=True
-                )
-                self._append_status(f"   Expected path: {cache_path}", is_error=False)
-                self._append_status(
-                    "   Please download the model or ensure offline mode has the model.",
-                    is_error=False,
-                )
-                return
+    def _is_active_model_directory(self, directory: Path) -> bool:
+        if not self._active_model_directory:
+            return False
+        return self._normalize_path_for_compare(str(directory)) == self._active_model_directory
 
-            # Check VRAM (rough estimate)
-            if torch.cuda.is_available():
-                gpu_name = torch.cuda.get_device_name(0)
-                total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-                self._append_status(f"✅ GPU: {gpu_name}", is_error=False)
-                self._append_status(f"   VRAM: {total_vram:.1f} GB", is_error=False)
+    def _append_resource_status(
+        self,
+        repo_id: str,
+        target_directory: Path,
+        custom_path_selected: bool,
+    ) -> None:
+        model_display = self._asr_model_combo.currentText()
+        location_label = "Custom directory" if custom_path_selected else "Default directory"
+        self._append_status(f"Model: {model_display}")
+        self._append_status(f"{location_label}: {target_directory}")
 
-                # Model size estimates (approximate)
-                model_vram_req = 1.5 if "0.6B" in model_display else 4.0
-                if total_vram < model_vram_req:
+        if target_directory.exists():
+            try:
+                validate_model_directory(repo_id, target_directory)
+            except ModelResourceError as exc:
+                self._append_status(str(exc), is_error=True)
+                if custom_path_selected:
                     self._append_status(
-                        f"⚠️ VRAM may be insufficient (need ~{model_vram_req:.1f} GB)",
-                        is_error=True,
+                        "Download the selected model into this directory, or clear the field "
+                        "to use the default location."
                     )
                 else:
                     self._append_status(
-                        f"✅ VRAM sufficient for {model_display}", is_error=False
+                        "Delete the incomplete files or download the model again into the "
+                        "default directory."
                     )
+                return
 
-            self._append_status(f"\n✅ {model_display} is available", is_error=False)
+            self._append_status(f"{model_display} is ready in {target_directory}.")
+            return
 
-        except ImportError as e:
-            self._append_status(f"❌ Import error: {e}", is_error=True)
-        except Exception as e:
-            self._append_status(f"❌ Error checking model: {e}", is_error=True)
+        if custom_path_selected:
+            self._append_status(
+                f"Custom model directory does not exist yet: {target_directory}",
+                is_error=True,
+            )
+            self._append_status(
+                "Download the selected model into this path before saving it for startup use."
+            )
+            return
+
+        self._append_status(
+            f"No managed local copy was found in the default directory: {target_directory}",
+            is_error=True,
+        )
+        cache_snapshot = find_hf_cache_snapshot(repo_id)
+        if cache_snapshot is None:
+            self._append_status("Click Download to save a local copy into the default directory.")
+            return
+
+        try:
+            validate_model_directory(repo_id, cache_snapshot)
+        except ModelResourceError as exc:
+            self._append_status(
+                f"A Hugging Face cache snapshot was found but it is incomplete: {cache_snapshot}",
+                is_error=True,
+            )
+            self._append_status(str(exc), is_error=True)
+            return
+
+        self._append_status(f"Cached Hugging Face snapshot detected: {cache_snapshot}")
+        self._append_status(
+            "Startup can still use the cached model until you download a managed local copy."
+        )
+
+    def _on_select_file_path(self) -> None:
+        start_directory = self._current_target_directory()
+        if not start_directory.exists():
+            start_directory = (
+                start_directory.parent if start_directory.parent.exists() else Path.cwd()
+            )
+
+        selected_directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select ASR Model Directory",
+            str(start_directory),
+        )
+        if selected_directory:
+            self._model_path_edit.setText(selected_directory)
+
+    def _on_download_model(self) -> None:
+        if self._download_worker is not None and self._download_worker.isRunning():
+            return
+
+        target_directory = self._current_target_directory()
+        if target_directory.exists() and not target_directory.is_dir():
+            message = f"Model path must be a directory, not a file: {target_directory}"
+            self._append_status(message, is_error=True)
+            self._show_resource_message(
+                title="Invalid Model Path",
+                text="MyASR can only download ASR models into a directory.",
+                informative_text=message,
+                icon=QMessageBox.Icon.Critical,
+            )
+            return
+
+        self._model_status_text.clear()
+        self._append_status(f"Preparing download into {target_directory}...")
+        self._set_resource_controls_enabled(False)
+
+        self._download_worker = _DownloadWorker(
+            self._current_model_repo_id(),
+            str(target_directory),
+        )
+        self._download_worker.progress.connect(self._append_status)
+        self._download_worker.finished_ok.connect(self._on_download_finished)
+        self._download_worker.finished_err.connect(self._on_download_failed)
+        self._download_worker.finished.connect(self._on_download_complete_cleanup)
+        self._download_worker.start()
+
+    def _on_download_finished(self, repo_id: str, target_directory: str) -> None:
+        self._resource_state_requires_restart = True
+        self._update_restart_label()
+        self._model_status_text.clear()
+        self._append_status(f"Download complete: {target_directory}")
+        self._append_resource_status(
+            repo_id=repo_id,
+            target_directory=Path(target_directory),
+            custom_path_selected=bool(self._current_custom_model_path()),
+        )
+
+    def _on_download_failed(self, message: str) -> None:
+        self._append_status(message, is_error=True)
+        self._show_resource_message(
+            title="Download Failed",
+            text="MyASR could not download the selected ASR model.",
+            informative_text=message,
+            icon=QMessageBox.Icon.Critical,
+        )
+
+    def _on_download_complete_cleanup(self) -> None:
+        self._set_resource_controls_enabled(True)
+        if self._download_worker is None:
+            return
+
+        self._download_worker.deleteLater()
+        self._download_worker = None
+
+    def _on_delete_model(self) -> None:
+        target_directory = self._current_target_directory()
+        if self._is_active_model_directory(target_directory):
+            message = (
+                "The selected model directory is currently in use. Restart MyASR before "
+                "deleting these files."
+            )
+            self._append_status(message, is_error=True)
+            self._show_resource_message(
+                title="Model In Use",
+                text="MyASR cannot delete the model files that are currently loaded.",
+                informative_text=message,
+                icon=QMessageBox.Icon.Warning,
+            )
+            return
+
+        if not self._confirm_delete_model(target_directory):
+            return
+
+        try:
+            report = delete_model_artifacts(target_directory)
+        except ModelResourceError as exc:
+            self._append_status(str(exc), is_error=True)
+            self._show_resource_message(
+                title="Delete Failed",
+                text="MyASR could not remove the selected ASR model files.",
+                informative_text=str(exc),
+                icon=QMessageBox.Icon.Critical,
+            )
+            return
+
+        self._model_status_text.clear()
+        if report.removed_entries:
+            self._append_status(
+                f"Removed {len(report.removed_entries)} managed model entries from "
+                f"{target_directory}."
+            )
+            if report.remaining_entries:
+                self._append_status(
+                    f"Preserved other files: {', '.join(report.remaining_entries)}"
+                )
+            elif report.removed_directory:
+                self._append_status("Removed the now-empty model directory.")
+            self._resource_state_requires_restart = True
+            self._update_restart_label()
+        else:
+            self._append_status(f"No MyASR-managed model files were found in {target_directory}.")
+
+        self._append_resource_status(
+            repo_id=self._current_model_repo_id(),
+            target_directory=target_directory,
+            custom_path_selected=bool(self._current_custom_model_path()),
+        )
+
+    def _on_refresh_model(self) -> None:
+        self._model_status_text.clear()
+        self._append_resource_status(
+            repo_id=self._current_model_repo_id(),
+            target_directory=self._current_target_directory(),
+            custom_path_selected=bool(self._current_custom_model_path()),
+        )
 
     def _append_status(self, text: str, is_error: bool = False) -> None:
         """Append text to the status area with optional red highlighting for errors."""
@@ -378,6 +709,11 @@ class SettingsDialog(QDialog):
                 self._asr_model_combo.setCurrentIndex(i)
                 break
 
+        self._model_path_edit.setText(config.asr_model_local_path)
+        self._update_resource_path_placeholder()
+        self._update_restart_label()
+        self._on_refresh_model()
+
         for key, btn in self._jlpt_color_buttons.items():
             hex_color = config.jlpt_colors.get(key, DEFAULT_JLPT_COLORS.get(key, "#FFFFFF"))
             btn.setProperty("hex_color", hex_color)
@@ -397,6 +733,7 @@ class SettingsDialog(QDialog):
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
             asr_model=self._asr_model_combo.currentData(),
+            asr_model_local_path=self._current_custom_model_path(),
             sample_rate=self._config.sample_rate,
             overlay_width=self._config.overlay_width,
             overlay_height=self._config.overlay_height,
@@ -404,11 +741,28 @@ class SettingsDialog(QDialog):
                 key: btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
                 for key, btn in self._jlpt_color_buttons.items()
             },
+            profiling=self._config.profiling,
         )
 
     def _on_save(self) -> None:
+        custom_model_path = self._current_custom_model_path()
+        if custom_model_path:
+            try:
+                validate_model_directory(self._current_model_repo_id(), custom_model_path)
+            except ModelResourceError as exc:
+                self._append_status(str(exc), is_error=True)
+                self._show_resource_message(
+                    title="Model Directory Not Ready",
+                    text="Download the selected ASR model before saving a custom directory.",
+                    informative_text=str(exc),
+                    icon=QMessageBox.Icon.Warning,
+                )
+                return
+
         new_config = self._collect_config()
         save_config(new_config)
+        self._config = new_config
+        self._update_restart_label()
         self.config_changed.emit(new_config)
         logger.info("SettingsDialog: config saved and signal emitted")
 
@@ -424,29 +778,7 @@ class SettingsDialog(QDialog):
         )
         msg_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
-        # Style the message box buttons for Windows 11 consistency (theme-aware)
-        msg_box.setStyleSheet(
-            "QMessageBox {"
-            "  font-family: 'Segoe UI', sans-serif;"
-            "}"
-            "QPushButton {"
-            "  min-width: 80px;"
-            "  padding: 6px 16px;"
-            "  border-radius: 4px;"
-            "  border: 1px solid palette(mid);"
-            "  background-color: palette(button);"
-            "  color: palette(button-text);"
-            "}"
-            "QPushButton:hover {"
-            "  background-color: palette(highlight);"
-            "  color: palette(highlighted-text);"
-            "  border-color: palette(highlight);"
-            "}"
-            "QPushButton:pressed {"
-            "  background-color: palette(dark);"
-            "  color: palette(button-text);"
-            "}"
-        )
+        msg_box.setStyleSheet(_MESSAGE_BOX_STYLESHEET)
 
         result = msg_box.exec()
         if result == QMessageBox.StandardButton.Reset:

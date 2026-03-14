@@ -41,6 +41,7 @@ class AppConfig:
     enable_grammar_highlight: bool = True
     max_history: int = 10
     asr_model: str = "Qwen/Qwen3-ASR-0.6B"
+    asr_model_local_path: str = ""
     jlpt_colors: dict[str, str] = dataclasses.field(
         default_factory=lambda: dict(DEFAULT_JLPT_COLORS)
     )

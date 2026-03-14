@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import unittest.mock as mock
+from pathlib import Path
 
 import pytest
 from PySide6.QtWidgets import QApplication
 
+from src.asr.model_resources import get_model_spec
 from src.config import DEFAULT_JLPT_COLORS, AppConfig
+from src.exceptions import ModelResourceError
 from src.ui.settings import SettingsDialog
 
 
@@ -21,11 +24,19 @@ def dialog(qapp: QApplication, default_config: AppConfig) -> SettingsDialog:
     return SettingsDialog(default_config)
 
 
-def test_settings_dialog_has_two_tabs(dialog: SettingsDialog) -> None:
-    assert dialog._tabs.count() == 2
+def _create_model_directory(repo_id: str, directory: Path) -> Path:
+    spec = get_model_spec(repo_id)
+    directory.mkdir(parents=True, exist_ok=True)
+    for file_name in spec.required_files:
+        (directory / file_name).write_bytes(b"ready")
+    return directory
 
 
-def test_widgets_populate_from_config(qapp: QApplication) -> None:
+def test_settings_dialog_has_three_tabs(dialog: SettingsDialog) -> None:
+    assert dialog._tabs.count() == 3
+
+
+def test_widgets_populate_from_config(qapp: QApplication, tmp_path: Path) -> None:
     config = AppConfig(
         user_jlpt_level=2,
         overlay_opacity=0.50,
@@ -35,6 +46,8 @@ def test_widgets_populate_from_config(qapp: QApplication) -> None:
         vad_threshold=0.6,
         vad_min_silence_ms=400,
         vad_min_speech_ms=500,
+        asr_model="Qwen/Qwen3-ASR-1.7B",
+        asr_model_local_path=str(tmp_path / "local-model"),
     )
     d = SettingsDialog(config)
     assert d._jlpt_level.value() == 2
@@ -45,6 +58,8 @@ def test_widgets_populate_from_config(qapp: QApplication) -> None:
     assert d._vad_threshold.value() == pytest.approx(0.6)
     assert d._vad_min_silence.value() == 400
     assert d._vad_min_speech.value() == 500
+    assert d._asr_model_combo.currentData() == "Qwen/Qwen3-ASR-1.7B"
+    assert d._model_path_edit.text() == str(tmp_path / "local-model")
 
 
 def test_save_emits_config_changed(qapp: QApplication, tmp_path: object) -> None:
@@ -96,8 +111,10 @@ def test_vad_min_speech_range(dialog: SettingsDialog) -> None:
 
 
 def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
+    dialog._model_path_edit.setText("/tmp/my-model")
     config = dialog._collect_config()
     assert isinstance(config, AppConfig)
+    assert config.asr_model_local_path == "/tmp/my-model"
 
 
 def test_collect_config_preserves_sample_rate(qapp: QApplication) -> None:
@@ -115,6 +132,54 @@ def test_on_save_does_not_close_dialog(qapp: QApplication) -> None:
     with mock.patch("src.ui.settings.save_config"):
         d._on_save()
     assert d.isVisible()
+
+
+def test_on_save_keeps_restart_label_visible_for_resource_change(
+    qapp: QApplication, tmp_path: Path
+) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config, runtime_config=config)
+    model_dir = _create_model_directory(config.asr_model, tmp_path / "model")
+    d._model_path_edit.setText(str(model_dir))
+
+    with mock.patch("src.ui.settings.save_config"):
+        d._on_save()
+
+    assert d._restart_label.isHidden() is False
+
+
+def test_on_save_blocks_invalid_custom_model_directory(qapp: QApplication, tmp_path: Path) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d._model_path_edit.setText(str(tmp_path / "missing-model"))
+
+    with (
+        mock.patch("src.ui.settings.save_config") as mock_save,
+        mock.patch.object(d, "_show_resource_message") as mock_message,
+    ):
+        d._on_save()
+
+    mock_save.assert_not_called()
+    mock_message.assert_called_once()
+
+
+def test_on_save_blocks_model_resource_error(qapp: QApplication) -> None:
+    config = AppConfig()
+    d = SettingsDialog(config)
+    d._model_path_edit.setText("/tmp/bad-model")
+
+    with (
+        mock.patch(
+            "src.ui.settings.validate_model_directory",
+            side_effect=ModelResourceError("broken model directory"),
+        ),
+        mock.patch("src.ui.settings.save_config") as mock_save,
+        mock.patch.object(d, "_show_resource_message") as mock_message,
+    ):
+        d._on_save()
+
+    mock_save.assert_not_called()
+    mock_message.assert_called_once()
 
 
 # ── JLPT color picker tests ──

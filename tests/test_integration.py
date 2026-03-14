@@ -139,12 +139,14 @@ def test_orchestrator_start_stop_lifecycle(qt_app: Any) -> None:
         patch("src.pipeline.orchestrator.WasapiLoopbackCapture") as MockCapture,
         patch("src.pipeline.orchestrator.VadWorker") as MockVadW,
         patch("src.pipeline.orchestrator.AsrWorker") as MockAsrW,
+        patch("src.pipeline.orchestrator.AnalysisWorker") as MockAnalysisW,
     ):
         MockVAD.return_value = MagicMock()
         MockASR.return_value = MagicMock()
         MockCapture.return_value = MagicMock()
         MockVadW.return_value = MagicMock()
         MockAsrW.return_value = MagicMock()
+        MockAnalysisW.return_value = MagicMock()
 
         orch = PipelineOrchestrator(config)
         orch.start()
@@ -464,10 +466,12 @@ class TestPipelineOrchestratorIntegration:
         """Pre-built mock workers with Qt-signal-like attributes."""
         vad_worker = MagicMock()
         asr_worker = MagicMock()
-        for worker in (vad_worker, asr_worker):
+        analysis_worker = MagicMock()
+        for worker in (vad_worker, asr_worker, analysis_worker):
             worker.error_occurred = MagicMock()
         asr_worker.asr_ready = MagicMock()
-        return {"vad": vad_worker, "asr": asr_worker}
+        analysis_worker.sentence_ready = MagicMock()
+        return {"vad": vad_worker, "asr": asr_worker, "analysis": analysis_worker}
 
     @pytest.fixture()
     def orchestrator(self, qt_app: Any, mock_workers: dict[str, MagicMock]) -> Any:
@@ -480,9 +484,15 @@ class TestPipelineOrchestratorIntegration:
             patch("src.pipeline.orchestrator.WasapiLoopbackCapture"),
             patch("src.pipeline.orchestrator.VadWorker", return_value=mock_workers["vad"]),
             patch("src.pipeline.orchestrator.AsrWorker", return_value=mock_workers["asr"]),
+            patch(
+                "src.pipeline.orchestrator.AnalysisWorker",
+                return_value=mock_workers["analysis"],
+            ),
         ):
             orch = PipelineOrchestrator(config=_pipeline_config())
             yield orch
+            if orch._running:
+                orch.stop()
 
     def test_start_calls_workers_in_vad_asr_order(
         self,
