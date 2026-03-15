@@ -1,0 +1,4 @@
+Grammar hits: 1
+  ことにする [0,5) N4
+てから hits: 2
+ALL PASS

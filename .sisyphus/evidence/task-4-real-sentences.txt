@@ -1,0 +1,4 @@
+ようにしている: 2 hits (max expected: 3) - non-overlapping verified
+わけではない: 1 hits (max expected: 1) - non-overlapping verified
+食べなければならない: 1 hits (max expected: 1) - non-overlapping verified
+ALL PASS

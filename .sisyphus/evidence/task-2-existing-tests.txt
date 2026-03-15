@@ -5,19 +5,22 @@ rootdir: /home/yuheng/MyASR
 configfile: pyproject.toml
 plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 12 items
+collecting ... collected 15 items
 
-tests/test_grammar.py::test_grammar_matcher_loads_rules PASSED           [  8%]
-tests/test_grammar.py::test_grammar_matcher_file_not_found PASSED        [ 16%]
-tests/test_grammar.py::test_grammar_hit_fields PASSED                    [ 25%]
-tests/test_grammar.py::test_grammar_hit_word_field_populated PASSED      [ 33%]
-tests/test_grammar.py::test_match_tekara_n5 PASSED                       [ 41%]
-tests/test_grammar.py::test_match_youni_n3 PASSED                        [ 50%]
-tests/test_grammar.py::test_matched_text_is_substring PASSED             [ 58%]
-tests/test_grammar.py::test_positions_identify_matched_text PASSED       [ 66%]
-tests/test_grammar.py::test_match_all_returns_all_levels PASSED          [ 75%]
-tests/test_grammar.py::test_match_all_includes_n3_rules PASSED           [ 83%]
-tests/test_grammar.py::test_match_empty_text_returns_empty PASSED        [ 91%]
-tests/test_grammar.py::test_match_non_japanese_returns_empty PASSED      [100%]
+tests/test_grammar.py::test_grammar_matcher_loads_rules PASSED           [  6%]
+tests/test_grammar.py::test_grammar_matcher_file_not_found PASSED        [ 13%]
+tests/test_grammar.py::test_grammar_hit_fields PASSED                    [ 20%]
+tests/test_grammar.py::test_grammar_hit_word_field_populated PASSED      [ 26%]
+tests/test_grammar.py::test_match_tekara_n5 PASSED                       [ 33%]
+tests/test_grammar.py::test_match_youni_n3 PASSED                        [ 40%]
+tests/test_grammar.py::test_matched_text_is_substring PASSED             [ 46%]
+tests/test_grammar.py::test_positions_identify_matched_text PASSED       [ 53%]
+tests/test_grammar.py::test_match_all_returns_all_levels PASSED          [ 60%]
+tests/test_grammar.py::test_match_all_includes_n3_rules PASSED           [ 66%]
+tests/test_grammar.py::test_match_empty_text_returns_empty PASSED        [ 73%]
+tests/test_grammar.py::test_match_non_japanese_returns_empty PASSED      [ 80%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_populated_for_capturing_groups PASSED [ 86%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_empty_for_simple_rules PASSED [ 93%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_spans_are_absolute_positions PASSED [100%]
 
-============================== 12 passed in 0.18s ==============================
+============================== 15 passed in 0.26s ==============================

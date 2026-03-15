@@ -1,0 +1,150 @@
+======================================================================
+GRAMMAR SINGLE-CHARACTER MATCH ANALYSIS
+Generated: 2026-03-15 | Source: data/grammar.json
+======================================================================
+
+Total rules in grammar.json: 831
+  N1: 253  N2: 197  N3: 181  N4: 123  N5: 77
+
+Rules whose regex can FULLMATCH a single character: 21
+  Of these, rules that ONLY EVER match 1 char: 21
+
+Test characters used:
+  Hiragana (46): あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゔ
+  Katakana (46): アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン
+  Particles:     はがをにでとものかへやよねわ
+  Kanji (26):    人日本語学生先生水火山川田力一二三四五六七八九十百千万
+  ASCII (62):    a-z A-Z 0-9
+
+----------------------------------------------------------------------
+RULES BY JLPT LEVEL — SINGLE-CHAR CAPABLE
+----------------------------------------------------------------------
+
+### N1 (3 rules with single-char match capability) ###
+  id= 146  word='さ'                            re='さ'
+         examples=['さ']  can_match_longer=False
+         description: -ness​ ; nominalizer for adjective; ending particle; indicates assertion  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 179  word='に'                            re='に'
+         examples=['に']  can_match_longer=False
+         description: destination particle; in; at; on; to; and; in addition to; the combination of ~  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 219  word='わ'                            re='わ'
+         examples=['わ']  can_match_longer=False
+         description: feminine sentence ending particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+
+### N2 (1 rules with single-char match capability) ###
+  id= 330  word='ぬ'                            re='ぬ'
+         examples=['ぬ']  can_match_longer=False
+         description: negative verb conjugation; traditional version of ない  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+
+### N3 (0 rules with single-char match capability) ###
+  [NONE]
+
+### N4 (5 rules with single-char match capability) ###
+  id= 636  word='も'                            re='も'
+         examples=['も']  can_match_longer=False
+         description: too; also; as well; as many as; as much as; up to; nearly ~  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 651  word='し'                            re='し'
+         examples=['し']  can_match_longer=False
+         description: and; and what’s more ~ (emphasis)  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 658  word='て / で'                        re='(?:て|で)'
+         examples=['で', 'て']  can_match_longer=False
+         description: conjunctive particle; so; because of [A], [B]...  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 664  word='と'                            re='と'
+         examples=['と']  can_match_longer=False
+         description: and; with; as; connecting particle; whenever [A] happens, [B] also happens  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 691  word='な'                            re='な'
+         examples=['な']  can_match_longer=False
+         description: don’t ~ (order somebody to not do something); na-adjectives  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+
+### N5 (12 rules with single-char match capability) ###
+  id= 758  word='に/へ'                          re='(?:に|へ)'
+         examples=['に', 'へ']  can_match_longer=False
+         description: to (indicates direction / destination)  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 760  word='ね'                            re='ね'
+         examples=['ね']  can_match_longer=False
+         description: isn't it? right? eh?  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 767  word='が'                            re='が'
+         examples=['が']  can_match_longer=False
+         description: subject marker; however; but ~  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 769  word='か'                            re='か'
+         examples=['か']  can_match_longer=False
+         description: question particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 774  word='い'                            re='い'
+         examples=['い']  can_match_longer=False
+         description: i-adjectives  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 790  word='で'                            re='で'
+         examples=['で']  can_match_longer=False
+         description: in; at; on; by; with; via ~  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 792  word='や'                            re='や'
+         examples=['や']  can_match_longer=False
+         description: and; or; connecting particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 793  word='よ'                            re='よ'
+         examples=['よ']  can_match_longer=False
+         description: you know; emphasis (ending particle)  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 800  word='お / ご'                        re='(?:お|ご)'
+         examples=['お']  can_match_longer=False
+         description: polite marker; honorific prefix particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 817  word='の'                            re='の'
+         examples=['の']  can_match_longer=False
+         description: possessive particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 818  word='は'                            re='は'
+         examples=['は']  can_match_longer=False
+         description: topic marker  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+  id= 825  word='を'                            re='を'
+         examples=['を']  can_match_longer=False
+         description: object marker particle  *** ONLY-1-CHAR (would be SUPPRESSED by _MIN_MATCH_LEN=2) ***
+
+======================================================================
+KEY FINDINGS
+======================================================================
+
+N3 rules with only-1-char regex: 0 ← NONE
+N2 rules with only-1-char regex: 1
+  id=330 word='ぬ' re='ぬ' — negative verb conjugation; traditional version of ない
+N1 rules with only-1-char regex: 3
+  id=146 word='さ' re='さ' — -ness​ ; nominalizer for adjective; ending particle; indicates assertion
+  id=179 word='に' re='に' — destination particle; in; at; on; to; and; in addition to; the combination of ~
+  id=219 word='わ' re='わ' — feminine sentence ending particle
+
+CONCLUSION REGARDING _MIN_MATCH_LEN = 2 FILTER:
+
+  1. N3: ZERO rules have single-char-only regex. Safe to filter.
+  2. N2: 1 rule(s) would be suppressed:
+       - id=330 word='ぬ' (negative verb conjugation; traditional version of ない)
+  3. N1: 3 rule(s) would be suppressed:
+       - id=146 word='さ' (-ness​ ; nominalizer for adjective; ending particle; indicates assertion)
+       - id=179 word='に' (destination particle; in; at; on; to; and; in addition to; the combination of ~)
+       - id=219 word='わ' (feminine sentence ending particle)
+
+  N1 'さ', N1 'に', N1 'わ', N2 'ぬ' are all single particles/suffixes.
+  These are NOISE rules — single-char particle patterns that are too
+  ambiguous to be useful grammar annotations in context-free matching.
+  Their suppression by _MIN_MATCH_LEN=2 is CORRECT behavior.
+
+  VALIDATION CONFIRMED: No N1/N2/N3 grammar rule has a regex that
+  represents a MULTI-CHAR grammar point truncated to 1 char. Every
+  affected rule genuinely is a single-character regex by design.
+  The _MIN_MATCH_LEN=2 filter is SAFE to implement without exceptions.
+
+ALL 21 RULES AFFECTED BY _MIN_MATCH_LEN=2 FILTER:
+  N1  id= 146  word='さ'  re='さ'
+  N1  id= 179  word='に'  re='に'
+  N1  id= 219  word='わ'  re='わ'
+  N2  id= 330  word='ぬ'  re='ぬ'
+  N4  id= 636  word='も'  re='も'
+  N4  id= 651  word='し'  re='し'
+  N4  id= 658  word='て / で'  re='(?:て|で)'
+  N4  id= 664  word='と'  re='と'
+  N4  id= 691  word='な'  re='な'
+  N5  id= 758  word='に/へ'  re='(?:に|へ)'
+  N5  id= 760  word='ね'  re='ね'
+  N5  id= 767  word='が'  re='が'
+  N5  id= 769  word='か'  re='か'
+  N5  id= 774  word='い'  re='い'
+  N5  id= 790  word='で'  re='で'
+  N5  id= 792  word='や'  re='や'
+  N5  id= 793  word='よ'  re='よ'
+  N5  id= 800  word='お / ご'  re='(?:お|ご)'
+  N5  id= 817  word='の'  re='の'
+  N5  id= 818  word='は'  re='は'
+  N5  id= 825  word='を'  re='を'

@@ -1,0 +1,8 @@
+  ことにする: 1 non-overlapping hits
+  ようにしている: 2 non-overlapping hits
+  わけではない: 1 non-overlapping hits
+  食べなければならない: 1 non-overlapping hits
+  食べてから寝てから起きる: 3 non-overlapping hits
+  日本語を勉強しなければならないと思います: 1 non-overlapping hits
+  彼女は毎日運動するようにしている: 2 non-overlapping hits
+ALL PASS — no overlaps detected

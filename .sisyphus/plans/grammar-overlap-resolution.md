@@ -155,7 +155,7 @@ Max Concurrent: 4 (Final wave)
 
 ## TODOs
 
-- [ ] 1. Validate Assumptions About Short Grammar Rules
+- [x] 1. Validate Assumptions About Short Grammar Rules
 
   **What to do**:
   - Query `data/grammar.json` to find ALL rules where the regex can only ever match ≤1 character
@@ -218,7 +218,7 @@ Max Concurrent: 4 (Final wave)
 
   **Commit**: NO (analysis only, no code changes)
 
-- [ ] 2. Write TDD Tests for Overlap Resolution (RED phase)
+- [x] 2. Write TDD Tests for Overlap Resolution (RED phase)
 
   **What to do**:
   - Create `tests/test_grammar_resolution.py` with comprehensive tests for `_resolve_overlaps()` behavior
@@ -327,7 +327,7 @@ Max Concurrent: 4 (Final wave)
   - Files: `tests/test_grammar_resolution.py`
   - Pre-commit: `pytest tests/test_grammar.py -v` (existing tests still pass)
 
-- [ ] 3. Implement `_resolve_overlaps()` and Modify `match_all()` (GREEN phase)
+- [x] 3. Implement `_resolve_overlaps()` and Modify `match_all()` (GREEN phase)
 
   **What to do**:
   - Add module-level constant to `src/analysis/grammar.py`:
@@ -494,7 +494,7 @@ Max Concurrent: 4 (Final wave)
   - Files: `src/analysis/grammar.py`
   - Pre-commit: `pytest tests/ && ruff check src/analysis/grammar.py && mypy src/analysis/grammar.py`
 
-- [ ] 4. Full Regression Suite + Integration QA
+- [x] 4. Full Regression Suite + Integration QA
 
   **What to do**:
   - Run the ENTIRE test suite: `pytest tests/ -v`
@@ -648,19 +648,19 @@ Max Concurrent: 4 (Final wave)
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read `src/analysis/grammar.py`, find `_resolve_overlaps`, `_MIN_MATCH_LEN`, updated docstring). For each "Must NOT Have": search for modifications to `highlight.py`, `models.py`, `pipeline.py`, `grammar.json`. Check evidence files exist in `.sisyphus/evidence/`. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check src/analysis/grammar.py tests/test_grammar_resolution.py && mypy src/analysis/grammar.py && pytest tests/`. Review `grammar.py` for: magic numbers (should use `_MIN_MATCH_LEN`), empty catches, `type: ignore`, commented-out code, unused imports, excessive comments, over-abstraction.
   Output: `Ruff [PASS/FAIL] | Mypy [PASS/FAIL] | Tests [N pass/N fail] | Code Review [CLEAN/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   Execute EVERY QA scenario from EVERY task — follow exact steps in `python -c` blocks, capture evidence. Test with real sentences: `ことにする`, `ようにしている`, `わけではない`, `食べなければならない`, `食べてから飲んでから寝る`. Verify non-overlapping output. Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   Run `git diff` on all changed files. Verify ONLY `src/analysis/grammar.py` and `tests/test_grammar_resolution.py` were modified/created. No changes to `highlight.py`, `models.py`, `pipeline.py`, `grammar.json`, `config.py`. Check "Must NOT do" compliance. Flag unaccounted changes.
   Output: `Files Changed [N expected/N actual] | Scope [CLEAN/N violations] | VERDICT`
 

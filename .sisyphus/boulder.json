@@ -1,8 +1,8 @@
 {
-  "active_plan": "/home/yuheng/MyASR/.sisyphus/plans/grammar-highlight-precision.md",
-  "started_at": "2026-03-15T08:37:19.843Z",
-  "session_ids": ["ses_30fa02b01ffeBVzfO1AKtjZVrX"],
-  "plan_name": "grammar-highlight-precision",
+  "active_plan": "/home/yuheng/MyASR/.sisyphus/plans/grammar-overlap-resolution.md",
+  "started_at": "2026-03-15T12:26:36.684Z",
+  "session_ids": ["ses_30ea97214ffehle1GO5bbOMg3p"],
+  "plan_name": "grammar-overlap-resolution",
   "worktree_path": "/home/yuheng/MyASR",
   "agent": "atlas"
 }

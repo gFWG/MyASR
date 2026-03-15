@@ -1,0 +1,492 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 23 items
+
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[empty] FAILED [  4%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[single_hit] FAILED [  8%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_non_overlapping] FAILED [ 13%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_overlapping_longer_wins] FAILED [ 17%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[longer_wins_input_order] FAILED [ 21%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_length_earlier_start_wins] FAILED [ 26%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[identical_span_lower_jlpt_wins] FAILED [ 30%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[adjacent_spans_both_preserved] FAILED [ 34%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[three_hits_first_third_kept] FAILED [ 39%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[min_length_filtered] FAILED [ 43%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[zero_length_filtered] FAILED [ 47%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[matched_parts_preserved] FAILED [ 52%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_rule_id_non_overlapping] FAILED [ 56%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[output_sorted_by_start_pos] FAILED [ 60%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[hit_at_start_pos_zero] FAILED [ 65%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_matched_parts_content FAILED [ 69%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_identical_span_winner_attributes FAILED [ 73%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_min_length_boundary FAILED [ 78%]
+tests/test_grammar_resolution.py::test_integration_koto_ni_suru_one_hit FAILED [ 82%]
+tests/test_grammar_resolution.py::test_integration_tekara_double_occurrence PASSED [ 86%]
+tests/test_grammar_resolution.py::test_integration_wake_dewa_nai_one_hit FAILED [ 91%]
+tests/test_grammar_resolution.py::test_integration_empty_string PASSED   [ 95%]
+tests/test_grammar_resolution.py::test_integration_no_overlaps_in_output FAILED [100%]
+
+=================================== FAILURES ===================================
+______________________ test_resolve_overlaps_unit[empty] _______________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'empty', input_hits = [], expected_spans = []
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+____________________ test_resolve_overlaps_unit[single_hit] ____________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'single_hit'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos=5, matched_parts=())]
+expected_spans = [(0, 5)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_______________ test_resolve_overlaps_unit[two_non_overlapping] ________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'two_non_overlapping'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_p...st', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=5, end_pos=8, matched_parts=())]
+expected_spans = [(0, 3), (5, 8)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+___________ test_resolve_overlaps_unit[two_overlapping_longer_wins] ____________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'two_overlapping_longer_wins'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end...est', matched_text='xx', word='test', jlpt_level=5, description='test rule', start_pos=2, end_pos=4, matched_parts=())]
+expected_spans = [(0, 5)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_____________ test_resolve_overlaps_unit[longer_wins_input_order] ______________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'longer_wins_input_order'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=2, end_p..., matched_text='xxxxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos=6, matched_parts=())]
+expected_spans = [(0, 6)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+__________ test_resolve_overlaps_unit[same_length_earlier_start_wins] __________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'same_length_earlier_start_wins'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=1, end_p...st', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=2, end_pos=5, matched_parts=())]
+expected_spans = [(1, 4)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+__________ test_resolve_overlaps_unit[identical_span_lower_jlpt_wins] __________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'identical_span_lower_jlpt_wins'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_p...st', matched_text='xxx', word='test', jlpt_level=2, description='test rule', start_pos=0, end_pos=3, matched_parts=())]
+expected_spans = [(0, 3)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+__________ test_resolve_overlaps_unit[adjacent_spans_both_preserved] ___________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'adjacent_spans_both_preserved'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_p...st', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=3, end_pos=6, matched_parts=())]
+expected_spans = [(0, 3), (3, 6)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+___________ test_resolve_overlaps_unit[three_hits_first_third_kept] ____________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'three_hits_first_third_kept'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end..., matched_text='xxxxx', word='test', jlpt_level=5, description='test rule', start_pos=6, end_pos=11, matched_parts=())]
+expected_spans = [(0, 5), (6, 11)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_______________ test_resolve_overlaps_unit[min_length_filtered] ________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'min_length_filtered'
+input_hits = [GrammarHit(rule_id='test', matched_text='x', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos=1, matched_parts=())]
+expected_spans = []
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_______________ test_resolve_overlaps_unit[zero_length_filtered] _______________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'zero_length_filtered'
+input_hits = [GrammarHit(rule_id='test', matched_text='', word='test', jlpt_level=5, description='test rule', start_pos=3, end_pos=3, matched_parts=())]
+expected_spans = []
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_____________ test_resolve_overlaps_unit[matched_parts_preserved] ______________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'matched_parts_preserved'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos=5, matched_parts=((1, 3),))]
+expected_spans = [(0, 5)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+___________ test_resolve_overlaps_unit[same_rule_id_non_overlapping] ___________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'same_rule_id_non_overlapping'
+input_hits = [GrammarHit(rule_id='r1', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos...r1', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=5, end_pos=8, matched_parts=())]
+expected_spans = [(0, 3), (5, 8)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+____________ test_resolve_overlaps_unit[output_sorted_by_start_pos] ____________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'output_sorted_by_start_pos'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=5, end_p...st', matched_text='xxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_pos=3, matched_parts=())]
+expected_spans = [(0, 3), (5, 8)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+______________ test_resolve_overlaps_unit[hit_at_start_pos_zero] _______________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+case_id = 'hit_at_start_pos_zero'
+input_hits = [GrammarHit(rule_id='test', matched_text='xxxx', word='test', jlpt_level=5, description='test rule', start_pos=0, end_...t', matched_text='xxxx', word='test', jlpt_level=5, description='test rule', start_pos=2, end_pos=6, matched_parts=())]
+expected_spans = [(0, 4)]
+
+    @pytest.mark.parametrize(
+        "case_id,input_hits,expected_spans",
+        RESOLVE_CASES,
+        ids=[c[0] for c in RESOLVE_CASES],
+    )
+    def test_resolve_overlaps_unit(
+        gm: GrammarMatcher,
+        case_id: str,
+        input_hits: list[GrammarHit],
+        expected_spans: list[tuple[int, int]],
+    ) -> None:
+>       result = gm._resolve_overlaps(input_hits)  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:99: AttributeError
+_________________ test_resolve_overlaps_matched_parts_content __________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_resolve_overlaps_matched_parts_content(gm: GrammarMatcher) -> None:
+        parts = ((1, 3), (4, 6))
+>       result = gm._resolve_overlaps([_make_hit(0, 8, matched_parts=parts)])  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:106: AttributeError
+____________ test_resolve_overlaps_identical_span_winner_attributes ____________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_resolve_overlaps_identical_span_winner_attributes(gm: GrammarMatcher) -> None:
+        harder = _make_hit(0, 5, jlpt=2, rule_id="hard", word="hard_word")
+        easier = _make_hit(0, 5, jlpt=5, rule_id="easy", word="easy_word")
+>       result = gm._resolve_overlaps([easier, harder])  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:114: AttributeError
+__________________ test_resolve_overlaps_min_length_boundary ___________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_resolve_overlaps_min_length_boundary(gm: GrammarMatcher) -> None:
+>       result = gm._resolve_overlaps([_make_hit(0, 2), _make_hit(5, 6)])  # type: ignore[attr-defined]
+                 ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'GrammarMatcher' object has no attribute '_resolve_overlaps'
+
+tests/test_grammar_resolution.py:121: AttributeError
+____________________ test_integration_koto_ni_suru_one_hit _____________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_integration_koto_ni_suru_one_hit(gm: GrammarMatcher) -> None:
+        hits = gm.match_all("ことにする")
+>       assert len(hits) == 1, (
+            f"ことにする: expected 1 hit, got {len(hits)}: "
+            f"{[(h.word, h.start_pos, h.end_pos) for h in hits]}"
+        )
+E       AssertionError: ことにする: expected 1 hit, got 7: [('に', 2, 3), ('ことに', 0, 3), ('こと', 0, 2), ('ことにする', 0, 5), ('と', 1, 2), ('にする', 2, 5), ('に/へ', 2, 3)]
+E       assert 7 == 1
+E        +  where 7 = len([GrammarHit(rule_id='179', matched_text='に', word='に', jlpt_level=1, description='destination particle; in; at; on; to; and; in addition to; the combination of ~', start_pos=2, end_pos=3, matched_parts=()), GrammarHit(rule_id='396', matched_text='ことに', word='ことに', jlpt_level=2, description="emphasize speaker's feelings; to my (surprise/etc)", start_pos=0, end_pos=3, matched_parts=()), GrammarHit(rule_id='474', matched_text='こと', word='こと', jlpt_level=3, description='Verb nominalizer; (must) do', start_pos=0, end_pos=2, matched_parts=()), GrammarHit(rule_id='644', matched_text='ことにする', word='ことにする', jlpt_level=4, description='to decide on', start_pos=0, end_pos=5, matched_parts=()), GrammarHit(rule_id='664', matched_text='と', word='と', jlpt_level=4, description='and; with; as; connecting particle; whenever [A] happens, [B] also happens', start_pos=1, end_pos=2, matched_parts=()), GrammarHit(rule_id='699', matched_text='にする', word='にする', jlpt_level=4, description='to decide on; to make something ~', start_pos=2, end_pos=5, matched_parts=()), ...])
+
+tests/test_grammar_resolution.py:129: AssertionError
+____________________ test_integration_wake_dewa_nai_one_hit ____________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_integration_wake_dewa_nai_one_hit(gm: GrammarMatcher) -> None:
+        hits = gm.match_all("わけではない")
+>       assert len(hits) == 1, (
+            f"わけではない: expected 1 hit, got {len(hits)}: "
+            f"{[(h.word, h.start_pos, h.end_pos) for h in hits]}"
+        )
+E       AssertionError: わけではない: expected 1 hit, got 9: [('わ', 0, 1), ('ては / では', 2, 4), ('わけではない', 0, 6), ('て / で', 2, 3), ('な', 4, 5), ('い', 5, 6), ('じゃない・ではない', 2, 6), ('で', 2, 3), ('は', 3, 4)]
+E       assert 9 == 1
+E        +  where 9 = len([GrammarHit(rule_id='219', matched_text='わ', word='わ', jlpt_level=1, description='feminine sentence ending particle', start_pos=0, end_pos=1, matched_parts=()), GrammarHit(rule_id='367', matched_text='では', word='ては / では', jlpt_level=2, description='whenever; if; when~; repetitive action', start_pos=2, end_pos=4, matched_parts=()), GrammarHit(rule_id='456', matched_text='わけではない', word='わけではない', jlpt_level=3, description='it doesn’t mean that; it is not the case that; I don’t mean that; it is not true that ~', start_pos=0, end_pos=6, matched_parts=()), GrammarHit(rule_id='658', matched_text='で', word='て / で', jlpt_level=4, description='conjunctive particle; so; because of [A], [B]...', start_pos=2, end_pos=3, matched_parts=()), GrammarHit(rule_id='691', matched_text='な', word='な', jlpt_level=4, description='don’t ~ (order somebody to not do something); na-adjectives', start_pos=4, end_pos=5, matched_parts=()), GrammarHit(rule_id='774', matched_text='い', word='い', jlpt_level=5, description='i-adjectives', start_pos=5, end_pos=6, matched_parts=()), ...])
+
+tests/test_grammar_resolution.py:147: AssertionError
+____________________ test_integration_no_overlaps_in_output ____________________
+
+gm = <src.analysis.grammar.GrammarMatcher object at 0x7c3a08895730>
+
+    def test_integration_no_overlaps_in_output(gm: GrammarMatcher) -> None:
+        sentences = [
+            "ことにする",
+            "わけではない",
+            "食べてから寝てから起きる",
+            "上手になるように練習している",
+            "日本語を勉強しなければならないと思います",
+        ]
+        for sentence in sentences:
+            hits = sorted(gm.match_all(sentence), key=lambda h: h.start_pos)
+            for i in range(len(hits) - 1):
+                a, b = hits[i], hits[i + 1]
+>               assert not (a.start_pos < b.end_pos and b.start_pos < a.end_pos), (
+                    f"Overlap in {sentence!r}: "
+                    f"{a.word!r}[{a.start_pos},{a.end_pos}) vs "
+                    f"{b.word!r}[{b.start_pos},{b.end_pos})"
+                )
+E               AssertionError: Overlap in 'ことにする': 'ことに'[0,3) vs 'こと'[0,2)
+E               assert not (0 < 2 and 0 < 3)
+E                +  where 0 = GrammarHit(rule_id='396', matched_text='ことに', word='ことに', jlpt_level=2, description="emphasize speaker's feelings; to my (surprise/etc)", start_pos=0, end_pos=3, matched_parts=()).start_pos
+E                +  and   2 = GrammarHit(rule_id='474', matched_text='こと', word='こと', jlpt_level=3, description='Verb nominalizer; (must) do', start_pos=0, end_pos=2, matched_parts=()).end_pos
+E                +  and   0 = GrammarHit(rule_id='474', matched_text='こと', word='こと', jlpt_level=3, description='Verb nominalizer; (must) do', start_pos=0, end_pos=2, matched_parts=()).start_pos
+E                +  and   3 = GrammarHit(rule_id='396', matched_text='ことに', word='ことに', jlpt_level=2, description="emphasize speaker's feelings; to my (surprise/etc)", start_pos=0, end_pos=3, matched_parts=()).end_pos
+
+tests/test_grammar_resolution.py:169: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[empty] - ...
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[single_hit]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_non_overlapping]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_overlapping_longer_wins]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[longer_wins_input_order]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_length_earlier_start_wins]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[identical_span_lower_jlpt_wins]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[adjacent_spans_both_preserved]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[three_hits_first_third_kept]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[min_length_filtered]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[zero_length_filtered]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[matched_parts_preserved]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_rule_id_non_overlapping]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[output_sorted_by_start_pos]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_unit[hit_at_start_pos_zero]
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_matched_parts_content
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_identical_span_winner_attributes
+FAILED tests/test_grammar_resolution.py::test_resolve_overlaps_min_length_boundary
+FAILED tests/test_grammar_resolution.py::test_integration_koto_ni_suru_one_hit
+FAILED tests/test_grammar_resolution.py::test_integration_wake_dewa_nai_one_hit
+FAILED tests/test_grammar_resolution.py::test_integration_no_overlaps_in_output
+========================= 21 failed, 2 passed in 0.15s =========================
