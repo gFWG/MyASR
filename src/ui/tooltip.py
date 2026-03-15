@@ -136,7 +136,7 @@ class TooltipPopup(QWidget):
         self._level_label.setStyleSheet(
             f"background: {level_color}; color: white; border-radius: 4px; padding: 1px 4px;"
         )
-        self._word_label.setText(hit.matched_text)
+        self._word_label.setText(hit.word)
         self._pronunciation_label.hide()
         description = hit.description or "Grammar pattern"
         self._desc_label.setText(f"{hit.word or hit.matched_text}: {description}")

@@ -1,0 +1,1 @@
+Fallback hover detection: PASS

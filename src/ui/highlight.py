@@ -80,7 +80,11 @@ class HighlightRenderer:
         grammar_spans: list[_Span] = []
         for gh in analysis.grammar_hits:
             color = self._grammar_color(gh.jlpt_level)
-            grammar_spans.append((gh.start_pos, gh.end_pos, color, _TYPE_GRAMMAR))
+            if gh.matched_parts:
+                for part_start, part_end in gh.matched_parts:
+                    grammar_spans.append((part_start, part_end, color, _TYPE_GRAMMAR))
+            else:
+                grammar_spans.append((gh.start_pos, gh.end_pos, color, _TYPE_GRAMMAR))
 
         vocab_spans: list[_Span] = []
         for vh in analysis.vocab_hits:
@@ -133,8 +137,13 @@ class HighlightRenderer:
             first ``VocabHit`` if no grammar hit matches, or ``None``.
         """
         for gh in analysis.grammar_hits:
-            if gh.start_pos <= position < gh.end_pos:
-                return gh
+            if gh.matched_parts:
+                for part_start, part_end in gh.matched_parts:
+                    if part_start <= position < part_end:
+                        return gh
+            else:
+                if gh.start_pos <= position < gh.end_pos:
+                    return gh
 
         for vh in analysis.vocab_hits:
             if vh.start_pos <= position < vh.end_pos:
