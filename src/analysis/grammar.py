@@ -88,6 +88,11 @@ class GrammarMatcher:
         hits: list[GrammarHit] = []
         for rule in self._rules:
             for m in rule.pattern.finditer(text):
+                parts: tuple[tuple[int, int], ...] = ()
+                if m.lastindex:  # has capturing groups
+                    parts = tuple(
+                        m.span(i) for i in range(1, m.lastindex + 1) if m.group(i) is not None
+                    )
                 hits.append(
                     GrammarHit(
                         rule_id=rule.rule_id,
@@ -97,6 +102,7 @@ class GrammarMatcher:
                         description=rule.description,
                         start_pos=m.start(),
                         end_pos=m.end(),
+                        matched_parts=parts,
                     )
                 )
         return hits

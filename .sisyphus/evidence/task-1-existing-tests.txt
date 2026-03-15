@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 33 items
+
+tests/test_grammar.py::test_grammar_matcher_loads_rules PASSED           [  3%]
+tests/test_grammar.py::test_grammar_matcher_file_not_found PASSED        [  6%]
+tests/test_grammar.py::test_grammar_hit_fields PASSED                    [  9%]
+tests/test_grammar.py::test_grammar_hit_word_field_populated PASSED      [ 12%]
+tests/test_grammar.py::test_match_tekara_n5 PASSED                       [ 15%]
+tests/test_grammar.py::test_match_youni_n3 PASSED                        [ 18%]
+tests/test_grammar.py::test_matched_text_is_substring PASSED             [ 21%]
+tests/test_grammar.py::test_positions_identify_matched_text PASSED       [ 24%]
+tests/test_grammar.py::test_match_all_returns_all_levels PASSED          [ 27%]
+tests/test_grammar.py::test_match_all_includes_n3_rules PASSED           [ 30%]
+tests/test_grammar.py::test_match_empty_text_returns_empty PASSED        [ 33%]
+tests/test_grammar.py::test_match_non_japanese_returns_empty PASSED      [ 36%]
+tests/test_highlight.py::test_jlpt_colors_has_all_five_levels PASSED     [ 39%]
+tests/test_highlight.py::test_jlpt_colors_each_level_has_vocab_and_grammar_keys PASSED [ 42%]
+tests/test_highlight.py::test_jlpt_colors_exact_values PASSED            [ 45%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_grammar_over_vocab PASSED [ 48%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_vocab_when_no_grammar PASSED [ 51%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_none_outside_all_hits PASSED [ 54%]
+tests/test_highlight.py::test_get_highlight_at_position_boundary_inclusive_start PASSED [ 57%]
+tests/test_highlight.py::test_get_highlight_at_position_boundary_exclusive_end PASSED [ 60%]
+tests/test_highlight.py::test_get_highlight_at_position_empty_analysis_returns_none PASSED [ 63%]
+tests/test_highlight.py::test_get_highlight_at_position_grammar_at_pos_with_no_vocab PASSED [ 66%]
+tests/test_highlight.py::test_apply_to_document_empty_text PASSED        [ 69%]
+tests/test_highlight.py::test_apply_to_document_plain_text_no_hits PASSED [ 72%]
+tests/test_highlight.py::test_apply_to_document_vocab_highlight PASSED   [ 75%]
+tests/test_highlight.py::test_apply_to_document_position_alignment PASSED [ 78%]
+tests/test_highlight.py::test_apply_to_document_grammar_suppresses_vocab PASSED [ 81%]
+tests/test_highlight.py::test_apply_to_document_non_overlapping_both_highlighted PASSED [ 84%]
+tests/test_highlight.py::test_apply_to_document_multiple_vocab_hits PASSED [ 87%]
+tests/test_highlight.py::test_apply_to_document_custom_colors PASSED     [ 90%]
+tests/test_highlight.py::test_apply_to_document_update_colors PASSED     [ 93%]
+tests/test_highlight.py::test_apply_to_document_default_colors PASSED    [ 96%]
+tests/test_highlight.py::test_apply_to_document_partial_overlap_both_present PASSED [100%]
+
+============================== 33 passed in 0.30s ==============================

@@ -35,6 +35,7 @@ class GrammarHit:
     description: str
     start_pos: int
     end_pos: int
+    matched_parts: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass
@@ -77,17 +78,11 @@ class SentenceResult:
 
         vocab_hits = []
         if enable_vocab:
-            vocab_hits = [
-                h for h in self.analysis.vocab_hits
-                if h.jlpt_level <= user_level
-            ]
+            vocab_hits = [h for h in self.analysis.vocab_hits if h.jlpt_level <= user_level]
 
         grammar_hits = []
         if enable_grammar:
-            grammar_hits = [
-                h for h in self.analysis.grammar_hits
-                if h.jlpt_level <= user_level
-            ]
+            grammar_hits = [h for h in self.analysis.grammar_hits if h.jlpt_level <= user_level]
 
         return AnalysisResult(
             tokens=self.analysis.tokens,
