@@ -1,0 +1,52 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 41 items
+
+tests/test_grammar.py::test_grammar_matcher_loads_rules PASSED           [  2%]
+tests/test_grammar.py::test_grammar_matcher_file_not_found PASSED        [  4%]
+tests/test_grammar.py::test_grammar_hit_fields PASSED                    [  7%]
+tests/test_grammar.py::test_grammar_hit_word_field_populated PASSED      [  9%]
+tests/test_grammar.py::test_match_tekara_n5 PASSED                       [ 12%]
+tests/test_grammar.py::test_match_youni_n3 PASSED                        [ 14%]
+tests/test_grammar.py::test_matched_text_is_substring PASSED             [ 17%]
+tests/test_grammar.py::test_positions_identify_matched_text PASSED       [ 19%]
+tests/test_grammar.py::test_match_all_returns_all_levels PASSED          [ 21%]
+tests/test_grammar.py::test_match_all_includes_n3_rules PASSED           [ 24%]
+tests/test_grammar.py::test_match_empty_text_returns_empty PASSED        [ 26%]
+tests/test_grammar.py::test_match_non_japanese_returns_empty PASSED      [ 29%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_populated_for_capturing_groups PASSED [ 31%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_empty_for_simple_rules PASSED [ 34%]
+tests/test_grammar.py::test_grammar_hit_matched_parts_spans_are_absolute_positions PASSED [ 36%]
+tests/test_highlight.py::test_jlpt_colors_has_all_five_levels PASSED     [ 39%]
+tests/test_highlight.py::test_jlpt_colors_each_level_has_vocab_and_grammar_keys PASSED [ 41%]
+tests/test_highlight.py::test_jlpt_colors_exact_values PASSED            [ 43%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_grammar_over_vocab PASSED [ 46%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_vocab_when_no_grammar PASSED [ 48%]
+tests/test_highlight.py::test_get_highlight_at_position_returns_none_outside_all_hits PASSED [ 51%]
+tests/test_highlight.py::test_get_highlight_at_position_boundary_inclusive_start PASSED [ 53%]
+tests/test_highlight.py::test_get_highlight_at_position_boundary_exclusive_end PASSED [ 56%]
+tests/test_highlight.py::test_get_highlight_at_position_empty_analysis_returns_none PASSED [ 58%]
+tests/test_highlight.py::test_get_highlight_at_position_grammar_at_pos_with_no_vocab PASSED [ 60%]
+tests/test_highlight.py::test_apply_to_document_empty_text PASSED        [ 63%]
+tests/test_highlight.py::test_apply_to_document_plain_text_no_hits PASSED [ 65%]
+tests/test_highlight.py::test_apply_to_document_vocab_highlight PASSED   [ 68%]
+tests/test_highlight.py::test_apply_to_document_position_alignment PASSED [ 70%]
+tests/test_highlight.py::test_apply_to_document_grammar_suppresses_vocab PASSED [ 73%]
+tests/test_highlight.py::test_apply_to_document_non_overlapping_both_highlighted PASSED [ 75%]
+tests/test_highlight.py::test_apply_to_document_multiple_vocab_hits PASSED [ 78%]
+tests/test_highlight.py::test_apply_to_document_custom_colors PASSED     [ 80%]
+tests/test_highlight.py::test_apply_to_document_update_colors PASSED     [ 82%]
+tests/test_highlight.py::test_apply_to_document_default_colors PASSED    [ 85%]
+tests/test_highlight.py::test_apply_to_document_partial_overlap_both_present PASSED [ 87%]
+tests/test_highlight.py::test_get_highlight_at_position_grammar_parts_only PASSED [ 90%]
+tests/test_highlight.py::test_get_highlight_at_position_grammar_fallback_full_range PASSED [ 92%]
+tests/test_highlight.py::test_apply_to_document_multi_part_grammar_partial_highlight PASSED [ 95%]
+tests/test_highlight.py::test_vocab_not_suppressed_in_grammar_filler_gap PASSED [ 97%]
+tests/test_highlight.py::test_vocab_suppressed_within_grammar_part PASSED [100%]
+
+============================== 41 passed in 0.29s ==============================

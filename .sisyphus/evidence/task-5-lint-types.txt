@@ -1,0 +1,5 @@
+All checks passed!
+Would reformat: src/analysis/jlpt_vocab.py
+Would reformat: src/ui/overlay.py
+2 files would be reformatted, 68 files already formatted
+Success: no issues found in 38 source files

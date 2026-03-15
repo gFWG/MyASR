@@ -158,7 +158,7 @@ Max Concurrent: 2 (Waves 1 & 2)
 
 ## TODOs
 
-- [ ] 1. Extend `GrammarHit` DTO with `matched_parts` field
+- [x] 1. Extend `GrammarHit` DTO with `matched_parts` field
 
   **What to do**:
   - Add a new field `matched_parts: tuple[tuple[int, int], ...] = ()` to the `GrammarHit` dataclass in `src/models.py`
@@ -239,7 +239,7 @@ Max Concurrent: 2 (Waves 1 & 2)
   - Files: `src/models.py`
   - Pre-commit: `pytest tests/test_grammar.py tests/test_highlight.py`
 
-- [ ] 2. Update `GrammarMatcher.match_all()` to extract capturing group spans
+- [x] 2. Update `GrammarMatcher.match_all()` to extract capturing group spans
 
   **What to do**:
   - In `src/analysis/grammar.py`, modify the `match_all()` method to detect and extract capturing group positions
@@ -369,7 +369,7 @@ print(f'Rule 762 matched_parts: {tekara[0].matched_parts} (correct: empty)')
   - Files: `src/models.py`, `src/analysis/grammar.py`
   - Pre-commit: `pytest tests/test_grammar.py`
 
-- [ ] 3. Update `HighlightRenderer` for multi-span grammar highlighting and precise hover
+- [x] 3. Update `HighlightRenderer` for multi-span grammar highlighting and precise hover
 
   **What to do**:
   Three changes in `src/ui/highlight.py`:
@@ -547,7 +547,7 @@ print('Vocab in filler gap NOT suppressed: PASS')
   - Files: `src/ui/highlight.py`
   - Pre-commit: `pytest tests/test_highlight.py`
 
-- [ ] 4. Update `TooltipPopup` to show grammar word pattern instead of full matched text
+- [x] 4. Update `TooltipPopup` to show grammar word pattern instead of full matched text
 
   **What to do**:
   - In `src/ui/tooltip.py`, line 139: change `self._word_label.setText(hit.matched_text)` to `self._word_label.setText(hit.word)`
@@ -628,7 +628,7 @@ print('TooltipPopup import: PASS')
   - Files: `src/ui/tooltip.py`
   - Pre-commit: `pytest tests/test_highlight.py`
 
-- [ ] 5. Update and extend test suite for multi-part grammar highlighting
+- [x] 5. Update and extend test suite for multi-part grammar highlighting
 
   **What to do**:
   Two test files need updates:
@@ -731,19 +731,19 @@ print('TooltipPopup import: PASS')
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run command). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in `.sisyphus/evidence/`. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check . && ruff format --check .` + `mypy src/` + `pytest tests/`. Review all changed files for: `type: ignore`, empty catches, `print()` in prod, commented-out code, unused imports. Check AI slop: excessive comments, over-abstraction, generic variable names.
   Output: `Lint [PASS/FAIL] | Types [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high`
+- [x] F3. **Real Manual QA** — `unspecified-high`
   Start from clean state. Execute EVERY QA scenario from EVERY task — follow exact steps, capture evidence. Test cross-task integration (grammar with capturing groups vs without). Test edge cases: empty text, no grammar hits, overlapping hits. Save to `.sisyphus/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (`git log/diff`). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance. Detect cross-task contamination: Task N touching Task M's files. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 

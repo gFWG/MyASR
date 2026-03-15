@@ -1,0 +1,212 @@
+MANUAL QA RESULTS — grammar-highlight-precision
+Generated: 2026-03-15
+Plan: grammar-highlight-precision
+
+============================================================
+TASK 1 QA: GrammarHit matched_parts field
+============================================================
+
+T1-A: GrammarHit with matched_parts
+  Input: GrammarHit(rule_id='1', matched_text='がなら', word='が...なら', jlpt_level=2,
+                    description='test', start_pos=0, end_pos=4, matched_parts=((0,1),(2,4)))
+  Output: ((0, 1), (2, 4))
+  Result: PASS
+
+T1-B: GrammarHit default empty tuple
+  Input: GrammarHit(rule_id='1', matched_text='ながら', word='ながら', jlpt_level=3,
+                    description='test', start_pos=0, end_pos=3)
+  Output: ()
+  Result: PASS
+
+============================================================
+TASK 2 QA: match_all() capturing group extraction
+============================================================
+
+T2-A: Rule 164 produces non-empty matched_parts
+  Input text: 'なりとなり'
+  Multi-part hits: 1
+    rule=164 parts=((0, 2), (3, 5)) text=なりとなり
+  Assertions: len(multi) > 0 ✓, all spans valid and non-empty ✓
+  Result: PASS
+
+T2-B: Rule 762 (てから) produces empty matched_parts
+  Input text: '食べてから寝る'
+  Rule 762 matched_parts: ()
+  Result: PASS
+
+============================================================
+TASK 3 QA: HighlightRenderer multi-span + hover
+============================================================
+
+T3-A: Part-level hover detection
+  GrammarHit: rule='47', matched_parts=((0,1),(2,4))
+  pos=0 -> hit (keyword part) ✓
+  pos=1 -> None (filler gap) ✓
+  pos=2 -> hit (keyword part) ✓
+  Result: PASS — keyword parts trigger hover, filler does not
+
+T3-B: Fallback (no matched_parts) highlights full range
+  GrammarHit: rule='99', word='ながら', no matched_parts (fallback)
+  pos=0,1,2 -> hit ✓ (full range covered)
+  pos=3 -> None ✓ (out of range)
+  Result: PASS — fallback full range hover works
+
+T3-C: Vocab in filler gap NOT suppressed
+  GrammarHit: rule='47', matched_parts=((0,1),(3,5))
+  VocabHit at pos 1-2 (filler gap between parts)
+  pos=1 -> VocabHit (not None, not suppressed) ✓
+  Result: PASS — vocab in filler gap is visible and hoverable
+
+============================================================
+TASK 4 QA: Tooltip uses hit.word
+============================================================
+
+T4-A: Source check — hit.word in show_for_grammar
+  File: src/ui/tooltip.py
+  Found: 'self._word_label.setText(hit.word)' ✓
+  Not found: 'self._word_label.setText(hit.matched_text)' ✓
+  Result: PASS — tooltip uses hit.word for word label
+
+============================================================
+INTEGRATION TESTS
+============================================================
+
+INT-1: Cross-task integration — rule 164 in full pipeline
+  Input text: 'なりとなり'
+  Multi-part hits from real grammar: 1
+    rule=164 parts=((0, 2), (3, 5))
+  Keyword part hover assertions:
+    pos=0,1 (parts[0]) -> hit ✓
+    pos=3,4 (parts[1]) -> hit ✓
+  Filler position analysis (pos=2, char='と'):
+    Returns GrammarHit rule=664 (NOT rule=164) ✓
+    REFINED ASSERTION: filler does not hover as rule 164, but independent rule 664
+    correctly matches 'と' at same position — expected/correct behavior
+  Result: PASS — full pipeline integration with real rules
+  Note: INT-1 scenario's strict assertion (filler=None) was overly strict for real data.
+        Real grammar.json has rule 664 ('と') that independently matches filler position.
+        The design property holds: rule 164's filler does NOT hover as rule 164.
+
+INT-2: Simple rule (てから) backward compatibility
+  Input text: '食べてから寝る'
+  Rule 762 (てから): matched_parts=(), start=2, end=5
+  All positions in [2,5) -> hover returns hit (not None) ✓
+  Result: PASS — てから backward compat verified (start=2, end=5)
+
+============================================================
+EDGE CASES
+============================================================
+
+EDGE-1: Empty text returns no hits
+  gm.match_all('') -> []
+  renderer.get_highlight_at_position(0, empty_analysis) -> None
+  Result: PASS — empty text
+
+EDGE-2: No grammar hits
+  AnalysisResult(grammar_hits=[])
+  renderer.get_highlight_at_position(0, analysis) -> None
+  Result: PASS — no grammar hits
+
+EDGE-3: GrammarHit with single capturing group
+  GrammarHit: matched_parts=((0,1),) over 'がXYZ'
+  pos=0 -> hit (keyword) ✓
+  pos=1 -> None (filler) ✓
+  pos=2 -> None (filler) ✓
+  Result: PASS — single capturing group
+
+EDGE-4: _make_grammar() helper accepts matched_parts
+  Checked tests/test_highlight.py
+  Found: 'matched_parts: tuple[tuple[int, int], ...] = ()' ✓
+  Result: PASS — test helper updated correctly
+
+============================================================
+PYTEST SUITE
+============================================================
+
+Command: pytest tests/test_grammar.py tests/test_highlight.py tests/test_tooltip.py -v
+Platform: linux, Python 3.12.12, pytest-9.0.2
+
+tests/test_grammar.py::test_grammar_matcher_loads_rules                          PASSED
+tests/test_grammar.py::test_grammar_matcher_file_not_found                       PASSED
+tests/test_grammar.py::test_grammar_hit_fields                                   PASSED
+tests/test_grammar.py::test_grammar_hit_word_field_populated                     PASSED
+tests/test_grammar.py::test_match_tekara_n5                                      PASSED
+tests/test_grammar.py::test_match_youni_n3                                       PASSED
+tests/test_grammar.py::test_matched_text_is_substring                            PASSED
+tests/test_grammar.py::test_positions_identify_matched_text                      PASSED
+tests/test_grammar.py::test_match_all_returns_all_levels                         PASSED
+tests/test_grammar.py::test_match_all_includes_n3_rules                          PASSED
+tests/test_grammar.py::test_match_empty_text_returns_empty                       PASSED
+tests/test_grammar.py::test_match_non_japanese_returns_empty                     PASSED
+tests/test_grammar.py::test_grammar_hit_matched_parts_populated_for_capturing_groups PASSED
+tests/test_grammar.py::test_grammar_hit_matched_parts_empty_for_simple_rules     PASSED
+tests/test_grammar.py::test_grammar_hit_matched_parts_spans_are_absolute_positions PASSED
+tests/test_highlight.py::test_jlpt_colors_has_all_five_levels                   PASSED
+tests/test_highlight.py::test_jlpt_colors_each_level_has_vocab_and_grammar_keys PASSED
+tests/test_highlight.py::test_jlpt_colors_exact_values                          PASSED
+tests/test_highlight.py::test_get_highlight_at_position_returns_grammar_over_vocab PASSED
+tests/test_highlight.py::test_get_highlight_at_position_returns_vocab_when_no_grammar PASSED
+tests/test_highlight.py::test_get_highlight_at_position_returns_none_outside_all_hits PASSED
+tests/test_highlight.py::test_get_highlight_at_position_boundary_inclusive_start PASSED
+tests/test_highlight.py::test_get_highlight_at_position_boundary_exclusive_end  PASSED
+tests/test_highlight.py::test_get_highlight_at_position_empty_analysis_returns_none PASSED
+tests/test_highlight.py::test_get_highlight_at_position_grammar_at_pos_with_no_vocab PASSED
+tests/test_highlight.py::test_apply_to_document_empty_text                      PASSED
+tests/test_highlight.py::test_apply_to_document_plain_text_no_hits              PASSED
+tests/test_highlight.py::test_apply_to_document_vocab_highlight                 PASSED
+tests/test_highlight.py::test_apply_to_document_position_alignment              PASSED
+tests/test_highlight.py::test_apply_to_document_grammar_suppresses_vocab        PASSED
+tests/test_highlight.py::test_apply_to_document_non_overlapping_both_highlighted PASSED
+tests/test_highlight.py::test_apply_to_document_multiple_vocab_hits             PASSED
+tests/test_highlight.py::test_apply_to_document_custom_colors                   PASSED
+tests/test_highlight.py::test_apply_to_document_update_colors                   PASSED
+tests/test_highlight.py::test_apply_to_document_default_colors                  PASSED
+tests/test_highlight.py::test_apply_to_document_partial_overlap_both_present    PASSED
+tests/test_highlight.py::test_get_highlight_at_position_grammar_parts_only      PASSED
+tests/test_highlight.py::test_get_highlight_at_position_grammar_fallback_full_range PASSED
+tests/test_highlight.py::test_apply_to_document_multi_part_grammar_partial_highlight PASSED
+tests/test_highlight.py::test_vocab_not_suppressed_in_grammar_filler_gap        PASSED
+tests/test_highlight.py::test_vocab_suppressed_within_grammar_part              PASSED
+tests/test_tooltip.py::test_tooltip_has_frameless_hint                          PASSED
+tests/test_tooltip.py::test_tooltip_has_stays_on_top_hint                       PASSED
+tests/test_tooltip.py::test_tooltip_has_tool_hint                               PASSED
+tests/test_tooltip.py::test_tooltip_max_width                                   PASSED
+tests/test_tooltip.py::test_show_for_vocab_sets_level_label                     PASSED
+tests/test_tooltip.py::test_show_for_vocab_sets_word_label                      PASSED
+tests/test_tooltip.py::test_show_for_vocab_sets_desc_label                      PASSED
+tests/test_tooltip.py::test_show_for_vocab_with_definition                      PASSED
+tests/test_tooltip.py::test_show_for_vocab_with_pronunciation                   PASSED
+tests/test_tooltip.py::test_show_for_vocab_without_pronunciation_hides_label    PASSED
+tests/test_tooltip.py::test_show_for_vocab_empty_pos_and_def                    PASSED
+tests/test_tooltip.py::test_show_for_vocab_makes_widget_visible                 PASSED
+tests/test_tooltip.py::test_show_for_grammar_sets_word_label                    PASSED
+tests/test_tooltip.py::test_show_for_grammar_sets_level_label                   PASSED
+tests/test_tooltip.py::test_show_for_grammar_sets_desc_label                    PASSED
+tests/test_tooltip.py::test_hide_tooltip_hides_widget                           PASSED
+tests/test_tooltip.py::test_reset_dedup_is_noop                                 PASSED
+tests/test_tooltip.py::test_shown_set_not_used                                  PASSED
+
+59 passed in 0.31s
+
+============================================================
+SUMMARY
+============================================================
+
+Scenarios [8/8 pass] | Integration [2/2] | Edge Cases [4 tested] | VERDICT: APPROVE
+
+Task Scenarios:
+  T1-A: PASS  T1-B: PASS
+  T2-A: PASS  T2-B: PASS
+  T3-A: PASS  T3-B: PASS  T3-C: PASS
+  T4-A: PASS
+
+Integration:
+  INT-1: PASS (refined — filler correctly not rule 164; independent rule 664 matches)
+  INT-2: PASS
+
+Edge Cases:
+  EDGE-1: PASS  EDGE-2: PASS  EDGE-3: PASS  EDGE-4: PASS
+
+Pytest: 59/59 passed in 0.31s
+
+VERDICT: APPROVE
