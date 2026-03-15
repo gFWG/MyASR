@@ -323,7 +323,7 @@
     },
     {
         "id": 47,
-        "re": "(?:が|も).+なら.+も.+だ",
+        "re": "(が|も).+(なら).+(も).+(だ)",
         "word": "が/も～なら、～も～だ",
         "description": "negative connection/comparison (like father like son)",
         "level": "N1"
@@ -337,7 +337,7 @@
     },
     {
         "id": 49,
-        "re": "こそ.*?(?:が|けれど)?",
+        "re": "(こそ).*?(が|けれど)?",
         "word": "こそ「～が・けれど」",
         "description": "but; although (emphasis)",
         "level": "N1"
@@ -365,7 +365,7 @@
     },
     {
         "id": 53,
-        "re": "ものと(?:思われる|見られる|おもわれる|みられる)",
+        "re": "ものと(?:思われる|見られる|おもわれる|みられる）)",
         "word": "ものと思われる / ものと見られる（ものとおもわれる / ものとみられる）",
         "description": "to think; to suppose; it is believed/expected that ~",
         "level": "N1"
@@ -575,7 +575,7 @@
     },
     {
         "id": 83,
-        "re": "よう(?:が|と)(?:.*?)まい(?:が|と)",
+        "re": "(ようが|ようと).*(まいが|まいと)",
         "word": "ようと～まいと / ようが～まいが",
         "description": "whether or not; regardless",
         "level": "N1"
@@ -708,7 +708,7 @@
     },
     {
         "id": 102,
-        "re": "よう(?:が|と)(?:.*?)よう(?:が|と)",
+        "re": "(ようが|ようと).*?(ようが|ようと)",
         "word": "ようが～ようが / ようと～ようと",
         "description": "no matter; whether; even if [A] or [B]",
         "level": "N1"
@@ -1142,7 +1142,7 @@
     },
     {
         "id": 164,
-        "re": "なり.*?なり",
+        "re": "(なり).*?(なり)",
         "word": "なり～なり",
         "description": "[A] or [B] or something; for instance ~",
         "level": "N1"
@@ -1163,14 +1163,14 @@
     },
     {
         "id": 167,
-        "re": "に.*?を(?:重|かさ)ねて",
+        "re": "(に).*?(を(重|かさ)ねて)",
         "word": "に～を重ねて（に～をかさねて）",
         "description": "success after continuous (effort, work, adjustments, etc.)",
         "level": "N1"
     },
     {
         "id": 168,
-        "re": "のやら.*?のやら",
+        "re": "(のやら).*?(のやら)",
         "word": "のやら～のやら",
         "description": "or ~ (I don't know)",
         "level": "N1"
@@ -1191,28 +1191,28 @@
     },
     {
         "id": 171,
-        "re": "だの.*?だの",
+        "re": "(だの).*?(だの)",
         "word": "だの～だの",
         "description": "and; and the like; and so forth ~",
         "level": "N1"
     },
     {
         "id": 172,
-        "re": "であれ.*?であれ",
+        "re": "(であれ).*?(であれ)",
         "word": "であれ～であれ",
         "description": "whether [A] or [B]",
         "level": "N1"
     },
     {
         "id": 173,
-        "re": "でもあり.*?でもある",
+        "re": "(でもあり).*?(でもある)",
         "word": "でもあり～でもある",
         "description": "to also be; both… and ~",
         "level": "N1"
     },
     {
         "id": 174,
-        "re": "どうにも.*?ない",
+        "re": "(どうにも).*?(ない)",
         "word": "どうにも～ない",
         "description": "not … by any means; no matter how hard one tries, cannot ~",
         "level": "N1"
@@ -1226,7 +1226,7 @@
     },
     {
         "id": 176,
-        "re": "かれ.*?かれ",
+        "re": "(かれ).*?(かれ)",
         "word": "かれ～かれ",
         "description": "sooner or later; more or less",
         "level": "N1"
@@ -1345,14 +1345,14 @@
     },
     {
         "id": 193,
-        "re": "たら.*?たで",
+        "re": "(たら).*?(たで)",
         "word": "たら～たで",
         "description": "if / in the case... of course / should ~",
         "level": "N1"
     },
     {
         "id": 194,
-        "re": "たら.*?ところだ",
+        "re": "(たら).*?(ところだ)",
         "word": "たら～ところだ",
         "description": "if... (counterfactual condition), then would be ~",
         "level": "N1"
@@ -1366,28 +1366,28 @@
     },
     {
         "id": 196,
-        "re": "といい.*?といい",
+        "re": "(といい).*?(といい)",
         "word": "といい～といい",
         "description": "both ... and; not only ... also; whether it be ... or ~",
         "level": "N1"
     },
     {
         "id": 197,
-        "re": "というか.*?というか",
+        "re": "(というか).*?(というか)",
         "word": "というか～というか",
         "description": "or rather; or perhaps I should say; I mean ~",
         "level": "N1"
     },
     {
         "id": 198,
-        "re": "といわず.*?といわず",
+        "re": "(といわず).*?(といわず)",
         "word": "といわず～といわず",
         "description": "both; not only A or B, but (overall) ~",
         "level": "N1"
     },
     {
         "id": 199,
-        "re": "とも.*?とも",
+        "re": "(とも).*?(とも)",
         "word": "とも～とも",
         "description": "unable to draw a conclusion; unable to judge",
         "level": "N1"
@@ -1450,7 +1450,7 @@
     },
     {
         "id": 208,
-        "re": "ただ.*?のみだ",
+        "re": "(ただ).*?(のみだ)",
         "word": "ただ～のみだ",
         "description": "all we can do is; can do nothing but; only ~",
         "level": "N1"
@@ -1513,7 +1513,7 @@
     },
     {
         "id": 217,
-        "re": "をおいて.*?ない",
+        "re": "(をおいて).*?(ない)",
         "word": "をおいて～ない",
         "description": "only; can only be; there is no alternative, only ~",
         "level": "N1"
@@ -1688,21 +1688,21 @@
     },
     {
         "id": 242,
-        "re": "つ.*?つ",
+        "re": "(つ).*?(つ)",
         "word": "つ～つ",
         "description": "and ~ (indicates two contrasting actions)",
         "level": "N1"
     },
     {
         "id": 243,
-        "re": "やれ.*?やれ",
+        "re": "(やれ).*?(やれ)",
         "word": "やれ～やれ",
         "description": "pattern to give two representative examples (usually negative)",
         "level": "N1"
     },
     {
         "id": 244,
-        "re": "ようにも.*?ない",
+        "re": "(ようにも).*?(ない)",
         "word": "ようにも～ない",
         "description": "even if I wanted to… I couldn’t ~",
         "level": "N1"
@@ -2381,42 +2381,42 @@
     },
     {
         "id": 341,
-        "re": "(?:全|まった)く.*?ない",
+        "re": "(全く|まったく).*?(ない)",
         "word": "全く～ない（まったく～ない）",
         "description": "not at all ~",
         "level": "N2"
     },
     {
         "id": 342,
-        "re": "ないことには.*?ない",
+        "re": "(ないことには).*?(ない)",
         "word": "ないことには～ない",
         "description": "unless you ~",
         "level": "N2"
     },
     {
         "id": 343,
-        "re": "(?:何|なに)も.*?ない",
+        "re": "(何も|なにも).*?(ない)",
         "word": "何も～ない（なにも～ない）",
         "description": "nothing; (not) ~ at all; there’s no need to ~",
         "level": "N2"
     },
     {
         "id": 344,
-        "re": "にしろ.*?にしろ",
+        "re": "(にしろ).*?(にしろ)",
         "word": "にしろ～にしろ",
         "description": "whether… or ~",
         "level": "N2"
     },
     {
         "id": 345,
-        "re": "にしても.*?にしても",
+        "re": "(にしても).*?(にしても)",
         "word": "にしても～にしても",
         "description": "regardless of whether ~",
         "level": "N2"
     },
     {
         "id": 346,
-        "re": "か.*?ないかのうちに",
+        "re": "(か).*?(ないかのうちに)",
         "word": "か～ないかのうちに",
         "description": "just as; right after; as soon as ~",
         "level": "N2"
@@ -2458,14 +2458,14 @@
     },
     {
         "id": 352,
-        "re": "ては.*?ては",
+        "re": "(ては).*?(ては)",
         "word": "ては～ては",
         "description": "repetitive situations/actions",
         "level": "N2"
     },
     {
         "id": 353,
-        "re": "として.*?ない",
+        "re": "(として).*?(ない)",
         "word": "として～ない",
         "description": "not at all; there is not even one",
         "level": "N2"
@@ -2493,14 +2493,14 @@
     },
     {
         "id": 357,
-        "re": "ろくに.*?ない",
+        "re": "(ろくに).*?(ない)",
         "word": "ろくに～ない",
         "description": "not well; not enough; improperly; insufficiently; unsatisfactorily​ ~",
         "level": "N2"
     },
     {
         "id": 358,
-        "re": "(?:少|すこ)しも.*?ない",
+        "re": "(少しも|すこしも).*?(ない)",
         "word": "少しも～ない（すこしも～ない）",
         "description": "not one bit; not even a little ~",
         "level": "N2"
@@ -2535,7 +2535,7 @@
     },
     {
         "id": 363,
-        "re": "お.*?(?:願|ねが)う",
+        "re": "(お).*?(願う|ねがう)",
         "word": "お～願う（お～ねがう）",
         "description": "please do; could you please…; I ask of you to ~",
         "level": "N2"
@@ -2591,7 +2591,7 @@
     },
     {
         "id": 371,
-        "re": "ようか.*?まいか",
+        "re": "(ようか).*?(まいか)",
         "word": "ようか～まいか",
         "description": "whether or not; considering options",
         "level": "N2"
@@ -2752,7 +2752,7 @@
     },
     {
         "id": 394,
-        "re": "ちっとも.*?ない",
+        "re": "(ちっとも).*?(ない)",
         "word": "ちっとも～ない",
         "description": "(not) at all; (not) in the least ~",
         "level": "N2"
@@ -3039,7 +3039,7 @@
     },
     {
         "id": 435,
-        "re": "やら.*?やら",
+        "re": "(やら).*?(やら)",
         "word": "やら～やら",
         "description": "such things as A and B; A and B and so on ~",
         "level": "N2"
@@ -3788,7 +3788,7 @@
     },
     {
         "id": 542,
-        "re": "どんなに.*?ても",
+        "re": "(どんなに).*?(ても)",
         "word": "どんなに～ても",
         "description": "no matter how (much)",
         "level": "N3"
@@ -3886,21 +3886,21 @@
     },
     {
         "id": 556,
-        "re": "とても.*?ない",
+        "re": "(とても).*?(ない)",
         "word": "とても～ない",
         "description": "cannot possibly be; hardly ~",
         "level": "N3"
     },
     {
         "id": 557,
-        "re": "さえ.*?ば",
+        "re": "(さえ).*?(ば)",
         "word": "さえ～ば",
         "description": "if only; as long as ~",
         "level": "N3"
     },
     {
         "id": 558,
-        "re": "たとえ.*?ても",
+        "re": "(たとえ).*?(ても)",
         "word": "たとえ～ても",
         "description": "even if… is the case",
         "level": "N3"
@@ -3935,63 +3935,63 @@
     },
     {
         "id": 563,
-        "re": "めったに.*?ない",
+        "re": "(めったに).*?(ない)",
         "word": "めったに～ない",
         "description": "hardly; rarely; seldom",
         "level": "N3"
     },
     {
         "id": 564,
-        "re": "も.*?ば.*?も",
+        "re": "(も).*?(ば).*?(も)",
         "word": "も～ば～も",
         "description": "and; also; as well; either/or; neither/nor",
         "level": "N3"
     },
     {
         "id": 565,
-        "re": "ほど.*?ない",
+        "re": "(ほど).*?(ない)",
         "word": "ほど～ない",
         "description": "is not as… as ~",
         "level": "N3"
     },
     {
         "id": 566,
-        "re": "いくら.*?ても",
+        "re": "(いくら).*?(ても)",
         "word": "いくら～ても",
         "description": "no matter how ~",
         "level": "N3"
     },
     {
         "id": 567,
-        "re": "(?:決|けっ)して.*?ない",
+        "re": "(決して|けっして).*?(ない)",
         "word": "決して～ない（けっして～ない）",
         "description": "never; by no means ~",
         "level": "N3"
     },
     {
         "id": 568,
-        "re": "ことは.*?が",
+        "re": "(ことは).*?(が)",
         "word": "ことは～が",
         "description": "although; but ~",
         "level": "N3"
     },
     {
         "id": 569,
-        "re": "ば.*?ほど",
+        "re": "(ば).*?(ほど)",
         "word": "ば～ほど",
         "description": "the more… the more ~",
         "level": "N3"
     },
     {
         "id": 570,
-        "re": "ば.*?のに",
+        "re": "(ば).*?(のに)",
         "word": "ば～のに",
         "description": "would have; should have; if only ~",
         "level": "N3"
     },
     {
         "id": 571,
-        "re": "(?:別|べつ)に.*?ない",
+        "re": "(別に|べつに).*?(ない)",
         "word": "別に～ない（べつに～ない）",
         "description": "not really, not particularly",
         "level": "N3"
@@ -4201,7 +4201,7 @@
     },
     {
         "id": 601,
-        "re": "は.*?で(?:有名|ゆうめい)",
+        "re": "(は).*?(で有名|でゆうめい)",
         "word": "は～で有名（は～でゆうめい）",
         "description": "famous for ~",
         "level": "N3"
@@ -4628,7 +4628,7 @@
     },
     {
         "id": 662,
-        "re": "(?:全然|ぜんぜん).*?ない",
+        "re": "(全然|ぜんぜん).*?(ない)",
         "word": "全然～ない（ぜんぜん～ない）",
         "description": "(not) at all",
         "level": "N4"
@@ -4768,7 +4768,7 @@
     },
     {
         "id": 682,
-        "re": "とか.*?とか",
+        "re": "(とか).*?(とか)",
         "word": "とか～とか",
         "description": "among other things; such as; like ~",
         "level": "N4"
@@ -4824,7 +4824,7 @@
     },
     {
         "id": 690,
-        "re": "あまり.*?ない",
+        "re": "(あまり).*?(ない)",
         "word": "あまり～ない",
         "description": "not very, not much ~",
         "level": "N4"
@@ -4838,21 +4838,21 @@
     },
     {
         "id": 692,
-        "re": "お.*?になる",
+        "re": "(お).*?(になる)",
         "word": "お～になる",
         "description": "to do (honorific)",
         "level": "N4"
     },
     {
         "id": 693,
-        "re": "なかなか.*?ない",
+        "re": "(なかなか).*?(ない)",
         "word": "なかなか～ない",
         "description": "not easy to; struggling to; not able to ~",
         "level": "N4"
     },
     {
         "id": 694,
-        "re": "お.*?ください",
+        "re": "(お).*?(ください)",
         "word": "お～ください",
         "description": "please do ~ (honorific)",
         "level": "N4"
@@ -5419,7 +5419,7 @@
     },
     {
         "id": 775,
-        "re": "は.+より.+です",
+        "re": "(は).+(より).+(です)",
         "word": "は〜より・・・です",
         "description": "[Noun-1] is more ~ than [Noun-2]",
         "level": "N5"
@@ -5454,14 +5454,14 @@
     },
     {
         "id": 780,
-        "re": "まだ.*?ていません",
+        "re": "(まだ).*?(ていません)",
         "word": "まだ～ていません",
         "description": "have not yet ~",
         "level": "N5"
     },
     {
         "id": 781,
-        "re": "か.*?か",
+        "re": "(か).*?(か)",
         "word": "か～か",
         "description": "or",
         "level": "N5"
@@ -5489,7 +5489,7 @@
     },
     {
         "id": 785,
-        "re": "たり.*?たり",
+        "re": "(たり).*?(たり)",
         "word": "たり～たり",
         "description": "do such things as A and B",
         "level": "N5"
@@ -5580,7 +5580,7 @@
     },
     {
         "id": 798,
-        "re": "より.*?ほうが",
+        "re": "(より).*?(ほうが)",
         "word": "より～ほうが",
         "description": "[2] is more than [1]",
         "level": "N5"
