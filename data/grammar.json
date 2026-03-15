@@ -1,0 +1,5819 @@
+[
+    {
+        "id": 1,
+        "re": "ものを",
+        "word": "ものを",
+        "description": "if only; I wish; I'm sorry it's not actually (regret)",
+        "level": "N1"
+    },
+    {
+        "id": 2,
+        "re": "ともな(?:く|しに)",
+        "word": "ともなく / ともなしに",
+        "description": "somehow; without knowing; without thinking; unconsciously​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 3,
+        "re": "(?:なら|は)いざしらず",
+        "word": "ならいざしらず / はいざしらず",
+        "description": "I don't know about ... but; it may be possible for ... but ~",
+        "level": "N1"
+    },
+    {
+        "id": 4,
+        "re": "に(?:則|のっと)って",
+        "word": "に則って（にのっとって）",
+        "description": "based on; according to; in accordance with ~",
+        "level": "N1"
+    },
+    {
+        "id": 5,
+        "re": "なり(?:に|の)",
+        "word": "なりに / なりの",
+        "description": "suitable; in one's own way/style",
+        "level": "N1"
+    },
+    {
+        "id": 6,
+        "re": "なし(?:に|で)",
+        "word": "なしに / なしで",
+        "description": "without; without doing ~",
+        "level": "N1"
+    },
+    {
+        "id": 7,
+        "re": "(?:にかかっては|にかかったら|にかかると|かかれば)",
+        "word": "にかかっては / にかかったら / にかかると / かかれば",
+        "description": "when handled by (N), becomes a completely different result",
+        "level": "N1"
+    },
+    {
+        "id": 8,
+        "re": "に(?:先駆|さきが)けて",
+        "word": "に先駆けて（にさきがけて）",
+        "description": "prior to; to be the first (pioneer); being ahead of ~",
+        "level": "N1"
+    },
+    {
+        "id": 9,
+        "re": "に(?:限|かぎ)ったことではない",
+        "word": "に限ったことではない（にかぎったことではない）",
+        "description": "not limited to only ~",
+        "level": "N1"
+    },
+    {
+        "id": 10,
+        "re": "(?:に|と)したところで",
+        "word": "にしたところで / としたところで",
+        "description": "even if; even supposing that ~",
+        "level": "N1"
+    },
+    {
+        "id": 11,
+        "re": "(?:の|もの|こと)やら",
+        "word": "のやら / ものやら / ことやら",
+        "description": "I wonder...; unsure; I don’t know ~",
+        "level": "N1"
+    },
+    {
+        "id": 12,
+        "re": "まで(?:のこと)?だ",
+        "word": "までだ / までのことだ",
+        "description": "only; just; nothing else",
+        "level": "N1"
+    },
+    {
+        "id": 13,
+        "re": "に(?:難|かた)くない",
+        "word": "に難くない（にかたくない）",
+        "description": "easy to do; it’s not hard to (imagine, understand, guess)",
+        "level": "N1"
+    },
+    {
+        "id": 14,
+        "re": "までもな(?:い|く)",
+        "word": "までもない / までもなく",
+        "description": "there's no need to; it’s not necessary to ~",
+        "level": "N1"
+    },
+    {
+        "id": 15,
+        "re": "ながら(?:に|の)",
+        "word": "ながらに / ながらの",
+        "description": "while; during; without change; performed in this condition",
+        "level": "N1"
+    },
+    {
+        "id": 16,
+        "re": "ないもの(?:だろう)?か",
+        "word": "ないものか / ないものだろうか",
+        "description": "isn't there; can’t we…?; can’t I…?",
+        "level": "N1"
+    },
+    {
+        "id": 17,
+        "re": "もしないで",
+        "word": "もしないで",
+        "description": "without even doing ~",
+        "level": "N1"
+    },
+    {
+        "id": 18,
+        "re": "なん(?:という|と|て)",
+        "word": "なんという / なんと / なんて",
+        "description": "how (beautiful, etc.); what a ~",
+        "level": "N1"
+    },
+    {
+        "id": 19,
+        "re": "ごと(?:き|く|し)",
+        "word": "ごとき / ごとく / ごとし",
+        "description": "like; as if; the same as ~",
+        "level": "N1"
+    },
+    {
+        "id": 20,
+        "re": "いかん(?:だ|では|によっては)",
+        "word": "いかんだ / いかんでは / いかんによっては",
+        "description": "in accordance with; depending on; whether or not ~",
+        "level": "N1"
+    },
+    {
+        "id": 21,
+        "re": "いかん(?:にかかわら|によら|をとわ)ず",
+        "word": "いかんにかかわらず / いかんによらず / いかんをとわず",
+        "description": "regardless of; whether or not; doesn't matter whether ~",
+        "level": "N1"
+    },
+    {
+        "id": 22,
+        "re": "もので",
+        "word": "もので",
+        "description": "because; for that reason",
+        "level": "N1"
+    },
+    {
+        "id": 23,
+        "re": "いずれに(?:しても|しろ|せよ)",
+        "word": "いずれにしても / いずれにしろ / いずれにせよ",
+        "description": "anyhow; anyway; either way; in any case ~",
+        "level": "N1"
+    },
+    {
+        "id": 24,
+        "re": "から(?:ある|する|の)",
+        "word": "からある / からする / からの",
+        "description": "at least; as much as; as many as ~",
+        "level": "N1"
+    },
+    {
+        "id": 25,
+        "re": "でなくてなんだろう",
+        "word": "でなくてなんだろう",
+        "description": "must be; is definitely ~",
+        "level": "N1"
+    },
+    {
+        "id": 26,
+        "re": "ではあるまいか",
+        "word": "ではあるまいか",
+        "description": "isn't it; I wonder if it’s not ~",
+        "level": "N1"
+    },
+    {
+        "id": 27,
+        "re": "まみれ",
+        "word": "まみれ",
+        "description": "covered with; stained; smeared with ~",
+        "level": "N1"
+    },
+    {
+        "id": 28,
+        "re": "まるっきり",
+        "word": "まるっきり",
+        "description": "completely; absolutely; totally; (not) at all​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 29,
+        "re": "めく",
+        "word": "めく",
+        "description": "seems; show signs of; to have the appearance of ~",
+        "level": "N1"
+    },
+    {
+        "id": 30,
+        "re": "ではあるまいし",
+        "word": "ではあるまいし",
+        "description": "it’s not like; it isn’t as if ~",
+        "level": "N1"
+    },
+    {
+        "id": 31,
+        "re": "もさることながら",
+        "word": "もさることながら",
+        "description": "one may well say so, but~; not only... but also ~",
+        "level": "N1"
+    },
+    {
+        "id": 32,
+        "re": "もしくは",
+        "word": "もしくは",
+        "description": "or; otherwise",
+        "level": "N1"
+    },
+    {
+        "id": 33,
+        "re": "に(?:値|あたい)する",
+        "word": "に値する（にあたいする）",
+        "description": "to be worth; to be worthy of; to deserve; to merit​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 34,
+        "re": "もはや",
+        "word": "もはや",
+        "description": "already; now; no longer; not anymore",
+        "level": "N1"
+    },
+    {
+        "id": 35,
+        "re": "に(?:至る|いたる|至った|いたった)",
+        "word": "に至る / に至った（にいたる / にいたった）",
+        "description": "leads to; come to a conclusion",
+        "level": "N1"
+    },
+    {
+        "id": 36,
+        "re": "やしない",
+        "word": "やしない",
+        "description": "should do, but don't; absolutely not; there's no way ~",
+        "level": "N1"
+    },
+    {
+        "id": 37,
+        "re": "ゆえに",
+        "word": "ゆえに",
+        "description": "therefore; consequently​; because of; due to ~",
+        "level": "N1"
+    },
+    {
+        "id": 38,
+        "re": "に(?:耐える|耐えない|たえる|たえない)",
+        "word": "に耐える / に耐えない（にたえる / にたえない）",
+        "description": "worth doing; can do; cannot bear doing ~",
+        "level": "N1"
+    },
+    {
+        "id": 39,
+        "re": "に(?:足|た)(?:ら|り)ない",
+        "word": "に足らない / に足りない（にたらない / にたりない）",
+        "description": "cannot; not worthy; not worth doing ~",
+        "level": "N1"
+    },
+    {
+        "id": 40,
+        "re": "に(?:足る|足りる|たる|たりる)",
+        "word": "に足る / に足りる（にたる / にたりる）",
+        "description": "can do; worthy; worth doing",
+        "level": "N1"
+    },
+    {
+        "id": 41,
+        "re": "(?:可能性|かのうせい)がある",
+        "word": "可能性がある（かのうせいがある）",
+        "description": "may/might; there’s a possibility that ~",
+        "level": "N1"
+    },
+    {
+        "id": 42,
+        "re": "てみせる",
+        "word": "てみせる",
+        "description": "I’ll do my best; I'll definitely do; I'll show you ~",
+        "level": "N1"
+    },
+    {
+        "id": 43,
+        "re": "てもどうにもならない",
+        "word": "てもどうにもならない",
+        "description": "it's no use; can't do anything",
+        "level": "N1"
+    },
+    {
+        "id": 44,
+        "re": "てやまない",
+        "word": "てやまない",
+        "description": "always; never stop; can’t help but ~",
+        "level": "N1"
+    },
+    {
+        "id": 45,
+        "re": "ものとして",
+        "word": "ものとして",
+        "description": "to assume; to suppose; on the presumption that ~",
+        "level": "N1"
+    },
+    {
+        "id": 46,
+        "re": "ものとする",
+        "word": "ものとする",
+        "description": "shall; to assume; understood as ~",
+        "level": "N1"
+    },
+    {
+        "id": 47,
+        "re": "(?:が|も).+なら.+も.+だ",
+        "word": "が/も～なら、～も～だ",
+        "description": "negative connection/comparison (like father like son)",
+        "level": "N1"
+    },
+    {
+        "id": 48,
+        "re": "(?:極|きわ)(?:まる|まりない)",
+        "word": "極まる / 極まりない（きわまる / きわまりない）",
+        "description": "extremely; very ~",
+        "level": "N1"
+    },
+    {
+        "id": 49,
+        "re": "こそ.*?(?:が|けれど)?",
+        "word": "こそ「～が・けれど」",
+        "description": "but; although (emphasis)",
+        "level": "N1"
+    },
+    {
+        "id": 50,
+        "re": "か(?:否|いな)か",
+        "word": "か否か（かいなか）",
+        "description": "whether or not ~",
+        "level": "N1"
+    },
+    {
+        "id": 51,
+        "re": "かと(?:思|おも)いきや",
+        "word": "かと思いきや（かとおもいきや）",
+        "description": "contrary to expectations; or so we thought, but ~",
+        "level": "N1"
+    },
+    {
+        "id": 52,
+        "re": "(こと)?この(?:上|うえ)ない",
+        "word": "ことこの上ない / この上ない / この上なく（ことこのうえない / このうえない / このうえなく）",
+        "description": "the most of all; the best; nothing is more ... than ~",
+        "level": "N1"
+    },
+    {
+        "id": 53,
+        "re": "ものと(?:思われる|見られる|おもわれる|みられる)",
+        "word": "ものと思われる / ものと見られる（ものとおもわれる / ものとみられる）",
+        "description": "to think; to suppose; it is believed/expected that ~",
+        "level": "N1"
+    },
+    {
+        "id": 54,
+        "re": "(?:限|かぎ)りだ",
+        "word": "限りだ（かぎりだ）",
+        "description": "to feel strongly",
+        "level": "N1"
+    },
+    {
+        "id": 55,
+        "re": "っ(?:てば|たら)",
+        "word": "ってば / ったら",
+        "description": "speaking of; I told you already; come on (annoyance / dissatisfaction)",
+        "level": "N1"
+    },
+    {
+        "id": 56,
+        "re": "(?:甲斐|かい)もなく",
+        "word": "甲斐もなく（かいもなく）",
+        "description": "despite; even though ~",
+        "level": "N1"
+    },
+    {
+        "id": 57,
+        "re": "を(?:機|き)に",
+        "word": "を機に（をきに）",
+        "description": "as an opportunity/chance to ~",
+        "level": "N1"
+    },
+    {
+        "id": 58,
+        "re": "(?:放題|ほうだい)",
+        "word": "放題（ほうだい）",
+        "description": "doing as one pleases; to one's heart's content; leaving uncontrolled",
+        "level": "N1"
+    },
+    {
+        "id": 59,
+        "re": "(?:は|を)そっちのけで",
+        "word": "はそっちのけで / をそっちのけで",
+        "description": "ignoring (one thing) for (another)​​; instead of ~",
+        "level": "N1"
+    },
+    {
+        "id": 60,
+        "re": "よう(?:が|と)",
+        "word": "ようが / ようと",
+        "description": "even if; no matter how/what ~",
+        "level": "N1"
+    },
+    {
+        "id": 61,
+        "re": "よう(?:によって|で)は",
+        "word": "ようによっては / ようでは",
+        "description": "depending on the way; depending on how; according to how ~",
+        "level": "N1"
+    },
+    {
+        "id": 62,
+        "re": "(?:ずに|ないで)はおかない",
+        "word": "ずにはおかない / ないではおかない",
+        "description": "will definitely/certainly do something; cannot not ~",
+        "level": "N1"
+    },
+    {
+        "id": 63,
+        "re": "(?:でも何で|くも何と|でもなんで|くもなんと)もない",
+        "word": "でも何でもない / くも何ともない（でもなんでもない / くもなんともない）",
+        "description": "not in the least; nothing like that",
+        "level": "N1"
+    },
+    {
+        "id": 64,
+        "re": "かたがた",
+        "word": "かたがた",
+        "description": "while; at the same time; incidentally; for the purpose of ~",
+        "level": "N1"
+    },
+    {
+        "id": 65,
+        "re": "かたわら",
+        "word": "かたわら",
+        "description": "while; besides; at the same time; in addition",
+        "level": "N1"
+    },
+    {
+        "id": 66,
+        "re": "まくる",
+        "word": "まくる",
+        "description": "to do over and over again; to do relentlessly",
+        "level": "N1"
+    },
+    {
+        "id": 67,
+        "re": "には(?:当|あ)たらない",
+        "word": "には当たらない（にはあたらない）",
+        "description": "it’s not worth; there’s no need to; does not correspond to ~",
+        "level": "N1"
+    },
+    {
+        "id": 68,
+        "re": "には(?:及|およ)ばない",
+        "word": "には及ばない（にはおよばない）",
+        "description": "there is no need to; unnecessary; no match for ~",
+        "level": "N1"
+    },
+    {
+        "id": 69,
+        "re": "の(?:至|いた)り",
+        "word": "の至り（のいたり）",
+        "description": "utmost; extremely ~",
+        "level": "N1"
+    },
+    {
+        "id": 70,
+        "re": "の(?:極|きわ)み",
+        "word": "の極み（のきわみ）",
+        "description": "utmost; extremely ~",
+        "level": "N1"
+    },
+    {
+        "id": 71,
+        "re": "かつて",
+        "word": "かつて",
+        "description": "once; before; formerly; ever; former; ex-",
+        "level": "N1"
+    },
+    {
+        "id": 72,
+        "re": "いかなる",
+        "word": "いかなる",
+        "description": "any kind of; every; whatsoever; whatever",
+        "level": "N1"
+    },
+    {
+        "id": 73,
+        "re": "いかに",
+        "word": "いかに",
+        "description": "how; in what way; how much; to what extent",
+        "level": "N1"
+    },
+    {
+        "id": 74,
+        "re": "ばこそ",
+        "word": "ばこそ",
+        "description": "only because ~",
+        "level": "N1"
+    },
+    {
+        "id": 75,
+        "re": "いかにも",
+        "word": "いかにも",
+        "description": "indeed; really; truly; just (like); very; extremely ~",
+        "level": "N1"
+    },
+    {
+        "id": 76,
+        "re": "べく",
+        "word": "べく",
+        "description": "in order to; for the purpose of ~",
+        "level": "N1"
+    },
+    {
+        "id": 77,
+        "re": "べくして",
+        "word": "べくして",
+        "description": "as it is bound to (happen); following the natural course",
+        "level": "N1"
+    },
+    {
+        "id": 78,
+        "re": "べくもない",
+        "word": "べくもない",
+        "description": "cannot possibly be ~",
+        "level": "N1"
+    },
+    {
+        "id": 79,
+        "re": "ほうがましだ",
+        "word": "ほうがましだ",
+        "description": "better than; would rather ~",
+        "level": "N1"
+    },
+    {
+        "id": 80,
+        "re": "ほどのことではない",
+        "word": "ほどのことではない",
+        "description": "it's not worth; no need to ~",
+        "level": "N1"
+    },
+    {
+        "id": 81,
+        "re": "およそ",
+        "word": "およそ",
+        "description": "about; roughly; generally; approximately; completely​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 82,
+        "re": "にも(?:増|ま)して",
+        "word": "にも増して（にもまして）",
+        "description": "more than…; above ~",
+        "level": "N1"
+    },
+    {
+        "id": 83,
+        "re": "よう(?:が|と)(?:.*?)まい(?:が|と)",
+        "word": "ようと～まいと / ようが～まいが",
+        "description": "whether or not; regardless",
+        "level": "N1"
+    },
+    {
+        "id": 84,
+        "re": "はどうであれ",
+        "word": "はどうであれ",
+        "description": "however; whatever​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 85,
+        "re": "(?:ぞ|ぜ)",
+        "word": "ぞ・ぜ",
+        "description": "ending particle; adds force or indicates command",
+        "level": "N1"
+    },
+    {
+        "id": 86,
+        "re": "(?:ずには済まない|ないでは済まない|ずにはすまない|ないではすまない)",
+        "word": "ずには済まない / ないでは済まない（ずにはすまない / ないではすまない）",
+        "description": "must; will definitely; can’t help but to ~",
+        "level": "N1"
+    },
+    {
+        "id": 87,
+        "re": "あくまでも",
+        "word": "あくまでも",
+        "description": "to the end; persistently; absolutely; is still very ~",
+        "level": "N1"
+    },
+    {
+        "id": 88,
+        "re": "あっての",
+        "word": "あっての",
+        "description": "which can exist solely due to the presence of; which owes everything to",
+        "level": "N1"
+    },
+    {
+        "id": 89,
+        "re": "に(?:忍|しの)びない",
+        "word": "に忍びない（にしのびない）",
+        "description": "cannot bring oneself (to do); unable to bear ~",
+        "level": "N1"
+    },
+    {
+        "id": 90,
+        "re": "に(?:即|そく)して",
+        "word": "に即して（にそくして）",
+        "description": "according to; in keeping with; to be based on ~",
+        "level": "N1"
+    },
+    {
+        "id": 91,
+        "re": "あらかじめ",
+        "word": "あらかじめ",
+        "description": "beforehand; in advance; previously​",
+        "level": "N1"
+    },
+    {
+        "id": 92,
+        "re": "(?:を顧|も顧|をかえり|もかえり)みず",
+        "word": "を顧みず / も顧みず（をかえりみず / もかえりみず）",
+        "description": "despite; without considering; not worrying about; regardless of ~",
+        "level": "N1"
+    },
+    {
+        "id": 93,
+        "re": "を(?:押して|押し切って|おして|おしきって)",
+        "word": "を押して / を押し切って（をおして / をおしきって）",
+        "description": "to overcome (opposition); to push past ~",
+        "level": "N1"
+    },
+    {
+        "id": 94,
+        "re": "に(?:照|て)らして",
+        "word": "に照らして（にてらして）",
+        "description": "according to; in view of; in light of ~",
+        "level": "N1"
+    },
+    {
+        "id": 95,
+        "re": "(?:損なう|損ねる|損じる|そこなう|そこねる|そんじる)",
+        "word": "損なう / 損ねる / 損じる（そこなう / そこねる / そんじる）",
+        "description": "to do something wrong; by mistake; to miss a chance; to fail to ~",
+        "level": "N1"
+    },
+    {
+        "id": 96,
+        "re": "には(?:無理|むり)がある",
+        "word": "には無理がある（にはむりがある）",
+        "description": "difficult to do; is unreasonable / unrealistic / impossible",
+        "level": "N1"
+    },
+    {
+        "id": 97,
+        "re": "(?:始末|しまつ)だ",
+        "word": "始末だ（しまつだ）",
+        "description": "end up; in the end; as a result (negative)",
+        "level": "N1"
+    },
+    {
+        "id": 98,
+        "re": "た(?:弾み|拍子|はずみ|ひょうし)に",
+        "word": "た弾みに / た拍子に（たはずみに / たひょうしに）",
+        "description": "the moment [A], unintentionally / inadvertently caused something to happen",
+        "level": "N1"
+    },
+    {
+        "id": 99,
+        "re": "た(?:ら最後|が最後|らさいご|がさいご)",
+        "word": "たら最後 / たが最後（たらさいご / たがさいご）",
+        "description": "if you do... negative result",
+        "level": "N1"
+    },
+    {
+        "id": 100,
+        "re": "(?:術|すべ)がない",
+        "word": "術がない（すべがない）",
+        "description": "there is no way / means; cannot do ~",
+        "level": "N1"
+    },
+    {
+        "id": 101,
+        "re": "とは(?:打って変わって|打って変わり|うってかわって|うってかわり)",
+        "word": "とは打って変わって / とは打って変わり（とはうってかわって / とはうってかわり）",
+        "description": "unlike; totally different; very different from ~",
+        "level": "N1"
+    },
+    {
+        "id": 102,
+        "re": "よう(?:が|と)(?:.*?)よう(?:が|と)",
+        "word": "ようが～ようが / ようと～ようと",
+        "description": "no matter; whether; even if [A] or [B]",
+        "level": "N1"
+    },
+    {
+        "id": 103,
+        "re": "きっての",
+        "word": "きっての",
+        "description": "the most / greatest … of all",
+        "level": "N1"
+    },
+    {
+        "id": 104,
+        "re": "くらいなら",
+        "word": "くらいなら",
+        "description": "rather than (do ...)​",
+        "level": "N1"
+    },
+    {
+        "id": 105,
+        "re": "(?:折|おり)に",
+        "word": "折に（おりに）",
+        "description": "when; at the time; on the occasion ~",
+        "level": "N1"
+    },
+    {
+        "id": 106,
+        "re": "くらいのものだ",
+        "word": "くらいのものだ",
+        "description": "only (emphasis)",
+        "level": "N1"
+    },
+    {
+        "id": 107,
+        "re": "ぐるみ",
+        "word": "ぐるみ",
+        "description": "together (with); -wide",
+        "level": "N1"
+    },
+    {
+        "id": 108,
+        "re": "こそあれ",
+        "word": "こそあれ",
+        "description": "although; even though ~",
+        "level": "N1"
+    },
+    {
+        "id": 109,
+        "re": "こそすれ",
+        "word": "こそすれ",
+        "description": "and; although; but ~",
+        "level": "N1"
+    },
+    {
+        "id": 110,
+        "re": "だろうに",
+        "word": "だろうに",
+        "description": "(1) surely..., but ~; although... is likely, ~ (2) should have (regret); might / must have been ~",
+        "level": "N1"
+    },
+    {
+        "id": 111,
+        "re": "がてら",
+        "word": "がてら",
+        "description": "while; on the same occasion; at the same time; coincidentally ~",
+        "level": "N1"
+    },
+    {
+        "id": 112,
+        "re": "がましい",
+        "word": "がましい",
+        "description": "look like; sound like; approximate; similar to; somewhat like ~",
+        "level": "N1"
+    },
+    {
+        "id": 113,
+        "re": "てしかるべきだ",
+        "word": "てしかるべきだ",
+        "description": "should; appropriate; it is natural to do ~",
+        "level": "N1"
+    },
+    {
+        "id": 114,
+        "re": "を(?:禁じ得|きんじえ)ない",
+        "word": "を禁じ得ない（をきんじえない）",
+        "description": "can’t help but; can’t refrain from ~",
+        "level": "N1"
+    },
+    {
+        "id": 115,
+        "re": "たつもりはない",
+        "word": "たつもりはない",
+        "description": "have no intention to / didn't mean to ~",
+        "level": "N1"
+    },
+    {
+        "id": 116,
+        "re": "を(?:境|さかい)に",
+        "word": "を境に（をさかいに）",
+        "description": "since ~ (indicates a large change before & after)",
+        "level": "N1"
+    },
+    {
+        "id": 117,
+        "re": "たところで",
+        "word": "たところで",
+        "description": "even if; no matter (who, what, when, where, why, how)",
+        "level": "N1"
+    },
+    {
+        "id": 118,
+        "re": "を(?:余儀|よぎ)なくされる",
+        "word": "を余儀なくされる（をよぎなくされる）",
+        "description": "to be forced to do something because one has no other choice",
+        "level": "N1"
+    },
+    {
+        "id": 119,
+        "re": "を(?:前提|ぜんてい)として",
+        "word": "を前提として（をぜんていとして）",
+        "description": "with the intention to; on the condition / assumption ~",
+        "level": "N1"
+    },
+    {
+        "id": 120,
+        "re": "(?:思|おも)いをする",
+        "word": "思いをする（おもいをする）",
+        "description": "to think; to feel ~",
+        "level": "N1"
+    },
+    {
+        "id": 121,
+        "re": "ためしがない",
+        "word": "ためしがない",
+        "description": "is never the case; has never happened; I have never seen or heard of ~",
+        "level": "N1"
+    },
+    {
+        "id": 122,
+        "re": "を(?:踏|ふ)まえて",
+        "word": "を踏まえて（をふまえて）",
+        "description": "to be based on; to take into account ~",
+        "level": "N1"
+    },
+    {
+        "id": 123,
+        "re": "を(?:経|へ)て",
+        "word": "を経て（をへて）",
+        "description": "through; by way of; after; via ~",
+        "level": "N1"
+    },
+    {
+        "id": 124,
+        "re": "を(?:控|ひか)えて",
+        "word": "を控えて（をひかえて）",
+        "description": "to be soon; the time has come to; nearby; ahead of ~",
+        "level": "N1"
+    },
+    {
+        "id": 125,
+        "re": "を(?:限|かぎ)りに",
+        "word": "を限りに（をかぎりに）",
+        "description": "starting from; the last time (ending a continued action)",
+        "level": "N1"
+    },
+    {
+        "id": 126,
+        "re": "を(?:兼|か)ねて",
+        "word": "を兼ねて（をかねて）",
+        "description": "also for the purpose of ~",
+        "level": "N1"
+    },
+    {
+        "id": 127,
+        "re": "を(?:皮切|かわき)りに",
+        "word": "を皮切りに（をかわきりに）",
+        "description": "one after another; starting with ~",
+        "level": "N1"
+    },
+    {
+        "id": 128,
+        "re": "たりとも",
+        "word": "たりとも",
+        "description": "not even; not any ~",
+        "level": "N1"
+    },
+    {
+        "id": 129,
+        "re": "はさておき",
+        "word": "はさておき",
+        "description": "setting aside ~",
+        "level": "N1"
+    },
+    {
+        "id": 130,
+        "re": "と(?:言|い)えなくもない",
+        "word": "と言えなくもない（といえなくもない）",
+        "description": "one can even say that; it can also be said that ~",
+        "level": "N1"
+    },
+    {
+        "id": 131,
+        "re": "てからというもの",
+        "word": "てからというもの",
+        "description": "ever since ~",
+        "level": "N1"
+    },
+    {
+        "id": 132,
+        "re": "と(?:見|み)るや",
+        "word": "と見るや（とみるや）",
+        "description": "at the sight of; upon seeing; after confirming ~",
+        "level": "N1"
+    },
+    {
+        "id": 133,
+        "re": "さぞ",
+        "word": "さぞ",
+        "description": "surely; certainly; no doubt; indeed​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 134,
+        "re": "さも",
+        "word": "さも",
+        "description": "really (seem, appear, etc.); truly; as if ~",
+        "level": "N1"
+    },
+    {
+        "id": 135,
+        "re": "とは(?:比|くら)べものにならない",
+        "word": "とは比べものにならない（とはくらべものにならない）",
+        "description": "can't compare with ~",
+        "level": "N1"
+    },
+    {
+        "id": 136,
+        "re": "(?:尽|つ)くす",
+        "word": "尽くす（つくす）",
+        "description": "to use up (completely without anything remaining); to exhaust; to run out of ~",
+        "level": "N1"
+    },
+    {
+        "id": 137,
+        "re": "さもないと",
+        "word": "さもないと",
+        "description": "otherwise; or else; if not ~",
+        "level": "N1"
+    },
+    {
+        "id": 138,
+        "re": "じみた",
+        "word": "じみた",
+        "description": "to become; to appear like; to look like; tainted with ~",
+        "level": "N1"
+    },
+    {
+        "id": 139,
+        "re": "(?:羽目|はめ)になる",
+        "word": "羽目になる（はめになる）",
+        "description": "to get stuck with; to end up with (something unpleasant)",
+        "level": "N1"
+    },
+    {
+        "id": 140,
+        "re": "のなんのって",
+        "word": "のなんのって",
+        "description": "extremely ~ (cannot be expressed in words)",
+        "level": "N1"
+    },
+    {
+        "id": 141,
+        "re": "こととて",
+        "word": "こととて",
+        "description": "because; since ~",
+        "level": "N1"
+    },
+    {
+        "id": 142,
+        "re": "ことなしに",
+        "word": "ことなしに",
+        "description": "without doing something",
+        "level": "N1"
+    },
+    {
+        "id": 143,
+        "re": "ことのないように",
+        "word": "ことのないように",
+        "description": "so as not to; to not ~",
+        "level": "N1"
+    },
+    {
+        "id": 144,
+        "re": "はおろか",
+        "word": "はおろか",
+        "description": "let alone; not to mention; needless to say ~",
+        "level": "N1"
+    },
+    {
+        "id": 145,
+        "re": "こともあって",
+        "word": "こともあって",
+        "description": "partly because; also because of; plus the reason for ~",
+        "level": "N1"
+    },
+    {
+        "id": 146,
+        "re": "さ",
+        "word": "さ",
+        "description": "-ness​ ; nominalizer for adjective; ending particle; indicates assertion",
+        "level": "N1"
+    },
+    {
+        "id": 147,
+        "re": "そばから",
+        "word": "そばから",
+        "description": "as soon as; right after​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 148,
+        "re": "にとどまらず",
+        "word": "にとどまらず",
+        "description": "not limited to; not only… but also ~",
+        "level": "N1"
+    },
+    {
+        "id": 149,
+        "re": "そびれる",
+        "word": "そびれる",
+        "description": "to miss a chance; to fail to do ~",
+        "level": "N1"
+    },
+    {
+        "id": 150,
+        "re": "にまつわる",
+        "word": "にまつわる",
+        "description": "to be related to; to concern; associated with ~",
+        "level": "N1"
+    },
+    {
+        "id": 151,
+        "re": "にもほどがある",
+        "word": "にもほどがある",
+        "description": "there is a limit to what is acceptable; to go too far",
+        "level": "N1"
+    },
+    {
+        "id": 152,
+        "re": "によらず",
+        "word": "によらず",
+        "description": "regardless of ~",
+        "level": "N1"
+    },
+    {
+        "id": 153,
+        "re": "て(?:敵|かな)わない",
+        "word": "て敵わない（てかなわない）",
+        "description": "can't bear to; unable to; troublesome to; can’t stand to ~",
+        "level": "N1"
+    },
+    {
+        "id": 154,
+        "re": "て(?:済|す)むことではない",
+        "word": "て済むことではない（てすむことではない）",
+        "description": "~ is not enough to solve the problem; cannot be resolved by ~",
+        "level": "N1"
+    },
+    {
+        "id": 155,
+        "re": "ことごとく",
+        "word": "ことごとく",
+        "description": "altogether; entirely; completely ~",
+        "level": "N1"
+    },
+    {
+        "id": 156,
+        "re": "(?:手前|てまえ)",
+        "word": "手前（てまえ）",
+        "description": "considering; before; in front of; one’s standpoint",
+        "level": "N1"
+    },
+    {
+        "id": 157,
+        "re": "ても(?:差し支|さしつか)えない",
+        "word": "ても差し支えない（てもさしつかえない）",
+        "description": "can ~; it’s okay if ~ (indicates permission or compromise)",
+        "level": "N1"
+    },
+    {
+        "id": 158,
+        "re": "ても(?:知|し)らない",
+        "word": "ても知らない（てもしらない）",
+        "description": "if (you) continue... you'll end up / I don't care about it",
+        "level": "N1"
+    },
+    {
+        "id": 159,
+        "re": "と(?:相|あい)まって",
+        "word": "と相まって（とあいまって）",
+        "description": "together with..., more; because of the influence of..., more ~",
+        "level": "N1"
+    },
+    {
+        "id": 160,
+        "re": "ずくめ",
+        "word": "ずくめ",
+        "description": "completely; entirely; nothing but ~",
+        "level": "N1"
+    },
+    {
+        "id": 161,
+        "re": "ずじまい",
+        "word": "ずじまい",
+        "description": "ended up not doing ~",
+        "level": "N1"
+    },
+    {
+        "id": 162,
+        "re": "ずとも",
+        "word": "ずとも",
+        "description": "even without doing; even without being​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 163,
+        "re": "に(?:引き換|ひきか)え",
+        "word": "に引き換え（にひきかえ）",
+        "description": "compared to; in contrast to; unlike; while; whereas ~",
+        "level": "N1"
+    },
+    {
+        "id": 164,
+        "re": "なり.*?なり",
+        "word": "なり～なり",
+        "description": "[A] or [B] or something; for instance ~",
+        "level": "N1"
+    },
+    {
+        "id": 165,
+        "re": "に(?:至|いた)るまで",
+        "word": "に至るまで（にいたるまで）",
+        "description": "as far as; up until; everything from ... to ~",
+        "level": "N1"
+    },
+    {
+        "id": 166,
+        "re": "に(?:至|いた)っても",
+        "word": "に至っても（にいたっても）",
+        "description": "even if; even though; although something reached the point ~",
+        "level": "N1"
+    },
+    {
+        "id": 167,
+        "re": "に.*?を(?:重|かさ)ねて",
+        "word": "に～を重ねて（に～をかさねて）",
+        "description": "success after continuous (effort, work, adjustments, etc.)",
+        "level": "N1"
+    },
+    {
+        "id": 168,
+        "re": "のやら.*?のやら",
+        "word": "のやら～のやら",
+        "description": "or ~ (I don't know)",
+        "level": "N1"
+    },
+    {
+        "id": 169,
+        "re": "にして",
+        "word": "にして",
+        "description": "at / on / under certain conditions (time, position, age, number of times)",
+        "level": "N1"
+    },
+    {
+        "id": 170,
+        "re": "ときたら",
+        "word": "ときたら",
+        "description": "when it comes to; concerning ~",
+        "level": "N1"
+    },
+    {
+        "id": 171,
+        "re": "だの.*?だの",
+        "word": "だの～だの",
+        "description": "and; and the like; and so forth ~",
+        "level": "N1"
+    },
+    {
+        "id": 172,
+        "re": "であれ.*?であれ",
+        "word": "であれ～であれ",
+        "description": "whether [A] or [B]",
+        "level": "N1"
+    },
+    {
+        "id": 173,
+        "re": "でもあり.*?でもある",
+        "word": "でもあり～でもある",
+        "description": "to also be; both… and ~",
+        "level": "N1"
+    },
+    {
+        "id": 174,
+        "re": "どうにも.*?ない",
+        "word": "どうにも～ない",
+        "description": "not … by any means; no matter how hard one tries, cannot ~",
+        "level": "N1"
+    },
+    {
+        "id": 175,
+        "re": "に(?:至|いた)っては",
+        "word": "に至っては（にいたっては）",
+        "description": "when it comes to; as for ~",
+        "level": "N1"
+    },
+    {
+        "id": 176,
+        "re": "かれ.*?かれ",
+        "word": "かれ～かれ",
+        "description": "sooner or later; more or less",
+        "level": "N1"
+    },
+    {
+        "id": 177,
+        "re": "なり",
+        "word": "なり",
+        "description": "as soon as; right after ~",
+        "level": "N1"
+    },
+    {
+        "id": 178,
+        "re": "なりとも",
+        "word": "なりとも",
+        "description": "at least; even just a little (adverbial particle)",
+        "level": "N1"
+    },
+    {
+        "id": 179,
+        "re": "に",
+        "word": "に",
+        "description": "destination particle; in; at; on; to; and; in addition to; the combination of ~",
+        "level": "N1"
+    },
+    {
+        "id": 180,
+        "re": "に(?:言|い)わせれば",
+        "word": "に言わせれば（にいわせれば）",
+        "description": "if you ask; if one may say ~",
+        "level": "N1"
+    },
+    {
+        "id": 181,
+        "re": "にあって",
+        "word": "にあって",
+        "description": "at; on; during; in the condition of​ ~",
+        "level": "N1"
+    },
+    {
+        "id": 182,
+        "re": "にかかっている",
+        "word": "にかかっている",
+        "description": "depending on; to depend on; whether or not",
+        "level": "N1"
+    },
+    {
+        "id": 183,
+        "re": "にかこつけて",
+        "word": "にかこつけて",
+        "description": "to use as a pretext; to use as an excuse",
+        "level": "N1"
+    },
+    {
+        "id": 184,
+        "re": "にかまけて",
+        "word": "にかまけて",
+        "description": "to be too busy; to focus / concentrate only on ~",
+        "level": "N1"
+    },
+    {
+        "id": 185,
+        "re": "うちに(?:入|はい)らない",
+        "word": "うちに入らない（うちにはいらない）",
+        "description": "not really; can't be regarded as ~",
+        "level": "N1"
+    },
+    {
+        "id": 186,
+        "re": "まじき",
+        "word": "まじき",
+        "description": "should not; must not ~",
+        "level": "N1"
+    },
+    {
+        "id": 187,
+        "re": "や(?:否|いな)や",
+        "word": "や否や（やいなや）",
+        "description": "as soon as; the moment ~",
+        "level": "N1"
+    },
+    {
+        "id": 188,
+        "re": "(?:切|き)りがない",
+        "word": "切りがない（きりがない）",
+        "description": "endless; boundless; going on forever​; there’s no end to ~",
+        "level": "N1"
+    },
+    {
+        "id": 189,
+        "re": "も(?:同然|どうぜん)だ",
+        "word": "も同然だ（もどうぜんだ）",
+        "description": "just like; same as ~",
+        "level": "N1"
+    },
+    {
+        "id": 190,
+        "re": "ないとも(?:限|かぎ)らない",
+        "word": "ないとも限らない（ないともかぎらない）",
+        "description": "not necessarily; I can't say that; maybe; might ~",
+        "level": "N1"
+    },
+    {
+        "id": 191,
+        "re": "なくしては",
+        "word": "なくしては",
+        "description": "cannot do without ~",
+        "level": "N1"
+    },
+    {
+        "id": 192,
+        "re": "ならでは",
+        "word": "ならでは",
+        "description": "distinctive of; uniquely applying to; special to ~",
+        "level": "N1"
+    },
+    {
+        "id": 193,
+        "re": "たら.*?たで",
+        "word": "たら～たで",
+        "description": "if / in the case... of course / should ~",
+        "level": "N1"
+    },
+    {
+        "id": 194,
+        "re": "たら.*?ところだ",
+        "word": "たら～ところだ",
+        "description": "if... (counterfactual condition), then would be ~",
+        "level": "N1"
+    },
+    {
+        "id": 195,
+        "re": "(?:並|な)み",
+        "word": "並み（なみ）",
+        "description": "average; ordinary; same level as; equal to; on par with ~",
+        "level": "N1"
+    },
+    {
+        "id": 196,
+        "re": "といい.*?といい",
+        "word": "といい～といい",
+        "description": "both ... and; not only ... also; whether it be ... or ~",
+        "level": "N1"
+    },
+    {
+        "id": 197,
+        "re": "というか.*?というか",
+        "word": "というか～というか",
+        "description": "or rather; or perhaps I should say; I mean ~",
+        "level": "N1"
+    },
+    {
+        "id": 198,
+        "re": "といわず.*?といわず",
+        "word": "といわず～といわず",
+        "description": "both; not only A or B, but (overall) ~",
+        "level": "N1"
+    },
+    {
+        "id": 199,
+        "re": "とも.*?とも",
+        "word": "とも～とも",
+        "description": "unable to draw a conclusion; unable to judge",
+        "level": "N1"
+    },
+    {
+        "id": 200,
+        "re": "(?:何|なに)しろ",
+        "word": "何しろ（なにしろ）",
+        "description": "at any rate; after all; anyhow; anyway; in any case; because; as you know ~",
+        "level": "N1"
+    },
+    {
+        "id": 201,
+        "re": "をいいことに",
+        "word": "をいいことに",
+        "description": "to take advantage of ~",
+        "level": "N1"
+    },
+    {
+        "id": 202,
+        "re": "わわで",
+        "word": "わわで",
+        "description": "and (listing negative things happening at the same time)",
+        "level": "N1"
+    },
+    {
+        "id": 203,
+        "re": "ないまでも",
+        "word": "ないまでも",
+        "description": "not to say; although it does not reach the level of ~",
+        "level": "N1"
+    },
+    {
+        "id": 204,
+        "re": "ないものでもない",
+        "word": "ないものでもない",
+        "description": "is not entirely impossible",
+        "level": "N1"
+    },
+    {
+        "id": 205,
+        "re": "では(?:済|す)まない",
+        "word": "では済まない（ではすまない）",
+        "description": "it doesn’t end with just ~; it will take more than ~",
+        "level": "N1"
+    },
+    {
+        "id": 206,
+        "re": "が(?:早|はや)いか",
+        "word": "が早いか（がはやいか）",
+        "description": "no sooner than; as soon as ~",
+        "level": "N1"
+    },
+    {
+        "id": 207,
+        "re": "(?:嫌|きら)いがある",
+        "word": "嫌いがある（きらいがある）",
+        "description": "bad habit; to have a tendency to ~",
+        "level": "N1"
+    },
+    {
+        "id": 208,
+        "re": "ただ.*?のみだ",
+        "word": "ただ～のみだ",
+        "description": "all we can do is; can do nothing but; only ~",
+        "level": "N1"
+    },
+    {
+        "id": 209,
+        "re": "とみると",
+        "word": "とみると",
+        "description": "as soon as one realizes ..., then ~",
+        "level": "N1"
+    },
+    {
+        "id": 210,
+        "re": "んばかりに",
+        "word": "んばかりに",
+        "description": "as if; as though ~",
+        "level": "N1"
+    },
+    {
+        "id": 211,
+        "re": "ともあろうものが",
+        "word": "ともあろうものが",
+        "description": "of all people (expression showing surprise at a high standing person's misbehavior)",
+        "level": "N1"
+    },
+    {
+        "id": 212,
+        "re": "ともすれば",
+        "word": "ともすれば",
+        "description": "apt to (do); tend to; liable to; prone to ~",
+        "level": "N1"
+    },
+    {
+        "id": 213,
+        "re": "とりわけ",
+        "word": "とりわけ",
+        "description": "especially; above all ~",
+        "level": "N1"
+    },
+    {
+        "id": 214,
+        "re": "んがために",
+        "word": "んがために",
+        "description": "in order to ~",
+        "level": "N1"
+    },
+    {
+        "id": 215,
+        "re": "をよそに",
+        "word": "をよそに",
+        "description": "despite; without regards to ~",
+        "level": "N1"
+    },
+    {
+        "id": 216,
+        "re": "(?:案の定|あんのじょう)",
+        "word": "案の定（あんのじょう）",
+        "description": "just as one thought; as usual; sure enough",
+        "level": "N1"
+    },
+    {
+        "id": 217,
+        "re": "をおいて.*?ない",
+        "word": "をおいて～ない",
+        "description": "only; can only be; there is no alternative, only ~",
+        "level": "N1"
+    },
+    {
+        "id": 218,
+        "re": "をものともせずに",
+        "word": "をものともせずに",
+        "description": "in defiance of; not losing to / afraid / worrying about ~",
+        "level": "N1"
+    },
+    {
+        "id": 219,
+        "re": "わ",
+        "word": "わ",
+        "description": "feminine sentence ending particle",
+        "level": "N1"
+    },
+    {
+        "id": 220,
+        "re": "とっさに",
+        "word": "とっさに",
+        "description": "at once; right away; promptly",
+        "level": "N1"
+    },
+    {
+        "id": 221,
+        "re": "とて",
+        "word": "とて",
+        "description": "even; even if/though ~",
+        "level": "N1"
+    },
+    {
+        "id": 222,
+        "re": "とは",
+        "word": "とは",
+        "description": "I didn't know; I was surprised that; the fact that ~",
+        "level": "N1"
+    },
+    {
+        "id": 223,
+        "re": "とはいえ",
+        "word": "とはいえ",
+        "description": "though; although; be that as it may; nonetheless",
+        "level": "N1"
+    },
+    {
+        "id": 224,
+        "re": "とばかりに",
+        "word": "とばかりに",
+        "description": "as if to say; as though~",
+        "level": "N1"
+    },
+    {
+        "id": 225,
+        "re": "といったらない",
+        "word": "といったらない",
+        "description": "extremely; very; nothing more ... than this; as ... as it could possibly be",
+        "level": "N1"
+    },
+    {
+        "id": 226,
+        "re": "(?:敢|あ)えて",
+        "word": "敢えて（あえて）",
+        "description": "dare to; daringly; deliberately; purposely ~",
+        "level": "N1"
+    },
+    {
+        "id": 227,
+        "re": "ときている",
+        "word": "ときている",
+        "description": "because of ~",
+        "level": "N1"
+    },
+    {
+        "id": 228,
+        "re": "ところを",
+        "word": "ところを",
+        "description": "although (it is a certain time/condition); even though normally",
+        "level": "N1"
+    },
+    {
+        "id": 229,
+        "re": "とされる",
+        "word": "とされる",
+        "description": "is considered to; it is said that ~",
+        "level": "N1"
+    },
+    {
+        "id": 230,
+        "re": "としたことが",
+        "word": "としたことが",
+        "description": "of all people, who would have thought?",
+        "level": "N1"
+    },
+    {
+        "id": 231,
+        "re": "というもの",
+        "word": "というもの",
+        "description": "during; for; since; over a period of time",
+        "level": "N1"
+    },
+    {
+        "id": 232,
+        "re": "というわけだ",
+        "word": "というわけだ",
+        "description": "that's why; no wonder; this means; it is the case that ~",
+        "level": "N1"
+    },
+    {
+        "id": 233,
+        "re": "というわけではない",
+        "word": "というわけではない",
+        "description": "it’s not that; it doesn’t mean that ~",
+        "level": "N1"
+    },
+    {
+        "id": 234,
+        "re": "といえども",
+        "word": "といえども",
+        "description": "even if; even though; despite ~",
+        "level": "N1"
+    },
+    {
+        "id": 235,
+        "re": "(?:ぶ|っぷ)り",
+        "word": "ぶり / っぷり",
+        "description": "style; manner; way​",
+        "level": "N1"
+    },
+    {
+        "id": 236,
+        "re": "ぶ(?:る|って|った)",
+        "word": "ぶる / ぶって / ぶった",
+        "description": "assuming the air of; behaving like; to pretend / act like ~",
+        "level": "N1"
+    },
+    {
+        "id": 237,
+        "re": "だに(?:しない)?",
+        "word": "だに / だにしない",
+        "description": "even; not even ~",
+        "level": "N1"
+    },
+    {
+        "id": 238,
+        "re": "であ(?:れ|ろうと)",
+        "word": "であれ / であろうと",
+        "description": "whoever; whatever; however; even ~",
+        "level": "N1"
+    },
+    {
+        "id": 239,
+        "re": "とあって",
+        "word": "とあって",
+        "description": "due to the fact that; because of ~",
+        "level": "N1"
+    },
+    {
+        "id": 240,
+        "re": "とあれば",
+        "word": "とあれば",
+        "description": "if it is the case that; if ~",
+        "level": "N1"
+    },
+    {
+        "id": 241,
+        "re": "という",
+        "word": "という",
+        "description": "called; named; that ~; all; every single ~ (no exceptions)",
+        "level": "N1"
+    },
+    {
+        "id": 242,
+        "re": "つ.*?つ",
+        "word": "つ～つ",
+        "description": "and ~ (indicates two contrasting actions)",
+        "level": "N1"
+    },
+    {
+        "id": 243,
+        "re": "やれ.*?やれ",
+        "word": "やれ～やれ",
+        "description": "pattern to give two representative examples (usually negative)",
+        "level": "N1"
+    },
+    {
+        "id": 244,
+        "re": "ようにも.*?ない",
+        "word": "ようにも～ない",
+        "description": "even if I wanted to… I couldn’t ~",
+        "level": "N1"
+    },
+    {
+        "id": 245,
+        "re": "(?:ば|たら)それまでだ",
+        "word": "ばそれまでだ / たらそれまでだ",
+        "description": "if… then it’s over",
+        "level": "N1"
+    },
+    {
+        "id": 246,
+        "re": "べから(?:ず|ざる)",
+        "word": "べからず / べからざる",
+        "description": "must not; should not; do not ~",
+        "level": "N1"
+    },
+    {
+        "id": 247,
+        "re": "び(?:る|て|た)",
+        "word": "びる / びて / びた",
+        "description": "to seem to be; to appear; to behave as ~",
+        "level": "N1"
+    },
+    {
+        "id": 248,
+        "re": "をも(?:っ|ちまし)て",
+        "word": "をもって / をもちまして",
+        "description": "by means of; with; on / at / as of (time)​",
+        "level": "N1"
+    },
+    {
+        "id": 249,
+        "re": "(?:で)?すら",
+        "word": "すら / ですら",
+        "description": "even ~ (with emphasis)",
+        "level": "N1"
+    },
+    {
+        "id": 250,
+        "re": "たことに(?:す|な)る",
+        "word": "たことにする / たことになる",
+        "description": "pretend to; see things as untrue; contrary to the truth ~",
+        "level": "N1"
+    },
+    {
+        "id": 251,
+        "re": "たる(?:もの)?",
+        "word": "たるもの / たる",
+        "description": "(those) who are; (that) which is; in the capacity of ... should ~",
+        "level": "N1"
+    },
+    {
+        "id": 252,
+        "re": "とい(?:う|った)ところだ",
+        "word": "というところだ / といったところだ",
+        "description": "at the most; no more than​; at best; roughly; about ~",
+        "level": "N1"
+    },
+    {
+        "id": 253,
+        "re": "とな(?:ると|れば)",
+        "word": "となると / となれば",
+        "description": "when it comes to; in such a case; if that happens",
+        "level": "N1"
+    },
+    {
+        "id": 254,
+        "re": "に(?:基|もと)づいて",
+        "word": "に基づいて（にもとづいて）",
+        "description": "based on; on the basis of ~",
+        "level": "N2"
+    },
+    {
+        "id": 255,
+        "re": "に(?:向|む)かって",
+        "word": "に向かって（にむかって）",
+        "description": "to face; to go towards; to head to ~",
+        "level": "N2"
+    },
+    {
+        "id": 256,
+        "re": "に(?:応|おう)じて",
+        "word": "に応じて（におうじて）",
+        "description": "depending on; in accordance with ~",
+        "level": "N2"
+    },
+    {
+        "id": 257,
+        "re": "に(?:際|さい)して",
+        "word": "に際して（にさいして）",
+        "description": "on the occasion of; at the time of ~",
+        "level": "N2"
+    },
+    {
+        "id": 258,
+        "re": "に(?:先立|さきだ)ち",
+        "word": "に先立ち（にさきだち）",
+        "description": "before; prior to ~",
+        "level": "N2"
+    },
+    {
+        "id": 259,
+        "re": "に(?:限|かぎ)って",
+        "word": "に限って（にかぎって）",
+        "description": "only; in particular ~",
+        "level": "N2"
+    },
+    {
+        "id": 260,
+        "re": "に(?:関|かか)わらず",
+        "word": "に関わらず（にかかわらず）",
+        "description": "in spite of; regardless of ~",
+        "level": "N2"
+    },
+    {
+        "id": 261,
+        "re": "に(?:関|かか)わる",
+        "word": "に関わる（にかかわる）",
+        "description": "to relate to; to have to do with; relating to ~",
+        "level": "N2"
+    },
+    {
+        "id": 262,
+        "re": "に(?:決|き)まっている",
+        "word": "に決まっている（にきまっている）",
+        "description": "certainly; I’m sure/certain that; it must be the case that ~",
+        "level": "N2"
+    },
+    {
+        "id": 263,
+        "re": "に(?:越|こ)したことはない",
+        "word": "に越したことはない（にこしたことはない）",
+        "description": "it’s best that, there’s nothing better than ~",
+        "level": "N2"
+    },
+    {
+        "id": 264,
+        "re": "に(?:応|こた)えて",
+        "word": "に応えて（にこたえて）",
+        "description": "in response to ~",
+        "level": "N2"
+    },
+    {
+        "id": 265,
+        "re": "もっとも",
+        "word": "もっとも",
+        "description": "but then; although; though ~",
+        "level": "N2"
+    },
+    {
+        "id": 266,
+        "re": "ものがある",
+        "word": "ものがある",
+        "description": "there is such a thing; to be the case that​; feels like ~",
+        "level": "N2"
+    },
+    {
+        "id": 267,
+        "re": "ものだ",
+        "word": "ものだ",
+        "description": "describe feeling; express memories; state fact",
+        "level": "N2"
+    },
+    {
+        "id": 268,
+        "re": "ものだから",
+        "word": "ものだから",
+        "description": "so; therefore; the reason for something",
+        "level": "N2"
+    },
+    {
+        "id": 269,
+        "re": "ものではない",
+        "word": "ものではない",
+        "description": "shouldn’t do something; it’s impossible to ~",
+        "level": "N2"
+    },
+    {
+        "id": 270,
+        "re": "に(?:限|かぎ)る",
+        "word": "に限る（にかぎる）",
+        "description": "is best; nothing is better than ~",
+        "level": "N2"
+    },
+    {
+        "id": 271,
+        "re": "(?:果|は)たして",
+        "word": "果たして（はたして）",
+        "description": "as was expected; sure enough; really; actually ~",
+        "level": "N2"
+    },
+    {
+        "id": 272,
+        "re": "ままに",
+        "word": "ままに",
+        "description": "as, to do as ~",
+        "level": "N2"
+    },
+    {
+        "id": 273,
+        "re": "もかまわず",
+        "word": "もかまわず",
+        "description": "without caring; without worrying about ~",
+        "level": "N2"
+    },
+    {
+        "id": 274,
+        "re": "やがて",
+        "word": "やがて",
+        "description": "before long; soon; almost; eventually ~",
+        "level": "N2"
+    },
+    {
+        "id": 275,
+        "re": "ようでは",
+        "word": "ようでは",
+        "description": "if ~ (bad result)",
+        "level": "N2"
+    },
+    {
+        "id": 276,
+        "re": "ようではないか",
+        "word": "ようではないか",
+        "description": "let’s do (something); why don’t we ~",
+        "level": "N2"
+    },
+    {
+        "id": 277,
+        "re": "より",
+        "word": "より",
+        "description": "than; rather than; more than ~; from~ (a time, place, or person)",
+        "level": "N2"
+    },
+    {
+        "id": 278,
+        "re": "から(?:言|い)うと",
+        "word": "から言うと（からいうと）",
+        "description": "in terms of; from the point of view of ~",
+        "level": "N2"
+    },
+    {
+        "id": 279,
+        "re": "から(?:見|み)ると",
+        "word": "から見ると（からみると）",
+        "description": "from the point of view of; by the look of; judging from ~",
+        "level": "N2"
+    },
+    {
+        "id": 280,
+        "re": "からと(?:言|い)って",
+        "word": "からと言って（からといって）",
+        "description": "just because; even if; even though ~",
+        "level": "N2"
+    },
+    {
+        "id": 281,
+        "re": "ものなら",
+        "word": "ものなら",
+        "description": "if I/we could; if [A] is possible, then [B]; if one can do something, then ~",
+        "level": "N2"
+    },
+    {
+        "id": 282,
+        "re": "ものの",
+        "word": "ものの",
+        "description": "but; although; even though ~",
+        "level": "N2"
+    },
+    {
+        "id": 283,
+        "re": "(?:上|じょう)",
+        "word": "上（じょう）",
+        "description": "for the sake of; from the standpoint of; as a matter of; in terms of ~",
+        "level": "N2"
+    },
+    {
+        "id": 284,
+        "re": "かと(?:思|おも)ったら",
+        "word": "かと思ったら（かとおもったら）",
+        "description": "just when; no sooner than ~",
+        "level": "N2"
+    },
+    {
+        "id": 285,
+        "re": "(?:限|かぎ)り",
+        "word": "限り（かぎり）",
+        "description": "as long as; while… is the case; as far as; while ~",
+        "level": "N2"
+    },
+    {
+        "id": 286,
+        "re": "(?:甲斐|かい)がある",
+        "word": "甲斐がある（かいがある）",
+        "description": "it’s worth one’s efforts to do something",
+        "level": "N2"
+    },
+    {
+        "id": 287,
+        "re": "(?:一応|いちおう)",
+        "word": "一応（いちおう）",
+        "description": "more or less; pretty much; roughly; tentatively ~",
+        "level": "N2"
+    },
+    {
+        "id": 288,
+        "re": "(?:以外|いがい)",
+        "word": "以外（いがい）",
+        "description": "with the exception of; excepting ~",
+        "level": "N2"
+    },
+    {
+        "id": 289,
+        "re": "(?:以上|いじょう)に",
+        "word": "以上に（いじょうに）",
+        "description": "more than; not less than; beyond ~",
+        "level": "N2"
+    },
+    {
+        "id": 290,
+        "re": "(?:以上|いじょう)は",
+        "word": "以上は（いじょうは）",
+        "description": "because; since; seeing that ~",
+        "level": "N2"
+    },
+    {
+        "id": 291,
+        "re": "(?:一気|いっき)に",
+        "word": "一気に（いっきに）",
+        "description": "in one go; without stopping; all at once; immediately; instantly; right away ~",
+        "level": "N2"
+    },
+    {
+        "id": 292,
+        "re": "(?:一方|いっぽう)で",
+        "word": "一方で（いっぽうで）",
+        "description": "on one hand, on the other hand; although ~",
+        "level": "N2"
+    },
+    {
+        "id": 293,
+        "re": "まい",
+        "word": "まい",
+        "description": "will not; will probably not; intend not to; must not ~",
+        "level": "N2"
+    },
+    {
+        "id": 294,
+        "re": "の(?:下|もと)で",
+        "word": "の下で（のもとで）",
+        "description": "under; with ~",
+        "level": "N2"
+    },
+    {
+        "id": 295,
+        "re": "の(?:上|うえ)では",
+        "word": "の上では（のうえでは）",
+        "description": "according to; from the viewpoint of ~",
+        "level": "N2"
+    },
+    {
+        "id": 296,
+        "re": "ばかりに",
+        "word": "ばかりに",
+        "description": "simply because; on account of~ (negative result)",
+        "level": "N2"
+    },
+    {
+        "id": 297,
+        "re": "ふうに",
+        "word": "ふうに",
+        "description": "this way; that way; in such a way; how",
+        "level": "N2"
+    },
+    {
+        "id": 298,
+        "re": "にも(?:関|かか)わらず",
+        "word": "にも関わらず（にもかかわらず）",
+        "description": "despite; in spite of; nevertheless; although ~",
+        "level": "N2"
+    },
+    {
+        "id": 299,
+        "re": "はともかく",
+        "word": "はともかく",
+        "description": "anyhow; anyway; regardless; in any case; whether or not ~",
+        "level": "N2"
+    },
+    {
+        "id": 300,
+        "re": "はもとより",
+        "word": "はもとより",
+        "description": "also; let alone; from the beginning",
+        "level": "N2"
+    },
+    {
+        "id": 301,
+        "re": "ばかり",
+        "word": "ばかり",
+        "description": "only; nothing but ~; about, approximately ~",
+        "level": "N2"
+    },
+    {
+        "id": 302,
+        "re": "ばかりか",
+        "word": "ばかりか",
+        "description": "not only... but also; as well as ~",
+        "level": "N2"
+    },
+    {
+        "id": 303,
+        "re": "ばかりだ",
+        "word": "ばかりだ",
+        "description": "continue to (go in negative direction)",
+        "level": "N2"
+    },
+    {
+        "id": 304,
+        "re": "に(?:沿|そ)って",
+        "word": "に沿って（にそって）",
+        "description": "along with; in accordance with ~",
+        "level": "N2"
+    },
+    {
+        "id": 305,
+        "re": "に(?:相違|そうい)ない",
+        "word": "に相違ない（にそういない）",
+        "description": "without a doubt; certain; sure",
+        "level": "N2"
+    },
+    {
+        "id": 306,
+        "re": "に(?:過|す)ぎない",
+        "word": "に過ぎない（にすぎない）",
+        "description": "no more than; just; merely; only ~",
+        "level": "N2"
+    },
+    {
+        "id": 307,
+        "re": "に(?:伴|ともな)って",
+        "word": "に伴って（にともなって）",
+        "description": "as; due to; with; along with; following; accordingly ~",
+        "level": "N2"
+    },
+    {
+        "id": 308,
+        "re": "その(?:上|うえ)",
+        "word": "その上（そのうえ）",
+        "description": "besides; in addition; furthermore ~",
+        "level": "N2"
+    },
+    {
+        "id": 309,
+        "re": "そう(?:言|い)えば",
+        "word": "そう言えば（そういえば）",
+        "description": "come to think of it; now that you mention it ~",
+        "level": "N2"
+    },
+    {
+        "id": 310,
+        "re": "(?:末|すえ)に",
+        "word": "末に（すえに）",
+        "description": "finally; after; following; at the end/ conclusion of ~",
+        "level": "N2"
+    },
+    {
+        "id": 311,
+        "re": "(?:少|すく)なくとも",
+        "word": "少なくとも（すくなくとも）",
+        "description": "at least ~",
+        "level": "N2"
+    },
+    {
+        "id": 312,
+        "re": "(?:直|ただ)ちに",
+        "word": "直ちに（ただちに）",
+        "description": "at once; immediately; directly; in person; automatically ~",
+        "level": "N2"
+    },
+    {
+        "id": 313,
+        "re": "て(?:以来|いらい)",
+        "word": "て以来（ていらい）",
+        "description": "since; henceforth ~",
+        "level": "N2"
+    },
+    {
+        "id": 314,
+        "re": "(?:恐|おそ)らく",
+        "word": "恐らく（おそらく）",
+        "description": "perhaps; likely; probably; I dare say ~",
+        "level": "N2"
+    },
+    {
+        "id": 315,
+        "re": "(?:恐|おそ)れがある",
+        "word": "恐れがある（おそれがある）",
+        "description": "it is feared that; to be in danger of; to be liable to ~",
+        "level": "N2"
+    },
+    {
+        "id": 316,
+        "re": "(?:及|およ)び",
+        "word": "及び（および）",
+        "description": "and; as well as ~",
+        "level": "N2"
+    },
+    {
+        "id": 317,
+        "re": "(?:幸|さいわ)いなことに",
+        "word": "幸いなことに（さいわいなことに）",
+        "description": "fortunately; luckily; thankfully ~",
+        "level": "N2"
+    },
+    {
+        "id": 318,
+        "re": "(?:次第|しだい)",
+        "word": "次第（しだい）",
+        "description": "as soon as, dependent upon",
+        "level": "N2"
+    },
+    {
+        "id": 319,
+        "re": "(?:次第|しだい)で",
+        "word": "次第で（しだいで）",
+        "description": "depending on; so ~",
+        "level": "N2"
+    },
+    {
+        "id": 320,
+        "re": "(?:次第|しだい)に",
+        "word": "次第に（しだいに）",
+        "description": "gradually (progress into a state); in sequence; in order",
+        "level": "N2"
+    },
+    {
+        "id": 321,
+        "re": "よりほかない",
+        "word": "よりほかない",
+        "description": "to have no choice but ~",
+        "level": "N2"
+    },
+    {
+        "id": 322,
+        "re": "を(?:除|のぞ)いて",
+        "word": "を除いて（をのぞいて）",
+        "description": "except; with the exception of; excluding ~",
+        "level": "N2"
+    },
+    {
+        "id": 323,
+        "re": "を(?:問|と)わず",
+        "word": "を問わず（をとわず）",
+        "description": "regardless of; irrespective of; no matter",
+        "level": "N2"
+    },
+    {
+        "id": 324,
+        "re": "(?:抜|ぬ)く",
+        "word": "抜く（ぬく）",
+        "description": "to do something from beginning to end; completely, extremely ~",
+        "level": "N2"
+    },
+    {
+        "id": 325,
+        "re": "を(?:契機|けいき)に",
+        "word": "を契機に（をけいきに）",
+        "description": "as a good opportunity/chance to; as a result of; make the best of ~",
+        "level": "N2"
+    },
+    {
+        "id": 326,
+        "re": "と(?:考|かんが)えられる",
+        "word": "と考えられる（とかんがえられる）",
+        "description": "one can think that; it is conceivable that; considered ~",
+        "level": "N2"
+    },
+    {
+        "id": 327,
+        "re": "とか(?:で)?",
+        "word": "とか（で）",
+        "description": "I heard that ~",
+        "level": "N2"
+    },
+    {
+        "id": 328,
+        "re": "ところを(?:見|み)ると",
+        "word": "ところを見ると（ところをみると）",
+        "description": "judging from; seeing that ~",
+        "level": "N2"
+    },
+    {
+        "id": 329,
+        "re": "にわたって",
+        "word": "にわたって",
+        "description": "throughout; over a period of ~",
+        "level": "N2"
+    },
+    {
+        "id": 330,
+        "re": "ぬ",
+        "word": "ぬ",
+        "description": "negative verb conjugation; traditional version of ない",
+        "level": "N2"
+    },
+    {
+        "id": 331,
+        "re": "ねばならない",
+        "word": "ねばならない",
+        "description": "have to do; must; should ~",
+        "level": "N2"
+    },
+    {
+        "id": 332,
+        "re": "のみ",
+        "word": "のみ",
+        "description": "only; nothing but​",
+        "level": "N2"
+    },
+    {
+        "id": 333,
+        "re": "のみならず",
+        "word": "のみならず",
+        "description": "not only; besides; as well as ~",
+        "level": "N2"
+    },
+    {
+        "id": 334,
+        "re": "のももっともだ",
+        "word": "のももっともだ",
+        "description": "no wonder; …is only natural",
+        "level": "N2"
+    },
+    {
+        "id": 335,
+        "re": "につき",
+        "word": "につき",
+        "description": "due to; because of; per; each",
+        "level": "N2"
+    },
+    {
+        "id": 336,
+        "re": "につけ",
+        "word": "につけ",
+        "description": "every time; whenever; as; whether; in (either case)​",
+        "level": "N2"
+    },
+    {
+        "id": 337,
+        "re": "にて",
+        "word": "にて",
+        "description": "in, at, with, by (formal particle)",
+        "level": "N2"
+    },
+    {
+        "id": 338,
+        "re": "にほかならない",
+        "word": "にほかならない",
+        "description": "nothing but; none other than ~",
+        "level": "N2"
+    },
+    {
+        "id": 339,
+        "re": "て(?:当然|とうぜん)だ",
+        "word": "て当然だ（てとうぜんだ）",
+        "description": "natural; as a matter of course",
+        "level": "N2"
+    },
+    {
+        "id": 340,
+        "re": "と(?:同時|どうじ)に",
+        "word": "と同時に（とどうじに）",
+        "description": "at the same time as; while; simultaneously ~",
+        "level": "N2"
+    },
+    {
+        "id": 341,
+        "re": "(?:全|まった)く.*?ない",
+        "word": "全く～ない（まったく～ない）",
+        "description": "not at all ~",
+        "level": "N2"
+    },
+    {
+        "id": 342,
+        "re": "ないことには.*?ない",
+        "word": "ないことには～ない",
+        "description": "unless you ~",
+        "level": "N2"
+    },
+    {
+        "id": 343,
+        "re": "(?:何|なに)も.*?ない",
+        "word": "何も～ない（なにも～ない）",
+        "description": "nothing; (not) ~ at all; there’s no need to ~",
+        "level": "N2"
+    },
+    {
+        "id": 344,
+        "re": "にしろ.*?にしろ",
+        "word": "にしろ～にしろ",
+        "description": "whether… or ~",
+        "level": "N2"
+    },
+    {
+        "id": 345,
+        "re": "にしても.*?にしても",
+        "word": "にしても～にしても",
+        "description": "regardless of whether ~",
+        "level": "N2"
+    },
+    {
+        "id": 346,
+        "re": "か.*?ないかのうちに",
+        "word": "か～ないかのうちに",
+        "description": "just as; right after; as soon as ~",
+        "level": "N2"
+    },
+    {
+        "id": 347,
+        "re": "にあたって",
+        "word": "にあたって",
+        "description": "at the time; on the occasion of ~",
+        "level": "N2"
+    },
+    {
+        "id": 348,
+        "re": "(?:上|うえ)は",
+        "word": "上は（うえは）",
+        "description": "now that; since; as long as ~",
+        "level": "N2"
+    },
+    {
+        "id": 349,
+        "re": "(?:要|よう)するに",
+        "word": "要するに（ようするに）",
+        "description": "in short; in a word; to sum up; to put it simply ~",
+        "level": "N2"
+    },
+    {
+        "id": 350,
+        "re": "ざるを(?:得|え)ない",
+        "word": "ざるを得ない（ざるをえない）",
+        "description": "cannot help (doing); have no choice but to ~",
+        "level": "N2"
+    },
+    {
+        "id": 351,
+        "re": "ずに(?:済む |すむ)",
+        "word": "ずに済む （ずにすむ）",
+        "description": "get by without doing ~",
+        "level": "N2"
+    },
+    {
+        "id": 352,
+        "re": "ては.*?ては",
+        "word": "ては～ては",
+        "description": "repetitive situations/actions",
+        "level": "N2"
+    },
+    {
+        "id": 353,
+        "re": "として.*?ない",
+        "word": "として～ない",
+        "description": "not at all; there is not even one",
+        "level": "N2"
+    },
+    {
+        "id": 354,
+        "re": "どころではない",
+        "word": "どころではない",
+        "description": "not the time for; not the place for; far from; anything but ~",
+        "level": "N2"
+    },
+    {
+        "id": 355,
+        "re": "ないではいられない",
+        "word": "ないではいられない",
+        "description": "can’t help but feel; can’t help but do ~",
+        "level": "N2"
+    },
+    {
+        "id": 356,
+        "re": "なお",
+        "word": "なお",
+        "description": "still; yet​; furthermore; in addition ~",
+        "level": "N2"
+    },
+    {
+        "id": 357,
+        "re": "ろくに.*?ない",
+        "word": "ろくに～ない",
+        "description": "not well; not enough; improperly; insufficiently; unsatisfactorily​ ~",
+        "level": "N2"
+    },
+    {
+        "id": 358,
+        "re": "(?:少|すこ)しも.*?ない",
+        "word": "少しも～ない（すこしも～ない）",
+        "description": "not one bit; not even a little ~",
+        "level": "N2"
+    },
+    {
+        "id": 359,
+        "re": "とも",
+        "word": "とも",
+        "description": "even if; no matter (who, what, when, where, why, how); though ~",
+        "level": "N2"
+    },
+    {
+        "id": 360,
+        "re": "どうせ",
+        "word": "どうせ",
+        "description": "anyhow; in any case; at any rate; after all; no matter what",
+        "level": "N2"
+    },
+    {
+        "id": 361,
+        "re": "どうやら",
+        "word": "どうやら",
+        "description": "possibly; apparently; seems like; somehow; barely ~",
+        "level": "N2"
+    },
+    {
+        "id": 362,
+        "re": "どころか",
+        "word": "どころか",
+        "description": "far from; anything but; let alone; not to mention; much less ~",
+        "level": "N2"
+    },
+    {
+        "id": 363,
+        "re": "お.*?(?:願|ねが)う",
+        "word": "お～願う（お～ねがう）",
+        "description": "please do; could you please…; I ask of you to ~",
+        "level": "N2"
+    },
+    {
+        "id": 364,
+        "re": "とっくに",
+        "word": "とっくに",
+        "description": "long ago; already; a long time ago",
+        "level": "N2"
+    },
+    {
+        "id": 365,
+        "re": "ところだった",
+        "word": "ところだった",
+        "description": "was just about to do something; something almost happened",
+        "level": "N2"
+    },
+    {
+        "id": 366,
+        "re": "ちなみに",
+        "word": "ちなみに",
+        "description": "by the way; in this connection; incidentally; (conjunction)",
+        "level": "N2"
+    },
+    {
+        "id": 367,
+        "re": "(?:て|で)は",
+        "word": "ては / では",
+        "description": "whenever; if; when~; repetitive action",
+        "level": "N2"
+    },
+    {
+        "id": 368,
+        "re": "(?:得|え|う)る",
+        "word": "得る（える / うる）",
+        "description": "can; to be able to; is possible to ~",
+        "level": "N2"
+    },
+    {
+        "id": 369,
+        "re": "かえって",
+        "word": "かえって",
+        "description": "on the contrary; rather; all the more; surprisingly ~",
+        "level": "N2"
+    },
+    {
+        "id": 370,
+        "re": "(?:中を|中では|なかを|なかでは)",
+        "word": "中を / 中では（なかを / なかでは）",
+        "description": "in; on; in the midst of; when; while ~",
+        "level": "N2"
+    },
+    {
+        "id": 371,
+        "re": "ようか.*?まいか",
+        "word": "ようか～まいか",
+        "description": "whether or not; considering options",
+        "level": "N2"
+    },
+    {
+        "id": 372,
+        "re": "たまえ",
+        "word": "たまえ",
+        "description": "do~; order somebody to do something",
+        "level": "N2"
+    },
+    {
+        "id": 373,
+        "re": "も(?:の|ん)",
+        "word": "もの / もん",
+        "description": "because; indicates reason/ excuse/ dissatisfaction",
+        "level": "N2"
+    },
+    {
+        "id": 374,
+        "re": "かねない",
+        "word": "かねない",
+        "description": "(someone) might do something; something might happen",
+        "level": "N2"
+    },
+    {
+        "id": 375,
+        "re": "だけあって",
+        "word": "だけあって",
+        "description": "being the case; precisely because; as expected from ~",
+        "level": "N2"
+    },
+    {
+        "id": 376,
+        "re": "だけに",
+        "word": "だけに",
+        "description": "being the case; precisely because; as one would expect",
+        "level": "N2"
+    },
+    {
+        "id": 377,
+        "re": "からして",
+        "word": "からして",
+        "description": "judging from; based on; since; from; even ~",
+        "level": "N2"
+    },
+    {
+        "id": 378,
+        "re": "からには",
+        "word": "からには",
+        "description": "now that; since; so long as; because ~",
+        "level": "N2"
+    },
+    {
+        "id": 379,
+        "re": "っこない",
+        "word": "っこない",
+        "description": "no chance of; … is definitely not possible",
+        "level": "N2"
+    },
+    {
+        "id": 380,
+        "re": "つつ",
+        "word": "つつ",
+        "description": "while; even though; despite ~",
+        "level": "N2"
+    },
+    {
+        "id": 381,
+        "re": "つつある",
+        "word": "つつある",
+        "description": "to be doing; to be in the process of doing ~",
+        "level": "N2"
+    },
+    {
+        "id": 382,
+        "re": "ていては",
+        "word": "ていては",
+        "description": "if one keeps doing ~",
+        "level": "N2"
+    },
+    {
+        "id": 383,
+        "re": "かねる",
+        "word": "かねる",
+        "description": "unable to do something; can’t do something",
+        "level": "N2"
+    },
+    {
+        "id": 384,
+        "re": "てこそ",
+        "word": "てこそ",
+        "description": "now that; since (something happened)",
+        "level": "N2"
+    },
+    {
+        "id": 385,
+        "re": "かのように",
+        "word": "かのように",
+        "description": "as if; just like ~",
+        "level": "N2"
+    },
+    {
+        "id": 386,
+        "re": "からこそ",
+        "word": "からこそ",
+        "description": "precisely because ~",
+        "level": "N2"
+    },
+    {
+        "id": 387,
+        "re": "も(?:の|ん)か",
+        "word": "ものか / もんか",
+        "description": "as if (something untrue were actually true); there's no way ~",
+        "level": "N2"
+    },
+    {
+        "id": 388,
+        "re": "しかも",
+        "word": "しかも",
+        "description": "moreover; furthermore; and yet; what’s more ~",
+        "level": "N2"
+    },
+    {
+        "id": 389,
+        "re": "というふうに",
+        "word": "というふうに",
+        "description": "in such a way that ~",
+        "level": "N2"
+    },
+    {
+        "id": 390,
+        "re": "(?:逆|ぎゃく)に",
+        "word": "逆に（ぎゃくに）",
+        "description": "conversely; on the contrary ~",
+        "level": "N2"
+    },
+    {
+        "id": 391,
+        "re": "てはいられない",
+        "word": "てはいられない",
+        "description": "can’t afford to; unable to ~",
+        "level": "N2"
+    },
+    {
+        "id": 392,
+        "re": "(?:反面|はんめん)",
+        "word": "反面（はんめん）",
+        "description": "while, although; on the other hand~",
+        "level": "N2"
+    },
+    {
+        "id": 393,
+        "re": "いきなり",
+        "word": "いきなり",
+        "description": "abruptly; suddenly; all of a sudden; without warning",
+        "level": "N2"
+    },
+    {
+        "id": 394,
+        "re": "ちっとも.*?ない",
+        "word": "ちっとも～ない",
+        "description": "(not) at all; (not) in the least ~",
+        "level": "N2"
+    },
+    {
+        "id": 395,
+        "re": "いよいよ",
+        "word": "いよいよ",
+        "description": "at last; finally; beyond doubt",
+        "level": "N2"
+    },
+    {
+        "id": 396,
+        "re": "ことに",
+        "word": "ことに",
+        "description": "emphasize speaker's feelings; to my (surprise/etc)",
+        "level": "N2"
+    },
+    {
+        "id": 397,
+        "re": "ことにはならない",
+        "word": "ことにはならない",
+        "description": "just because… doesn’t mean ~",
+        "level": "N2"
+    },
+    {
+        "id": 398,
+        "re": "いわゆる",
+        "word": "いわゆる",
+        "description": "what is called; as it is called; the so-called; so to speak​",
+        "level": "N2"
+    },
+    {
+        "id": 399,
+        "re": "おまけに",
+        "word": "おまけに",
+        "description": "to make matters worse; besides; what's more; in addition; on top of that​",
+        "level": "N2"
+    },
+    {
+        "id": 400,
+        "re": "てはならない",
+        "word": "てはならない",
+        "description": "must not; cannot; should not ~",
+        "level": "N2"
+    },
+    {
+        "id": 401,
+        "re": "せっかく",
+        "word": "せっかく",
+        "description": "especially; (thank you for) troubling to, going to great pains for ~",
+        "level": "N2"
+    },
+    {
+        "id": 402,
+        "re": "せめて",
+        "word": "せめて",
+        "description": "at least; at most ~",
+        "level": "N2"
+    },
+    {
+        "id": 403,
+        "re": "そうすると",
+        "word": "そうすると",
+        "description": "having done that; if that is done; if it is done in that way",
+        "level": "N2"
+    },
+    {
+        "id": 404,
+        "re": "てばかりはいられない",
+        "word": "てばかりはいられない",
+        "description": "can’t keep doing ~",
+        "level": "N2"
+    },
+    {
+        "id": 405,
+        "re": "てまで",
+        "word": "てまで",
+        "description": "even; will go far so as to ~",
+        "level": "N2"
+    },
+    {
+        "id": 406,
+        "re": "それなのに",
+        "word": "それなのに",
+        "description": "and yet; despite this; but even so ~",
+        "level": "N2"
+    },
+    {
+        "id": 407,
+        "re": "それなら",
+        "word": "それなら",
+        "description": "if that’s the case; if so ~",
+        "level": "N2"
+    },
+    {
+        "id": 408,
+        "re": "それにしても",
+        "word": "それにしても",
+        "description": "nevertheless; at any rate; even so; be that as it may ~",
+        "level": "N2"
+    },
+    {
+        "id": 409,
+        "re": "ことか",
+        "word": "ことか",
+        "description": "how…!; what…!",
+        "level": "N2"
+    },
+    {
+        "id": 410,
+        "re": "ところに",
+        "word": "ところに",
+        "description": "at the time; just as I was ~",
+        "level": "N2"
+    },
+    {
+        "id": 411,
+        "re": "ことだ",
+        "word": "ことだ",
+        "description": "should do~ (used for suggestions or giving advice)",
+        "level": "N2"
+    },
+    {
+        "id": 412,
+        "re": "ことだから",
+        "word": "ことだから",
+        "description": "because; since ~",
+        "level": "N2"
+    },
+    {
+        "id": 413,
+        "re": "なく(?:は|も)ない",
+        "word": "なくはない / なくもない",
+        "description": "it’s not that; I may (double negative)",
+        "level": "N2"
+    },
+    {
+        "id": 414,
+        "re": "あげく",
+        "word": "あげく",
+        "description": "to end up; in the end; finally; after all ~",
+        "level": "N2"
+    },
+    {
+        "id": 415,
+        "re": "といった",
+        "word": "といった",
+        "description": "like; such as ~",
+        "level": "N2"
+    },
+    {
+        "id": 416,
+        "re": "せいか",
+        "word": "せいか",
+        "description": "perhaps because ~",
+        "level": "N2"
+    },
+    {
+        "id": 417,
+        "re": "に(?:加|くわ)えて",
+        "word": "に加えて（にくわえて）",
+        "description": "in addition ~",
+        "level": "N2"
+    },
+    {
+        "id": 418,
+        "re": "でしかない",
+        "word": "でしかない",
+        "description": "merely; nothing but; no more than; there is only ~",
+        "level": "N2"
+    },
+    {
+        "id": 419,
+        "re": "あるいは",
+        "word": "あるいは",
+        "description": "or; either; maybe; perhaps; possibly ~",
+        "level": "N2"
+    },
+    {
+        "id": 420,
+        "re": "(?:抜きにして|抜きで|ぬきにして|ぬきで)",
+        "word": "抜きにして / 抜きで（ぬきにして/ ぬきで）",
+        "description": "without; leaving out; cutting out ~",
+        "level": "N2"
+    },
+    {
+        "id": 421,
+        "re": "としても",
+        "word": "としても",
+        "description": "assuming; even if ~",
+        "level": "N2"
+    },
+    {
+        "id": 422,
+        "re": "(?:が|を)きっかけ(?:で|に)",
+        "word": "がきっかけで / をきっかけに",
+        "description": "with… as a start; as a result of; taking advantage of ~",
+        "level": "N2"
+    },
+    {
+        "id": 423,
+        "re": "に(?:限|かぎ)らず",
+        "word": "に限らず（にかぎらず）",
+        "description": "not just; not only... but also ~",
+        "level": "N2"
+    },
+    {
+        "id": 424,
+        "re": "というものだ",
+        "word": "というものだ",
+        "description": "something like; something called ~",
+        "level": "N2"
+    },
+    {
+        "id": 425,
+        "re": "ということは",
+        "word": "ということは",
+        "description": "that is to say; so that means; in other words ~",
+        "level": "N2"
+    },
+    {
+        "id": 426,
+        "re": "というものではない",
+        "word": "というものではない",
+        "description": "there is no guarantee that…; not necessarily ~",
+        "level": "N2"
+    },
+    {
+        "id": 427,
+        "re": "も(?:当然|とうぜん)だ",
+        "word": "も当然だ（もとうぜんだ）",
+        "description": "it’s only natural; no wonder; might as well ~",
+        "level": "N2"
+    },
+    {
+        "id": 428,
+        "re": "もう(?:少|すこ)しで",
+        "word": "もう少しで（もうすこしで）",
+        "description": "almost; nearly, close to ~",
+        "level": "N2"
+    },
+    {
+        "id": 429,
+        "re": "てたまらない",
+        "word": "てたまらない",
+        "description": "can't help but; dying to; extremely ~",
+        "level": "N2"
+    },
+    {
+        "id": 430,
+        "re": "なくて(?:済|す)む",
+        "word": "なくて済む（なくてすむ）",
+        "description": "get by without doing ~",
+        "level": "N2"
+    },
+    {
+        "id": 431,
+        "re": "てでも",
+        "word": "てでも",
+        "description": "even if I have to; by all means ~",
+        "level": "N2"
+    },
+    {
+        "id": 432,
+        "re": "てならない",
+        "word": "てならない",
+        "description": "can't help but; dying to; extremely ~",
+        "level": "N2"
+    },
+    {
+        "id": 433,
+        "re": "くせして",
+        "word": "くせして",
+        "description": "although; despite the fact that; even though ~",
+        "level": "N2"
+    },
+    {
+        "id": 434,
+        "re": "に(?:せよ|しろ)",
+        "word": "にせよ/ にしろ",
+        "description": "even if; regardless; whether... or ~",
+        "level": "N2"
+    },
+    {
+        "id": 435,
+        "re": "やら.*?やら",
+        "word": "やら～やら",
+        "description": "such things as A and B; A and B and so on ~",
+        "level": "N2"
+    },
+    {
+        "id": 436,
+        "re": "(?:得|え)ない",
+        "word": "得ない（えない）",
+        "description": "unable to; cannot; it is not possible to ~",
+        "level": "N2"
+    },
+    {
+        "id": 437,
+        "re": "(?:再|ふたた)び",
+        "word": "再び（ふたたび）",
+        "description": "again; once more",
+        "level": "N2"
+    },
+    {
+        "id": 438,
+        "re": "よ(?:ほ|っぽ)ど",
+        "word": "よほど / よっぽど",
+        "description": "very; greatly; much; to a large extent",
+        "level": "N2"
+    },
+    {
+        "id": 439,
+        "re": "わずかに",
+        "word": "わずかに",
+        "description": "slightly; only; barely; narrowly ~",
+        "level": "N2"
+    },
+    {
+        "id": 440,
+        "re": "げ",
+        "word": "げ",
+        "description": "looks like; seems like; appears to ~",
+        "level": "N2"
+    },
+    {
+        "id": 441,
+        "re": "まだしも",
+        "word": "まだしも",
+        "description": "rather; better​ ~",
+        "level": "N2"
+    },
+    {
+        "id": 442,
+        "re": "からす(?:ると|れば)",
+        "word": "からすると / からすれば",
+        "description": "judging from; considering; by the look of ~",
+        "level": "N2"
+    },
+    {
+        "id": 443,
+        "re": "に(?:したら|すれば)",
+        "word": "にしたら / にすれば",
+        "description": "from one’s perspective; from the point of view of ~",
+        "level": "N2"
+    },
+    {
+        "id": 444,
+        "re": "だけのことはある",
+        "word": "だけのことはある",
+        "description": "no wonder; as expected of; not ... for nothing; not ... with nothing to show for it",
+        "level": "N2"
+    },
+    {
+        "id": 445,
+        "re": "だけは",
+        "word": "だけは",
+        "description": "to do all that one can",
+        "level": "N2"
+    },
+    {
+        "id": 446,
+        "re": "だけましだ",
+        "word": "だけましだ",
+        "description": "it’s better than; one should feel grateful for ~",
+        "level": "N2"
+    },
+    {
+        "id": 447,
+        "re": "をもとに",
+        "word": "をもとに",
+        "description": "based on; derived from; building on; beginning with ~",
+        "level": "N2"
+    },
+    {
+        "id": 448,
+        "re": "をめぐって",
+        "word": "をめぐって",
+        "description": "concerning; in regard to ~",
+        "level": "N2"
+    },
+    {
+        "id": 449,
+        "re": "だって",
+        "word": "だって",
+        "description": "because; but; after all; even; too",
+        "level": "N2"
+    },
+    {
+        "id": 450,
+        "re": "ことなく",
+        "word": "ことなく",
+        "description": "without doing something even once",
+        "level": "N2"
+    },
+    {
+        "id": 451,
+        "re": "よりも",
+        "word": "よりも",
+        "description": "in comparison to; rather than; more than ~",
+        "level": "N3"
+    },
+    {
+        "id": 452,
+        "re": "(?:上|あ)げる",
+        "word": "上げる（あげる）",
+        "description": "to finish doing ~",
+        "level": "N3"
+    },
+    {
+        "id": 453,
+        "re": "んだって",
+        "word": "んだって",
+        "description": "I hear that; heard that ~",
+        "level": "N3"
+    },
+    {
+        "id": 454,
+        "re": "わけがない",
+        "word": "わけがない",
+        "description": "there is no way that; it is impossible to ~",
+        "level": "N3"
+    },
+    {
+        "id": 455,
+        "re": "わけだ",
+        "word": "わけだ",
+        "description": "for that reason; no wonder; as you’d expect; the fact is; so you mean ~",
+        "level": "N3"
+    },
+    {
+        "id": 456,
+        "re": "わけではない",
+        "word": "わけではない",
+        "description": "it doesn’t mean that; it is not the case that; I don’t mean that; it is not true that ~",
+        "level": "N3"
+    },
+    {
+        "id": 457,
+        "re": "わけにはいかない",
+        "word": "わけにはいかない",
+        "description": "must not; cannot afford to; must, have no choice but to ~",
+        "level": "N3"
+    },
+    {
+        "id": 458,
+        "re": "ようとしない",
+        "word": "ようとしない",
+        "description": "not try to; not make an effort to ~",
+        "level": "N3"
+    },
+    {
+        "id": 459,
+        "re": "ようとする",
+        "word": "ようとする",
+        "description": "try to; attempt to; be about to ~",
+        "level": "N3"
+    },
+    {
+        "id": 460,
+        "re": "ように",
+        "word": "ように",
+        "description": "in order to, so that ~",
+        "level": "N3"
+    },
+    {
+        "id": 461,
+        "re": "(?:合|あ)う",
+        "word": "合う（あう）",
+        "description": "do something together",
+        "level": "N3"
+    },
+    {
+        "id": 462,
+        "re": "(?:中|ちゅう)",
+        "word": "中（ちゅう）",
+        "description": "currently; during; at some point; throughout; before the end of ~",
+        "level": "N3"
+    },
+    {
+        "id": 463,
+        "re": "をはじめ",
+        "word": "をはじめ",
+        "description": "for example; starting with ~",
+        "level": "N3"
+    },
+    {
+        "id": 464,
+        "re": "(?:気味|ぎみ)",
+        "word": "気味（ぎみ）",
+        "description": "-like; -looking; -looked; tending to ~",
+        "level": "N3"
+    },
+    {
+        "id": 465,
+        "re": "それとも",
+        "word": "それとも",
+        "description": "or; or else ~",
+        "level": "N3"
+    },
+    {
+        "id": 466,
+        "re": "そのために",
+        "word": "そのために",
+        "description": "hence; for that reason; because of ~",
+        "level": "N3"
+    },
+    {
+        "id": 467,
+        "re": "ずに",
+        "word": "ずに",
+        "description": "without doing ~",
+        "level": "N3"
+    },
+    {
+        "id": 468,
+        "re": "ずにはいられない",
+        "word": "ずにはいられない",
+        "description": "can’t help but feel; can’t help but do; must do ~",
+        "level": "N3"
+    },
+    {
+        "id": 469,
+        "re": "せいぜい",
+        "word": "せいぜい",
+        "description": "at the most; at best; to the utmost",
+        "level": "N3"
+    },
+    {
+        "id": 470,
+        "re": "せいで",
+        "word": "せいで",
+        "description": "because of; due to; as a result of ~",
+        "level": "N3"
+    },
+    {
+        "id": 471,
+        "re": "すでに",
+        "word": "すでに",
+        "description": "something has already been done/taken place; is already the case",
+        "level": "N3"
+    },
+    {
+        "id": 472,
+        "re": "すなわち",
+        "word": "すなわち",
+        "description": "in other words; namely ~",
+        "level": "N3"
+    },
+    {
+        "id": 473,
+        "re": "ずつ",
+        "word": "ずつ",
+        "description": "apiece; each; at a time",
+        "level": "N3"
+    },
+    {
+        "id": 474,
+        "re": "こと",
+        "word": "こと",
+        "description": "Verb nominalizer; (must) do",
+        "level": "N3"
+    },
+    {
+        "id": 475,
+        "re": "ことから",
+        "word": "ことから",
+        "description": "from the fact that ~",
+        "level": "N3"
+    },
+    {
+        "id": 476,
+        "re": "こそ",
+        "word": "こそ",
+        "description": "for sure (emphasize preceding word); precisely; definitely ~",
+        "level": "N3"
+    },
+    {
+        "id": 477,
+        "re": "きり",
+        "word": "きり",
+        "description": "only; just; since; after ~",
+        "level": "N3"
+    },
+    {
+        "id": 478,
+        "re": "くせに",
+        "word": "くせに",
+        "description": "and yet; though; in spite of; despite ~",
+        "level": "N3"
+    },
+    {
+        "id": 479,
+        "re": "(?:際|さい)に",
+        "word": "際に（さいに）",
+        "description": "when; at the time of; in the case of ~",
+        "level": "N3"
+    },
+    {
+        "id": 480,
+        "re": "(?:最中|さいちゅう)に",
+        "word": "最中に（さいちゅうに）",
+        "description": "while; during; in the middle of ~",
+        "level": "N3"
+    },
+    {
+        "id": 481,
+        "re": "を(?:込|こ)めて",
+        "word": "を込めて（をこめて）",
+        "description": "filled with; full of",
+        "level": "N3"
+    },
+    {
+        "id": 482,
+        "re": "を(?:中心|ちゅうしん)に",
+        "word": "を中心に（をちゅうしんに）",
+        "description": "focused on; centered on",
+        "level": "N3"
+    },
+    {
+        "id": 483,
+        "re": "ほど",
+        "word": "ほど",
+        "description": "degree; extent; bounds; upper limit",
+        "level": "N3"
+    },
+    {
+        "id": 484,
+        "re": "まさか",
+        "word": "まさか",
+        "description": "there's no way; that's impossible; you must be joking",
+        "level": "N3"
+    },
+    {
+        "id": 485,
+        "re": "ふと",
+        "word": "ふと",
+        "description": "suddenly; accidentally; unexpectedly; unintentionally ~",
+        "level": "N3"
+    },
+    {
+        "id": 486,
+        "re": "ふりをする",
+        "word": "ふりをする",
+        "description": "to pretend; to act as if ~",
+        "level": "N3"
+    },
+    {
+        "id": 487,
+        "re": "ぶりに",
+        "word": "ぶりに",
+        "description": "for the first time in (period of time)",
+        "level": "N3"
+    },
+    {
+        "id": 488,
+        "re": "べきだ",
+        "word": "べきだ",
+        "description": "should do; must do ~",
+        "level": "N3"
+    },
+    {
+        "id": 489,
+        "re": "べきではない",
+        "word": "べきではない",
+        "description": "should not do; must not do ~",
+        "level": "N3"
+    },
+    {
+        "id": 490,
+        "re": "ばかりで",
+        "word": "ばかりで",
+        "description": "only; just ~ (negative description)",
+        "level": "N3"
+    },
+    {
+        "id": 491,
+        "re": "ばかりでなく",
+        "word": "ばかりでなく",
+        "description": "not only... but also; as well as ~",
+        "level": "N3"
+    },
+    {
+        "id": 492,
+        "re": "ばよかった",
+        "word": "ばよかった",
+        "description": "should have; would have been better if ~",
+        "level": "N3"
+    },
+    {
+        "id": 493,
+        "re": "はもちろん",
+        "word": "はもちろん",
+        "description": "not to mention; not only ... but also ~",
+        "level": "N3"
+    },
+    {
+        "id": 494,
+        "re": "ばいい",
+        "word": "ばいい",
+        "description": "should; can; it’d be good if ~",
+        "level": "N3"
+    },
+    {
+        "id": 495,
+        "re": "に(?:対|たい)して",
+        "word": "に対して（にたいして）",
+        "description": "towards; against; regarding; in contrast with​ ~",
+        "level": "N3"
+    },
+    {
+        "id": 496,
+        "re": "に(?:比|くら)べて",
+        "word": "に比べて（にくらべて）",
+        "description": "compared to; in comparison to ~",
+        "level": "N3"
+    },
+    {
+        "id": 497,
+        "re": "に(?:慣|な)れる",
+        "word": "に慣れる（になれる）",
+        "description": "to be used to something",
+        "level": "N3"
+    },
+    {
+        "id": 498,
+        "re": "もしもたら",
+        "word": "もしもたら",
+        "description": "if; in the case; supposing ~",
+        "level": "N3"
+    },
+    {
+        "id": 499,
+        "re": "がたい",
+        "word": "がたい",
+        "description": "very difficult to; hard to ~",
+        "level": "N3"
+    },
+    {
+        "id": 500,
+        "re": "がち",
+        "word": "がち",
+        "description": "tend to; tendency to; frequently; often; to do something easily",
+        "level": "N3"
+    },
+    {
+        "id": 501,
+        "re": "だらけ",
+        "word": "だらけ",
+        "description": "full of; covered with; a lot of (something undesirable)",
+        "level": "N3"
+    },
+    {
+        "id": 502,
+        "re": "っけ",
+        "word": "っけ",
+        "description": "a casual suffix to confirm something you are trying to remember",
+        "level": "N3"
+    },
+    {
+        "id": 503,
+        "re": "だけ",
+        "word": "だけ",
+        "description": "only; just; as much as ~; as much as ~",
+        "level": "N3"
+    },
+    {
+        "id": 504,
+        "re": "だけでなく",
+        "word": "だけでなく",
+        "description": "not only… but also ~",
+        "level": "N3"
+    },
+    {
+        "id": 505,
+        "re": "だけど",
+        "word": "だけど",
+        "description": "but; however; although; regarding ~",
+        "level": "N3"
+    },
+    {
+        "id": 506,
+        "re": "たびに",
+        "word": "たびに",
+        "description": "whenever; every time ~",
+        "level": "N3"
+    },
+    {
+        "id": 507,
+        "re": "ために",
+        "word": "ために",
+        "description": "for; in order to; for the benefit of; because of; as a result of ~",
+        "level": "N3"
+    },
+    {
+        "id": 508,
+        "re": "たものだ",
+        "word": "たものだ",
+        "description": "used to do; would often do",
+        "level": "N3"
+    },
+    {
+        "id": 509,
+        "re": "たって",
+        "word": "たって",
+        "description": "even if; even though; no matter how ~",
+        "level": "N3"
+    },
+    {
+        "id": 510,
+        "re": "たて",
+        "word": "たて",
+        "description": "just done; freshly done; newly done",
+        "level": "N3"
+    },
+    {
+        "id": 511,
+        "re": "たとたん",
+        "word": "たとたん",
+        "description": "as soon as; just as ~",
+        "level": "N3"
+    },
+    {
+        "id": 512,
+        "re": "てからでないと",
+        "word": "てからでないと",
+        "description": "must first do; cannot do without first doing ~",
+        "level": "N3"
+    },
+    {
+        "id": 513,
+        "re": "てごらん",
+        "word": "てごらん",
+        "description": "(please) try to; (please) look",
+        "level": "N3"
+    },
+    {
+        "id": 514,
+        "re": "と(?:共|とも)に",
+        "word": "と共に（とともに）",
+        "description": "together with; at the same time as; as well as ~",
+        "level": "N3"
+    },
+    {
+        "id": 515,
+        "re": "(?:通|とお)す",
+        "word": "通す（とおす）",
+        "description": "to do until the end; to continually do; through ~",
+        "level": "N3"
+    },
+    {
+        "id": 516,
+        "re": "とは(?:限|かぎ)らない",
+        "word": "とは限らない（とはかぎらない）",
+        "description": "not necessarily so; is not always true",
+        "level": "N3"
+    },
+    {
+        "id": 517,
+        "re": "と(?:言|い)えば",
+        "word": "と言えば（といえば）",
+        "description": "speaking of; when you talk of; when you say; if it were the case that ~",
+        "level": "N3"
+    },
+    {
+        "id": 518,
+        "re": "と(?:言|い)うと",
+        "word": "と言うと（というと）",
+        "description": "speaking of; when you talk of; when you say ~",
+        "level": "N3"
+    },
+    {
+        "id": 519,
+        "re": "のでしょうか",
+        "word": "のでしょうか",
+        "description": "ask a question in a polite way",
+        "level": "N3"
+    },
+    {
+        "id": 520,
+        "re": "について",
+        "word": "について",
+        "description": "concerning; regarding; about; on ~",
+        "level": "N3"
+    },
+    {
+        "id": 521,
+        "re": "につれて",
+        "word": "につれて",
+        "description": "as; in proportion to; with; as… then ~",
+        "level": "N3"
+    },
+    {
+        "id": 522,
+        "re": "にとって",
+        "word": "にとって",
+        "description": "to; for; concerning; as far as ... is concerned; regarding ~",
+        "level": "N3"
+    },
+    {
+        "id": 523,
+        "re": "には",
+        "word": "には",
+        "description": "for the purpose of; in order to ~",
+        "level": "N3"
+    },
+    {
+        "id": 524,
+        "re": "(?:的|てき)",
+        "word": "的（てき）",
+        "description": "change noun into na-adjective or adverb",
+        "level": "N3"
+    },
+    {
+        "id": 525,
+        "re": "ても(?:始|はじ)まらない",
+        "word": "ても始まらない（てもはじまらない）",
+        "description": "even if you... it’s no use; there is no point to ~",
+        "level": "N3"
+    },
+    {
+        "id": 526,
+        "re": "ても(?:構|かま)わない",
+        "word": "ても構わない（てもかまわない）",
+        "description": "it doesn't matter if ~",
+        "level": "N3"
+    },
+    {
+        "id": 527,
+        "re": "(?:確|たし)かに",
+        "word": "確かに（たしかに）",
+        "description": "surely, certainly ~",
+        "level": "N3"
+    },
+    {
+        "id": 528,
+        "re": "(?:例|たと)えば",
+        "word": "例えば（たとえば）",
+        "description": "for example; for instance ~",
+        "level": "N3"
+    },
+    {
+        "id": 529,
+        "re": "て(?:済|す)む",
+        "word": "て済む（てすむ）",
+        "description": "sufficient by; no problem to; resolve by ~",
+        "level": "N3"
+    },
+    {
+        "id": 530,
+        "re": "ている(?:場合|ばあい)じゃない",
+        "word": "ている場合じゃない（ているばあいじゃない）",
+        "description": "this is no time to be doing ~",
+        "level": "N3"
+    },
+    {
+        "id": 531,
+        "re": "つまり",
+        "word": "つまり",
+        "description": "in other words; in summary; in short ~",
+        "level": "N3"
+    },
+    {
+        "id": 532,
+        "re": "つもりだった",
+        "word": "つもりだった",
+        "description": "I thought I~; I believe I~; was planning to~; was intending to ~",
+        "level": "N3"
+    },
+    {
+        "id": 533,
+        "re": "つもりで",
+        "word": "つもりで",
+        "description": "with the intention of doing ~",
+        "level": "N3"
+    },
+    {
+        "id": 534,
+        "re": "っぱなし",
+        "word": "っぱなし",
+        "description": "leaving (something) on; leaving (something) still in use​",
+        "level": "N3"
+    },
+    {
+        "id": 535,
+        "re": "っぽい",
+        "word": "っぽい",
+        "description": "seems like; somewhat; -ish; easily does; often does ~",
+        "level": "N3"
+    },
+    {
+        "id": 536,
+        "re": "つい",
+        "word": "つい",
+        "description": "accidentally; unintentionally; by mistake",
+        "level": "N3"
+    },
+    {
+        "id": 537,
+        "re": "ついでに",
+        "word": "ついでに",
+        "description": "while, incidentally, at the same time, on the way ~",
+        "level": "N3"
+    },
+    {
+        "id": 538,
+        "re": "ついに",
+        "word": "ついに",
+        "description": "finally; at last; in the end ~",
+        "level": "N3"
+    },
+    {
+        "id": 539,
+        "re": "からにかけて",
+        "word": "からにかけて",
+        "description": "through; from [A] to [B]",
+        "level": "N3"
+    },
+    {
+        "id": 540,
+        "re": "おかげで",
+        "word": "おかげで",
+        "description": "thanks to; owing to; because of ~",
+        "level": "N3"
+    },
+    {
+        "id": 541,
+        "re": "かける",
+        "word": "かける",
+        "description": "half-; not yet finished; in the middle of~",
+        "level": "N3"
+    },
+    {
+        "id": 542,
+        "re": "どんなに.*?ても",
+        "word": "どんなに～ても",
+        "description": "no matter how (much)",
+        "level": "N3"
+    },
+    {
+        "id": 543,
+        "re": "にしたがって",
+        "word": "にしたがって",
+        "description": "as; therefore; in accordance with; according to; consequently ~",
+        "level": "N3"
+    },
+    {
+        "id": 544,
+        "re": "にしては",
+        "word": "にしては",
+        "description": "for; considering it’s (something or someone)",
+        "level": "N3"
+    },
+    {
+        "id": 545,
+        "re": "にしても",
+        "word": "にしても",
+        "description": "even if; even though; regardless of ~",
+        "level": "N3"
+    },
+    {
+        "id": 546,
+        "re": "なるべく",
+        "word": "なるべく",
+        "description": "as much as possible",
+        "level": "N3"
+    },
+    {
+        "id": 547,
+        "re": "にかけて",
+        "word": "にかけて",
+        "description": "over (a period); through; concerning; regarding ~",
+        "level": "N3"
+    },
+    {
+        "id": 548,
+        "re": "なぜなら",
+        "word": "なぜなら",
+        "description": "because; the reason is; if you want to know why",
+        "level": "N3"
+    },
+    {
+        "id": 549,
+        "re": "ながらも",
+        "word": "ながらも",
+        "description": "but; although; despite ~",
+        "level": "N3"
+    },
+    {
+        "id": 550,
+        "re": "ような(?:気|き)がする",
+        "word": "ような気がする（ようなきがする）",
+        "description": "have a feeling that; feels like; seems like; think that ~",
+        "level": "N3"
+    },
+    {
+        "id": 551,
+        "re": "ように(?:見|み)える",
+        "word": "ように見える（ようにみえる）",
+        "description": "to look; to seem; to appear ~",
+        "level": "N3"
+    },
+    {
+        "id": 552,
+        "re": "(?:上|うえ)で",
+        "word": "上で（うえで）",
+        "description": "upon; after; when; for; in order to",
+        "level": "N3"
+    },
+    {
+        "id": 553,
+        "re": "(?:上|うえ)に",
+        "word": "上に（うえに）",
+        "description": "as well; besides; in addition to; not only… but also ~",
+        "level": "N3"
+    },
+    {
+        "id": 554,
+        "re": "は(?:別|べつ)として",
+        "word": "は別として（はべつとして）",
+        "description": "aside from; apart from; except for; whether or not ~",
+        "level": "N3"
+    },
+    {
+        "id": 555,
+        "re": "(?:割|わり)に",
+        "word": "割に（わりに）",
+        "description": "considering ~; for ~; despite ~",
+        "level": "N3"
+    },
+    {
+        "id": 556,
+        "re": "とても.*?ない",
+        "word": "とても～ない",
+        "description": "cannot possibly be; hardly ~",
+        "level": "N3"
+    },
+    {
+        "id": 557,
+        "re": "さえ.*?ば",
+        "word": "さえ～ば",
+        "description": "if only; as long as ~",
+        "level": "N3"
+    },
+    {
+        "id": 558,
+        "re": "たとえ.*?ても",
+        "word": "たとえ～ても",
+        "description": "even if… is the case",
+        "level": "N3"
+    },
+    {
+        "id": 559,
+        "re": "ないと",
+        "word": "ないと",
+        "description": "must do; unless/if you don't ~",
+        "level": "N3"
+    },
+    {
+        "id": 560,
+        "re": "なかなか",
+        "word": "なかなか",
+        "description": "very; quite; pretty; rather; just not ~",
+        "level": "N3"
+    },
+    {
+        "id": 561,
+        "re": "ないことはない",
+        "word": "ないことはない",
+        "description": "can do; is not impossible to ~",
+        "level": "N3"
+    },
+    {
+        "id": 562,
+        "re": "どうしても",
+        "word": "どうしても",
+        "description": "no matter what; at any cost; after all ~",
+        "level": "N3"
+    },
+    {
+        "id": 563,
+        "re": "めったに.*?ない",
+        "word": "めったに～ない",
+        "description": "hardly; rarely; seldom",
+        "level": "N3"
+    },
+    {
+        "id": 564,
+        "re": "も.*?ば.*?も",
+        "word": "も～ば～も",
+        "description": "and; also; as well; either/or; neither/nor",
+        "level": "N3"
+    },
+    {
+        "id": 565,
+        "re": "ほど.*?ない",
+        "word": "ほど～ない",
+        "description": "is not as… as ~",
+        "level": "N3"
+    },
+    {
+        "id": 566,
+        "re": "いくら.*?ても",
+        "word": "いくら～ても",
+        "description": "no matter how ~",
+        "level": "N3"
+    },
+    {
+        "id": 567,
+        "re": "(?:決|けっ)して.*?ない",
+        "word": "決して～ない（けっして～ない）",
+        "description": "never; by no means ~",
+        "level": "N3"
+    },
+    {
+        "id": 568,
+        "re": "ことは.*?が",
+        "word": "ことは～が",
+        "description": "although; but ~",
+        "level": "N3"
+    },
+    {
+        "id": 569,
+        "re": "ば.*?ほど",
+        "word": "ば～ほど",
+        "description": "the more… the more ~",
+        "level": "N3"
+    },
+    {
+        "id": 570,
+        "re": "ば.*?のに",
+        "word": "ば～のに",
+        "description": "would have; should have; if only ~",
+        "level": "N3"
+    },
+    {
+        "id": 571,
+        "re": "(?:別|べつ)に.*?ない",
+        "word": "別に～ない（べつに～ない）",
+        "description": "not really, not particularly",
+        "level": "N3"
+    },
+    {
+        "id": 572,
+        "re": "うちに",
+        "word": "うちに",
+        "description": "while; before ~",
+        "level": "N3"
+    },
+    {
+        "id": 573,
+        "re": "あまり",
+        "word": "あまり",
+        "description": "so much… that",
+        "level": "N3"
+    },
+    {
+        "id": 574,
+        "re": "あまりにも",
+        "word": "あまりにも",
+        "description": "too much; so much… that; excessively ~",
+        "level": "N3"
+    },
+    {
+        "id": 575,
+        "re": "を(?:通じて|通して|つうじて|とおして)",
+        "word": "を通じて / を通して（をつうじて / をとおして）",
+        "description": "through; via; throughout; by ~",
+        "level": "N3"
+    },
+    {
+        "id": 576,
+        "re": "てし(?:ょう|かた)がない",
+        "word": "てしょうがない・てしかたがない",
+        "description": "can't help but; very; extremely ~",
+        "level": "N3"
+    },
+    {
+        "id": 577,
+        "re": "と(?:すれば|したら|すると)",
+        "word": "とすれば・としたら・とすると",
+        "description": "in the case of~; assuming~; if A then B",
+        "level": "N3"
+    },
+    {
+        "id": 578,
+        "re": "(?:途中で|途中に|とちゅうで|とちゅうに)",
+        "word": "途中で/途中に（とちゅうで/とちゅうに）",
+        "description": "on the way; in the middle of ~",
+        "level": "N3"
+    },
+    {
+        "id": 579,
+        "re": "に(?:関する|関して|かんする|かんして)",
+        "word": "に関する / に関して（にかんする / にかんして）",
+        "description": "about; regarding; related to ~",
+        "level": "N3"
+    },
+    {
+        "id": 580,
+        "re": "てばかりいる",
+        "word": "てばかりいる",
+        "description": "only; nothing but ~",
+        "level": "N3"
+    },
+    {
+        "id": 581,
+        "re": "てはいけないから",
+        "word": "てはいけないから",
+        "description": "in order to not~; to prevent a negative situation",
+        "level": "N3"
+    },
+    {
+        "id": 582,
+        "re": "てはじめて",
+        "word": "てはじめて",
+        "description": "not until; only after [x] did I",
+        "level": "N3"
+    },
+    {
+        "id": 583,
+        "re": "てもし(?:ょう|かた)がない",
+        "word": "てもしょうがない / てもしかたがない",
+        "description": "there's no point to~; it's no use to~; it cannot be helped",
+        "level": "N3"
+    },
+    {
+        "id": 584,
+        "re": "(?:と|たら)いい",
+        "word": "といい / たらいい",
+        "description": "it would be nice if; should; I hope ~",
+        "level": "N3"
+    },
+    {
+        "id": 585,
+        "re": "とみえ(?:る|て)",
+        "word": "とみえる / とみえて",
+        "description": "it seems that ~",
+        "level": "N3"
+    },
+    {
+        "id": 586,
+        "re": "そう(?:も|に)ない",
+        "word": "そうもない /そうにない",
+        "description": "very unlikely to; showing no signs of ~",
+        "level": "N3"
+    },
+    {
+        "id": 587,
+        "re": "によ(?:ると|れば)",
+        "word": "によると /によれば",
+        "description": "according to ~",
+        "level": "N3"
+    },
+    {
+        "id": 588,
+        "re": "によ(?:って|る)",
+        "word": "によって / による",
+        "description": "by means of; due to; owing to; because of ~",
+        "level": "N3"
+    },
+    {
+        "id": 589,
+        "re": "な(?:んか|んて|ど)",
+        "word": "なんか / なんて / など",
+        "description": "give examples; show modesty; make light of ~",
+        "level": "N3"
+    },
+    {
+        "id": 590,
+        "re": "にかわ(?:って|り)",
+        "word": "にかわって / にかわり",
+        "description": "instead of; replacing; on behalf of ~",
+        "level": "N3"
+    },
+    {
+        "id": 591,
+        "re": "にお(?:いて|ける)",
+        "word": "において / における",
+        "description": "in; at (place); regarding; as for; in relation to ~",
+        "level": "N3"
+    },
+    {
+        "id": 592,
+        "re": "(?:く|ぐ)らい",
+        "word": "くらい / ぐらい",
+        "description": "approximately; about; around; to the extent ~",
+        "level": "N3"
+    },
+    {
+        "id": 593,
+        "re": "ところで",
+        "word": "ところで",
+        "description": "by the way ~",
+        "level": "N3"
+    },
+    {
+        "id": 594,
+        "re": "として",
+        "word": "として",
+        "description": "as; in the role of ~",
+        "level": "N3"
+    },
+    {
+        "id": 595,
+        "re": "といっても",
+        "word": "といっても",
+        "description": "although I say; although one might say ~",
+        "level": "N3"
+    },
+    {
+        "id": 596,
+        "re": "とおりに",
+        "word": "とおりに",
+        "description": "in the same way as; in the way; as ~",
+        "level": "N3"
+    },
+    {
+        "id": 597,
+        "re": "ところが",
+        "word": "ところが",
+        "description": "even so; however; even though ~",
+        "level": "N3"
+    },
+    {
+        "id": 598,
+        "re": "というより",
+        "word": "というより",
+        "description": "rather than ~",
+        "level": "N3"
+    },
+    {
+        "id": 599,
+        "re": "ということだ",
+        "word": "ということだ",
+        "description": "I heard; it means that; in other words ~",
+        "level": "N3"
+    },
+    {
+        "id": 600,
+        "re": "というのは",
+        "word": "というのは",
+        "description": "this means; the meaning of … is; because; that is to say ~",
+        "level": "N3"
+    },
+    {
+        "id": 601,
+        "re": "は.*?で(?:有名|ゆうめい)",
+        "word": "は～で有名（は～でゆうめい）",
+        "description": "famous for ~",
+        "level": "N3"
+    },
+    {
+        "id": 602,
+        "re": "ようがない",
+        "word": "ようがない",
+        "description": "there is no way to; it’s impossible to ~",
+        "level": "N3"
+    },
+    {
+        "id": 603,
+        "re": "(?:一体|いったい)",
+        "word": "一体（いったい）",
+        "description": "emphasis; what on earth; what in the world",
+        "level": "N3"
+    },
+    {
+        "id": 604,
+        "re": "か(?:何|なに)か",
+        "word": "か何か（かなにか）",
+        "description": "or something ~",
+        "level": "N3"
+    },
+    {
+        "id": 605,
+        "re": "(?:一度|いちど)に",
+        "word": "一度に（いちどに）",
+        "description": "all at once",
+        "level": "N3"
+    },
+    {
+        "id": 606,
+        "re": "(?:一方|いっぽう)だ",
+        "word": "一方だ（いっぽうだ）",
+        "description": "more and more; continue to ~",
+        "level": "N3"
+    },
+    {
+        "id": 607,
+        "re": "わざと",
+        "word": "わざと",
+        "description": "on purpose; intentionally ~",
+        "level": "N3"
+    },
+    {
+        "id": 608,
+        "re": "さらに",
+        "word": "さらに",
+        "description": "furthermore; again; more and more ~",
+        "level": "N3"
+    },
+    {
+        "id": 609,
+        "re": "しかない",
+        "word": "しかない",
+        "description": "have no choice but ~",
+        "level": "N3"
+    },
+    {
+        "id": 610,
+        "re": "しばらく",
+        "word": "しばらく",
+        "description": "for a moment; for a while; for the time being",
+        "level": "N3"
+    },
+    {
+        "id": 611,
+        "re": "じゃない",
+        "word": "じゃない",
+        "description": "maybe; most likely; confirmation of information; express surprise towards listener",
+        "level": "N3"
+    },
+    {
+        "id": 612,
+        "re": "さて",
+        "word": "さて",
+        "description": "conjunction: well; now; then ~",
+        "level": "N3"
+    },
+    {
+        "id": 613,
+        "re": "ことはない",
+        "word": "ことはない",
+        "description": "there is no need to; (something) never happens; there is no possibility that ~",
+        "level": "N3"
+    },
+    {
+        "id": 614,
+        "re": "ごとに",
+        "word": "ごとに",
+        "description": "each; every; at intervals of ~",
+        "level": "N3"
+    },
+    {
+        "id": 615,
+        "re": "さえ",
+        "word": "さえ",
+        "description": "even; so much as; not even",
+        "level": "N3"
+    },
+    {
+        "id": 616,
+        "re": "ことになっている",
+        "word": "ことになっている",
+        "description": "expresses a standard, rule or expectation",
+        "level": "N3"
+    },
+    {
+        "id": 617,
+        "re": "むしろ",
+        "word": "むしろ",
+        "description": "rather; instead; better ~",
+        "level": "N3"
+    },
+    {
+        "id": 618,
+        "re": "もしかしたら",
+        "word": "もしかしたら",
+        "description": "perhaps; maybe; perchance; by any chance ~",
+        "level": "N3"
+    },
+    {
+        "id": 619,
+        "re": "まるで",
+        "word": "まるで",
+        "description": "as if; as though; just like ~",
+        "level": "N3"
+    },
+    {
+        "id": 620,
+        "re": "に(?:反|はん)して",
+        "word": "に反して（にはんして）",
+        "description": "against; contrary to; in contrast to ~",
+        "level": "N3"
+    },
+    {
+        "id": 621,
+        "re": "(?:向|む)き",
+        "word": "向き（むき）",
+        "description": "suitable for ~",
+        "level": "N3"
+    },
+    {
+        "id": 622,
+        "re": "(?:直|なお)す",
+        "word": "直す（なおす）",
+        "description": "to do something again; to do over",
+        "level": "N3"
+    },
+    {
+        "id": 623,
+        "re": "に(?:違|ちが)いない",
+        "word": "に違いない（にちがいない）",
+        "description": "I’m sure/ certain; no doubt that ~",
+        "level": "N3"
+    },
+    {
+        "id": 624,
+        "re": "(?:切|き)る",
+        "word": "切る（きる）",
+        "description": "to do something completely to the end",
+        "level": "N3"
+    },
+    {
+        "id": 625,
+        "re": "(?:込|こ)む",
+        "word": "込む（こむ）",
+        "description": "to do something for a long time or to move something inside",
+        "level": "N3"
+    },
+    {
+        "id": 626,
+        "re": "(?:向|む)け",
+        "word": "向け（むけ）",
+        "description": "intended for; aimed at ~",
+        "level": "N3"
+    },
+    {
+        "id": 627,
+        "re": "(?:代|か)わりに",
+        "word": "代わりに（かわりに）",
+        "description": "instead of; as a substitute for​; in exchange for; in return for",
+        "level": "N3"
+    },
+    {
+        "id": 628,
+        "re": "(?:結果|けっか)",
+        "word": "結果（けっか）",
+        "description": "as a result of; after ~",
+        "level": "N3"
+    },
+    {
+        "id": 629,
+        "re": "(?:結局|けっきょく)",
+        "word": "結局（けっきょく）",
+        "description": "after all; eventually; in the end ~",
+        "level": "N3"
+    },
+    {
+        "id": 630,
+        "re": "(?:切|き)れない",
+        "word": "切れない（きれない）",
+        "description": "unable to do; too much to finish/complete",
+        "level": "N3"
+    },
+    {
+        "id": 631,
+        "re": "わざわざ",
+        "word": "わざわざ",
+        "description": "to go to the trouble of; to go out of one's way to ~",
+        "level": "N3"
+    },
+    {
+        "id": 632,
+        "re": "から(?:作|つく)る",
+        "word": "から作る（からつくる）",
+        "description": "made from; made with",
+        "level": "N4"
+    },
+    {
+        "id": 633,
+        "re": "(?:急|きゅう)に",
+        "word": "急に（きゅうに）",
+        "description": "quickly; immediately; hastily; suddenly; abruptly; unexpectedly ~",
+        "level": "N4"
+    },
+    {
+        "id": 634,
+        "re": "みたいに",
+        "word": "みたいに",
+        "description": "like; similar to ~",
+        "level": "N4"
+    },
+    {
+        "id": 635,
+        "re": "みたいだ",
+        "word": "みたいだ",
+        "description": "like; similar to; resembling ~",
+        "level": "N4"
+    },
+    {
+        "id": 636,
+        "re": "も",
+        "word": "も",
+        "description": "too; also; as well; as many as; as much as; up to; nearly ~",
+        "level": "N4"
+    },
+    {
+        "id": 637,
+        "re": "まま",
+        "word": "まま",
+        "description": "as it is; current state; without changing",
+        "level": "N4"
+    },
+    {
+        "id": 638,
+        "re": "までに",
+        "word": "までに",
+        "description": "by; by the time; indicates time limit",
+        "level": "N4"
+    },
+    {
+        "id": 639,
+        "re": "または",
+        "word": "または",
+        "description": "both; or; otherwise​; choice between [A] or [B]",
+        "level": "N4"
+    },
+    {
+        "id": 640,
+        "re": "させる",
+        "word": "させる",
+        "description": "causative form; to make/let somebody do something",
+        "level": "N4"
+    },
+    {
+        "id": 641,
+        "re": "させられる",
+        "word": "させられる",
+        "description": "causative-passive; to be made to do something",
+        "level": "N4"
+    },
+    {
+        "id": 642,
+        "re": "させてください",
+        "word": "させてください",
+        "description": "please let me do",
+        "level": "N4"
+    },
+    {
+        "id": 643,
+        "re": "ことになる",
+        "word": "ことになる",
+        "description": "It has been decided that..; it turns out that..",
+        "level": "N4"
+    },
+    {
+        "id": 644,
+        "re": "ことにする",
+        "word": "ことにする",
+        "description": "to decide on",
+        "level": "N4"
+    },
+    {
+        "id": 645,
+        "re": "さすが",
+        "word": "さすが",
+        "description": "as one would expect; as is to be expected; even ~",
+        "level": "N4"
+    },
+    {
+        "id": 646,
+        "re": "ございます",
+        "word": "ございます",
+        "description": "to be, to exist (the polite form of いる/ある)",
+        "level": "N4"
+    },
+    {
+        "id": 647,
+        "re": "みたいな",
+        "word": "みたいな",
+        "description": "like, similar to ~",
+        "level": "N4"
+    },
+    {
+        "id": 648,
+        "re": "さっき",
+        "word": "さっき",
+        "description": "some time ago; just now",
+        "level": "N4"
+    },
+    {
+        "id": 649,
+        "re": "(?:始|はじ)める",
+        "word": "始める（はじめる）",
+        "description": "to start; to begin to ~",
+        "level": "N4"
+    },
+    {
+        "id": 650,
+        "re": "(?:必要|ひつよう)がある",
+        "word": "必要がある（ひつようがある）",
+        "description": "need to; it is necessary to",
+        "level": "N4"
+    },
+    {
+        "id": 651,
+        "re": "し",
+        "word": "し",
+        "description": "and; and what’s more ~ (emphasis)",
+        "level": "N4"
+    },
+    {
+        "id": 652,
+        "re": "ようだ",
+        "word": "ようだ",
+        "description": "appears; seems; looks as if ~",
+        "level": "N4"
+    },
+    {
+        "id": 653,
+        "re": "てよかった",
+        "word": "てよかった",
+        "description": "I’m glad that ~",
+        "level": "N4"
+    },
+    {
+        "id": 654,
+        "re": "てほしい",
+        "word": "てほしい",
+        "description": "I want you to; need you to ~",
+        "level": "N4"
+    },
+    {
+        "id": 655,
+        "re": "でございます",
+        "word": "でございます",
+        "description": "to be (honorific)",
+        "level": "N4"
+    },
+    {
+        "id": 656,
+        "re": "ところ",
+        "word": "ところ",
+        "description": "just about to; on the verge of doing something",
+        "level": "N4"
+    },
+    {
+        "id": 657,
+        "re": "(?:てしま|ちゃ)う",
+        "word": "てしまう / ちゃう",
+        "description": "to do something by accident, to finish completely",
+        "level": "N4"
+    },
+    {
+        "id": 658,
+        "re": "(?:て|で)",
+        "word": "て / で",
+        "description": "conjunctive particle; so; because of [A], [B]...",
+        "level": "N4"
+    },
+    {
+        "id": 659,
+        "re": "そう(?:に|な)",
+        "word": "そうに / そうな",
+        "description": "seems like; looks like ~",
+        "level": "N4"
+    },
+    {
+        "id": 660,
+        "re": "ても",
+        "word": "ても",
+        "description": "even; even if; even though ~",
+        "level": "N4"
+    },
+    {
+        "id": 661,
+        "re": "が(?:ってい)?る",
+        "word": "がる / がっている",
+        "description": "to show signs of; to appear; to feel, to think ~",
+        "level": "N4"
+    },
+    {
+        "id": 662,
+        "re": "(?:全然|ぜんぜん).*?ない",
+        "word": "全然～ない（ぜんぜん～ない）",
+        "description": "(not) at all",
+        "level": "N4"
+    },
+    {
+        "id": 663,
+        "re": "ということ",
+        "word": "ということ",
+        "description": "convert phrase into noun",
+        "level": "N4"
+    },
+    {
+        "id": 664,
+        "re": "と",
+        "word": "と",
+        "description": "and; with; as; connecting particle; whenever [A] happens, [B] also happens",
+        "level": "N4"
+    },
+    {
+        "id": 665,
+        "re": "でも",
+        "word": "でも",
+        "description": "but; however; though ~; ... or something; how about~",
+        "level": "N4"
+    },
+    {
+        "id": 666,
+        "re": "てみる",
+        "word": "てみる",
+        "description": "try doing",
+        "level": "N4"
+    },
+    {
+        "id": 667,
+        "re": "ではないか",
+        "word": "ではないか",
+        "description": "right?; isn't it?",
+        "level": "N4"
+    },
+    {
+        "id": 668,
+        "re": "よう(?:に|な)",
+        "word": "ように / ような",
+        "description": "like; as; similar to ~",
+        "level": "N4"
+    },
+    {
+        "id": 669,
+        "re": "てもらう",
+        "word": "てもらう",
+        "description": "to get somebody to do something",
+        "level": "N4"
+    },
+    {
+        "id": 670,
+        "re": "(?:頃|ころ|ごろ)",
+        "word": "頃（ころ / ごろ）",
+        "description": "around; about; when",
+        "level": "N4"
+    },
+    {
+        "id": 671,
+        "re": "てすみません",
+        "word": "てすみません",
+        "description": "I’m sorry for",
+        "level": "N4"
+    },
+    {
+        "id": 672,
+        "re": "てやる",
+        "word": "てやる",
+        "description": "to do for; to do a favor (casual)",
+        "level": "N4"
+    },
+    {
+        "id": 673,
+        "re": "いたします",
+        "word": "いたします",
+        "description": "to do (polite form of する)",
+        "level": "N4"
+    },
+    {
+        "id": 674,
+        "re": "かもしれない",
+        "word": "かもしれない",
+        "description": "might; perhaps; indicates possibility",
+        "level": "N4"
+    },
+    {
+        "id": 675,
+        "re": "ているところ",
+        "word": "ているところ",
+        "description": "in the process of doing",
+        "level": "N4"
+    },
+    {
+        "id": 676,
+        "re": "って",
+        "word": "って",
+        "description": "named; called ~",
+        "level": "N4"
+    },
+    {
+        "id": 677,
+        "re": "てあげる",
+        "word": "てあげる",
+        "description": "to do for; to do a favor",
+        "level": "N4"
+    },
+    {
+        "id": 678,
+        "re": "づらい",
+        "word": "づらい",
+        "description": "difficult to do ~",
+        "level": "N4"
+    },
+    {
+        "id": 679,
+        "re": "かどうか",
+        "word": "かどうか",
+        "description": "whether or not ~",
+        "level": "N4"
+    },
+    {
+        "id": 680,
+        "re": "のはだ",
+        "word": "のはだ",
+        "description": "[A] is [B]; the reason for [A] is [B]",
+        "level": "N4"
+    },
+    {
+        "id": 681,
+        "re": "のに",
+        "word": "のに",
+        "description": "although, in spite of, even though ~; to (do something); in order to ~",
+        "level": "N4"
+    },
+    {
+        "id": 682,
+        "re": "とか.*?とか",
+        "word": "とか～とか",
+        "description": "among other things; such as; like ~",
+        "level": "N4"
+    },
+    {
+        "id": 683,
+        "re": "ようと(?:思|おも)う",
+        "word": "ようと思う（ようとおもう）",
+        "description": "thinking of doing; planning to ~",
+        "level": "N4"
+    },
+    {
+        "id": 684,
+        "re": "(?:予定|よてい)だ",
+        "word": "予定だ（よていだ）",
+        "description": "plan to, intend to",
+        "level": "N4"
+    },
+    {
+        "id": 685,
+        "re": "なければならない",
+        "word": "なければならない",
+        "description": "must do something; have to do something",
+        "level": "N4"
+    },
+    {
+        "id": 686,
+        "re": "なさい",
+        "word": "なさい",
+        "description": "do this (soft/firm command)",
+        "level": "N4"
+    },
+    {
+        "id": 687,
+        "re": "なければいけない",
+        "word": "なければいけない",
+        "description": "must do something; have to do something",
+        "level": "N4"
+    },
+    {
+        "id": 688,
+        "re": "なさる",
+        "word": "なさる",
+        "description": "to do (honorific)",
+        "level": "N4"
+    },
+    {
+        "id": 689,
+        "re": "(?:続|つづ)ける",
+        "word": "続ける（つづける）",
+        "description": "continue to; keen on ~",
+        "level": "N4"
+    },
+    {
+        "id": 690,
+        "re": "あまり.*?ない",
+        "word": "あまり～ない",
+        "description": "not very, not much ~",
+        "level": "N4"
+    },
+    {
+        "id": 691,
+        "re": "な",
+        "word": "な",
+        "description": "don’t ~ (order somebody to not do something); na-adjectives",
+        "level": "N4"
+    },
+    {
+        "id": 692,
+        "re": "お.*?になる",
+        "word": "お～になる",
+        "description": "to do (honorific)",
+        "level": "N4"
+    },
+    {
+        "id": 693,
+        "re": "なかなか.*?ない",
+        "word": "なかなか～ない",
+        "description": "not easy to; struggling to; not able to ~",
+        "level": "N4"
+    },
+    {
+        "id": 694,
+        "re": "お.*?ください",
+        "word": "お～ください",
+        "description": "please do ~ (honorific)",
+        "level": "N4"
+    },
+    {
+        "id": 695,
+        "re": "いらっしゃる",
+        "word": "いらっしゃる",
+        "description": "to be; to come; to go (polite version)",
+        "level": "N4"
+    },
+    {
+        "id": 696,
+        "re": "ていただけませんか",
+        "word": "ていただけませんか",
+        "description": "could you please ~",
+        "level": "N4"
+    },
+    {
+        "id": 697,
+        "re": "ておく",
+        "word": "ておく",
+        "description": "to do something in advance",
+        "level": "N4"
+    },
+    {
+        "id": 698,
+        "re": "他動詞 & 自動詞(?:たどうし & じどうし)?",
+        "word": "他動詞 & 自動詞（たどうし & じどうし）",
+        "description": "Transitive & Intransitive Verbs",
+        "level": "N4"
+    },
+    {
+        "id": 699,
+        "re": "にする",
+        "word": "にする",
+        "description": "to decide on; to make something ~",
+        "level": "N4"
+    },
+    {
+        "id": 700,
+        "re": "にくい",
+        "word": "にくい",
+        "description": "difficult to do ~",
+        "level": "N4"
+    },
+    {
+        "id": 701,
+        "re": "ながら",
+        "word": "ながら",
+        "description": "while; during; as; simultaneously",
+        "level": "N4"
+    },
+    {
+        "id": 702,
+        "re": "なら",
+        "word": "なら",
+        "description": "if; in the case that ~",
+        "level": "N4"
+    },
+    {
+        "id": 703,
+        "re": "かしら",
+        "word": "かしら",
+        "description": "I wonder (feminine)",
+        "level": "N4"
+    },
+    {
+        "id": 704,
+        "re": "かい",
+        "word": "かい",
+        "description": "turns a sentence into a yes/no question",
+        "level": "N4"
+    },
+    {
+        "id": 705,
+        "re": "おきに",
+        "word": "おきに",
+        "description": "repeated at intervals, every ~",
+        "level": "N4"
+    },
+    {
+        "id": 706,
+        "re": "かな",
+        "word": "かな",
+        "description": "I wonder; should I?",
+        "level": "N4"
+    },
+    {
+        "id": 707,
+        "re": "など",
+        "word": "など",
+        "description": "such as; things like ~",
+        "level": "N4"
+    },
+    {
+        "id": 708,
+        "re": "がする",
+        "word": "がする",
+        "description": "to smell; hear; taste",
+        "level": "N4"
+    },
+    {
+        "id": 709,
+        "re": "ば",
+        "word": "ば",
+        "description": "conditional form; If [A] then [B]",
+        "level": "N4"
+    },
+    {
+        "id": 710,
+        "re": "に(?:気|き)がつく",
+        "word": "に気がつく（にきがつく）",
+        "description": "to notice; to realize",
+        "level": "N4"
+    },
+    {
+        "id": 711,
+        "re": "に(?:見|み)える",
+        "word": "に見える（にみえる）",
+        "description": "to look; to seem; to appear",
+        "level": "N4"
+    },
+    {
+        "id": 712,
+        "re": "たら",
+        "word": "たら",
+        "description": "if; after; when ~",
+        "level": "N4"
+    },
+    {
+        "id": 713,
+        "re": "ようになる",
+        "word": "ようになる",
+        "description": "to reach the point that; to come to be that; to turn into ~",
+        "level": "N4"
+    },
+    {
+        "id": 714,
+        "re": "(?:間|あいだ)に",
+        "word": "間に（あいだに）",
+        "description": "while; during~ something happened",
+        "level": "N4"
+    },
+    {
+        "id": 715,
+        "re": "(?:後|あと)で",
+        "word": "後で（あとで）",
+        "description": "after~; later",
+        "level": "N4"
+    },
+    {
+        "id": 716,
+        "re": "(?:間|あいだ)",
+        "word": "間（あいだ）",
+        "description": "while; during; between ~",
+        "level": "N4"
+    },
+    {
+        "id": 717,
+        "re": "られる",
+        "word": "られる",
+        "description": "potential form; ability or inability to do something",
+        "level": "N4"
+    },
+    {
+        "id": 718,
+        "re": "らしい",
+        "word": "らしい",
+        "description": "it seems like; I heard; apparently ~",
+        "level": "N4"
+    },
+    {
+        "id": 719,
+        "re": "ようにする",
+        "word": "ようにする",
+        "description": "to try to; to make sure that ~",
+        "level": "N4"
+    },
+    {
+        "id": 720,
+        "re": "それでも",
+        "word": "それでも",
+        "description": "but still; and yet; even so ~",
+        "level": "N4"
+    },
+    {
+        "id": 721,
+        "re": "ぜひ",
+        "word": "ぜひ",
+        "description": "by all means; certainly; definitely ~",
+        "level": "N4"
+    },
+    {
+        "id": 722,
+        "re": "じゃないか",
+        "word": "じゃないか",
+        "description": "right? isn't it? let's~; confirmation",
+        "level": "N4"
+    },
+    {
+        "id": 723,
+        "re": "それに",
+        "word": "それに",
+        "description": "besides; in addition; also; moreover ~",
+        "level": "N4"
+    },
+    {
+        "id": 724,
+        "re": "そんなに",
+        "word": "そんなに",
+        "description": "so much; so; like that",
+        "level": "N4"
+    },
+    {
+        "id": 725,
+        "re": "やっと",
+        "word": "やっと",
+        "description": "at last; finally; barely; narrowly ~",
+        "level": "N4"
+    },
+    {
+        "id": 726,
+        "re": "(?:出|だ)す",
+        "word": "出す（だす）",
+        "description": "to begin to; to start to; to burst into; ... out (e.g. to jump out, to carry out)​",
+        "level": "N4"
+    },
+    {
+        "id": 727,
+        "re": "やすい",
+        "word": "やすい",
+        "description": "easy to; likely to; prone to; have a tendency to ~",
+        "level": "N4"
+    },
+    {
+        "id": 728,
+        "re": "(?:終|お)わる",
+        "word": "終わる（おわる）",
+        "description": "to finish; to end~",
+        "level": "N4"
+    },
+    {
+        "id": 729,
+        "re": "の(?:中|なか)で",
+        "word": "の中で（のなかで）",
+        "description": "in; among ~",
+        "level": "N4"
+    },
+    {
+        "id": 730,
+        "re": "きっと",
+        "word": "きっと",
+        "description": "surely; undoubtedly; almost certainly; most likely",
+        "level": "N4"
+    },
+    {
+        "id": 731,
+        "re": "ことができる",
+        "word": "ことができる",
+        "description": "can; able to",
+        "level": "N4"
+    },
+    {
+        "id": 732,
+        "re": "ことがある",
+        "word": "ことがある",
+        "description": "there are times when",
+        "level": "N4"
+    },
+    {
+        "id": 733,
+        "re": "くする",
+        "word": "くする",
+        "description": "to make something ~",
+        "level": "N4"
+    },
+    {
+        "id": 734,
+        "re": "がり",
+        "word": "がり",
+        "description": "personality (someone tends to; has a tendency to; has a sensitivity to ~)",
+        "level": "N4"
+    },
+    {
+        "id": 735,
+        "re": "(?:場合|ばあい)は",
+        "word": "場合は（ばあいは）",
+        "description": "in the event of; in the case that ~",
+        "level": "N4"
+    },
+    {
+        "id": 736,
+        "re": "が(?:必要|ひつよう)",
+        "word": "が必要（がひつよう）",
+        "description": "need; necessary",
+        "level": "N4"
+    },
+    {
+        "id": 737,
+        "re": "そうだ",
+        "word": "そうだ",
+        "description": "I heard that; it is said that ~; looks like; appears like; seeming ~",
+        "level": "N4"
+    },
+    {
+        "id": 738,
+        "re": "たがる",
+        "word": "たがる",
+        "description": "wants to do ~ (third person)",
+        "level": "N4"
+    },
+    {
+        "id": 739,
+        "re": "だけで",
+        "word": "だけで",
+        "description": "just by; just by doing",
+        "level": "N4"
+    },
+    {
+        "id": 740,
+        "re": "はずだ",
+        "word": "はずだ",
+        "description": "it must be; it should be (expectation)",
+        "level": "N4"
+    },
+    {
+        "id": 741,
+        "re": "はずがない",
+        "word": "はずがない",
+        "description": "cannot be (impossible)",
+        "level": "N4"
+    },
+    {
+        "id": 742,
+        "re": "はがは",
+        "word": "はがは",
+        "description": "[A] but [B]; however; comparison",
+        "level": "N4"
+    },
+    {
+        "id": 743,
+        "re": "と(?:聞|き)いた",
+        "word": "と聞いた（ときいた）",
+        "description": "I heard...",
+        "level": "N4"
+    },
+    {
+        "id": 744,
+        "re": "と(?:言|い)ってもいい",
+        "word": "と言ってもいい（といってもいい）",
+        "description": "you could say; one might say; I'd say ~",
+        "level": "N4"
+    },
+    {
+        "id": 745,
+        "re": "たらいいですか",
+        "word": "たらいいですか",
+        "description": "what should I do?; speaker seeking instructions from listener",
+        "level": "N4"
+    },
+    {
+        "id": 746,
+        "re": "たらどう",
+        "word": "たらどう",
+        "description": "why don't you; how about ~ (used to give advice)",
+        "level": "N4"
+    },
+    {
+        "id": 747,
+        "re": "たところ",
+        "word": "たところ",
+        "description": "just finished doing, was just doing",
+        "level": "N4"
+    },
+    {
+        "id": 748,
+        "re": "てくる",
+        "word": "てくる",
+        "description": "to do… and come back; to become; to continue; to start ~",
+        "level": "N4"
+    },
+    {
+        "id": 749,
+        "re": "ていた",
+        "word": "ていた",
+        "description": "was doing something (past continuous)",
+        "level": "N4"
+    },
+    {
+        "id": 750,
+        "re": "てくれる",
+        "word": "てくれる",
+        "description": "to do a favor; do something for someone",
+        "level": "N4"
+    },
+    {
+        "id": 751,
+        "re": "ていく",
+        "word": "ていく",
+        "description": "to start; to continue; to go on",
+        "level": "N4"
+    },
+    {
+        "id": 752,
+        "re": "たばかり",
+        "word": "たばかり",
+        "description": "just finished; something just occurred",
+        "level": "N4"
+    },
+    {
+        "id": 753,
+        "re": "と(?:言|い)われている",
+        "word": "と言われている（といわれている）",
+        "description": "it is said that ~",
+        "level": "N4"
+    },
+    {
+        "id": 754,
+        "re": "と(?:思|おも)う",
+        "word": "と思う（とおもう）",
+        "description": "to think…; I think…; you think…",
+        "level": "N4"
+    },
+    {
+        "id": 755,
+        "re": "もう",
+        "word": "もう",
+        "description": "already; anymore; again; other",
+        "level": "N5"
+    },
+    {
+        "id": 756,
+        "re": "(?:一緒|いっしょ)に",
+        "word": "一緒に（いっしょに）",
+        "description": "together",
+        "level": "N5"
+    },
+    {
+        "id": 757,
+        "re": "(?:ちゃ|じゃ)いけない",
+        "word": "ちゃいけない・じゃいけない",
+        "description": "must not do (spoken Japanese)",
+        "level": "N5"
+    },
+    {
+        "id": 758,
+        "re": "(?:に|へ)",
+        "word": "に/へ",
+        "description": "to (indicates direction / destination)",
+        "level": "N5"
+    },
+    {
+        "id": 759,
+        "re": "てはいけない",
+        "word": "てはいけない",
+        "description": "must not; may not; cannot",
+        "level": "N5"
+    },
+    {
+        "id": 760,
+        "re": "ね",
+        "word": "ね",
+        "description": "isn't it? right? eh?",
+        "level": "N5"
+    },
+    {
+        "id": 761,
+        "re": "のです",
+        "word": "のです",
+        "description": "to explain something; show emphasis",
+        "level": "N5"
+    },
+    {
+        "id": 762,
+        "re": "てから",
+        "word": "てから",
+        "description": "after doing ~",
+        "level": "N5"
+    },
+    {
+        "id": 763,
+        "re": "つもり",
+        "word": "つもり",
+        "description": "plan to ~; intend to ~",
+        "level": "N5"
+    },
+    {
+        "id": 764,
+        "re": "てある",
+        "word": "てある",
+        "description": "is/has been done (resulting state)",
+        "level": "N5"
+    },
+    {
+        "id": 765,
+        "re": "ている",
+        "word": "ている",
+        "description": "ongoing action or current state",
+        "level": "N5"
+    },
+    {
+        "id": 766,
+        "re": "から",
+        "word": "から",
+        "description": "because; since; from",
+        "level": "N5"
+    },
+    {
+        "id": 767,
+        "re": "が",
+        "word": "が",
+        "description": "subject marker; however; but ~",
+        "level": "N5"
+    },
+    {
+        "id": 768,
+        "re": "いつも",
+        "word": "いつも",
+        "description": "always; usually; habitually",
+        "level": "N5"
+    },
+    {
+        "id": 769,
+        "re": "か",
+        "word": "か",
+        "description": "question particle",
+        "level": "N5"
+    },
+    {
+        "id": 770,
+        "re": "なる",
+        "word": "なる",
+        "description": "to become",
+        "level": "N5"
+    },
+    {
+        "id": 771,
+        "re": "ないといけない",
+        "word": "ないといけない",
+        "description": "must do; have an obligation to do ~",
+        "level": "N5"
+    },
+    {
+        "id": 772,
+        "re": "なくちゃ",
+        "word": "なくちゃ",
+        "description": "must do; need to; gotta do ~",
+        "level": "N5"
+    },
+    {
+        "id": 773,
+        "re": "なくてもいい",
+        "word": "なくてもいい",
+        "description": "don't have to",
+        "level": "N5"
+    },
+    {
+        "id": 774,
+        "re": "い",
+        "word": "い",
+        "description": "i-adjectives",
+        "level": "N5"
+    },
+    {
+        "id": 775,
+        "re": "は.+より.+です",
+        "word": "は〜より・・・です",
+        "description": "[Noun-1] is more ~ than [Noun-2]",
+        "level": "N5"
+    },
+    {
+        "id": 776,
+        "re": "どうして",
+        "word": "どうして",
+        "description": "why; for what reason; how",
+        "level": "N5"
+    },
+    {
+        "id": 777,
+        "re": "ないで",
+        "word": "ないで",
+        "description": "without doing ~; to do [B] without doing [A]",
+        "level": "N5"
+    },
+    {
+        "id": 778,
+        "re": "なあ",
+        "word": "なあ",
+        "description": "sentence ending particle; confirmation; admiration, etc",
+        "level": "N5"
+    },
+    {
+        "id": 779,
+        "re": "どんな",
+        "word": "どんな",
+        "description": "what kind of; what sort of",
+        "level": "N5"
+    },
+    {
+        "id": 780,
+        "re": "まだ.*?ていません",
+        "word": "まだ～ていません",
+        "description": "have not yet ~",
+        "level": "N5"
+    },
+    {
+        "id": 781,
+        "re": "か.*?か",
+        "word": "か～か",
+        "description": "or",
+        "level": "N5"
+    },
+    {
+        "id": 782,
+        "re": "どうやって",
+        "word": "どうやって",
+        "description": "how; in what way; by what means​",
+        "level": "N5"
+    },
+    {
+        "id": 783,
+        "re": "とても",
+        "word": "とても",
+        "description": "very; awfully; exceedingly​",
+        "level": "N5"
+    },
+    {
+        "id": 784,
+        "re": "てもいいです",
+        "word": "てもいいです",
+        "description": "is OK to ~; is alright to ~; may I ~?",
+        "level": "N5"
+    },
+    {
+        "id": 785,
+        "re": "たり.*?たり",
+        "word": "たり～たり",
+        "description": "do such things as A and B",
+        "level": "N5"
+    },
+    {
+        "id": 786,
+        "re": "ないでください",
+        "word": "ないでください",
+        "description": "please don't do ~",
+        "level": "N5"
+    },
+    {
+        "id": 787,
+        "re": "なくてはならない",
+        "word": "なくてはならない",
+        "description": "must do; need to do ~",
+        "level": "N5"
+    },
+    {
+        "id": 788,
+        "re": "なくてはいけない",
+        "word": "なくてはいけない",
+        "description": "must do; need to do",
+        "level": "N5"
+    },
+    {
+        "id": 789,
+        "re": "(?:じゃ|では)ない",
+        "word": "じゃない・ではない",
+        "description": "to not be (am not; is not; are not)",
+        "level": "N5"
+    },
+    {
+        "id": 790,
+        "re": "で",
+        "word": "で",
+        "description": "in; at; on; by; with; via ~",
+        "level": "N5"
+    },
+    {
+        "id": 791,
+        "re": "でしょう",
+        "word": "でしょう",
+        "description": "I think; it seems; probably; right?",
+        "level": "N5"
+    },
+    {
+        "id": 792,
+        "re": "や",
+        "word": "や",
+        "description": "and; or; connecting particle",
+        "level": "N5"
+    },
+    {
+        "id": 793,
+        "re": "よ",
+        "word": "よ",
+        "description": "you know; emphasis (ending particle)",
+        "level": "N5"
+    },
+    {
+        "id": 794,
+        "re": "しかし",
+        "word": "しかし",
+        "description": "but; however ~",
+        "level": "N5"
+    },
+    {
+        "id": 795,
+        "re": "に(?:行|い)く",
+        "word": "に行く（にいく）",
+        "description": "go to do ~",
+        "level": "N5"
+    },
+    {
+        "id": 796,
+        "re": "(?:だ|です)",
+        "word": "だ / です",
+        "description": "to be (am, is, are, were, used to)",
+        "level": "N5"
+    },
+    {
+        "id": 797,
+        "re": "(?:一番|いちばん)",
+        "word": "一番（いちばん）",
+        "description": "the most; the best",
+        "level": "N5"
+    },
+    {
+        "id": 798,
+        "re": "より.*?ほうが",
+        "word": "より～ほうが",
+        "description": "[2] is more than [1]",
+        "level": "N5"
+    },
+    {
+        "id": 799,
+        "re": "とき",
+        "word": "とき",
+        "description": "when; at this time",
+        "level": "N5"
+    },
+    {
+        "id": 800,
+        "re": "(?:お|ご)",
+        "word": "お / ご",
+        "description": "polite marker; honorific prefix particle",
+        "level": "N5"
+    },
+    {
+        "id": 801,
+        "re": "ませんか",
+        "word": "ませんか",
+        "description": "would you; do you want to; shall we ~",
+        "level": "N5"
+    },
+    {
+        "id": 802,
+        "re": "(?:前|まえ)に",
+        "word": "前に（まえに）",
+        "description": "before; in front of ~",
+        "level": "N5"
+    },
+    {
+        "id": 803,
+        "re": "ましょうか",
+        "word": "ましょうか",
+        "description": "shall I ~; used to offer help to the listener",
+        "level": "N5"
+    },
+    {
+        "id": 804,
+        "re": "(?:方|かた)",
+        "word": "方（かた）",
+        "description": "the way of doing something; how to do ~",
+        "level": "N5"
+    },
+    {
+        "id": 805,
+        "re": "まだ",
+        "word": "まだ",
+        "description": "still; not yet",
+        "level": "N5"
+    },
+    {
+        "id": 806,
+        "re": "まで",
+        "word": "まで",
+        "description": "until; as far as; to (an extent); even ~",
+        "level": "N5"
+    },
+    {
+        "id": 807,
+        "re": "ので",
+        "word": "ので",
+        "description": "because of; given that; since ~",
+        "level": "N5"
+    },
+    {
+        "id": 808,
+        "re": "のが(?:上手|じょうず)",
+        "word": "のが上手（のがじょうず）",
+        "description": "to be good at",
+        "level": "N5"
+    },
+    {
+        "id": 809,
+        "re": "はどうですか",
+        "word": "はどうですか",
+        "description": "how about; how is",
+        "level": "N5"
+    },
+    {
+        "id": 810,
+        "re": "がほしい",
+        "word": "がほしい",
+        "description": "to want something",
+        "level": "N5"
+    },
+    {
+        "id": 811,
+        "re": "それから",
+        "word": "それから",
+        "description": "and; and then; after that; since then",
+        "level": "N5"
+    },
+    {
+        "id": 812,
+        "re": "ましょう",
+        "word": "ましょう",
+        "description": "let's ~; shall we ~",
+        "level": "N5"
+    },
+    {
+        "id": 813,
+        "re": "の中で[A]が一番(?:のなかで[A]がいちばん)?",
+        "word": "の中で[A]が一番（のなかで[A]がいちばん）",
+        "description": "out of this group, [A] is best",
+        "level": "N5"
+    },
+    {
+        "id": 814,
+        "re": "のが(?:下手|へた)",
+        "word": "のが下手（のがへた）",
+        "description": "to be bad at doing something",
+        "level": "N5"
+    },
+    {
+        "id": 815,
+        "re": "けど",
+        "word": "けど",
+        "description": "but; however; although ~",
+        "level": "N5"
+    },
+    {
+        "id": 816,
+        "re": "ほうがいい",
+        "word": "ほうがいい",
+        "description": "had better; it'd be better to; should ~",
+        "level": "N5"
+    },
+    {
+        "id": 817,
+        "re": "の",
+        "word": "の",
+        "description": "possessive particle",
+        "level": "N5"
+    },
+    {
+        "id": 818,
+        "re": "は",
+        "word": "は",
+        "description": "topic marker",
+        "level": "N5"
+    },
+    {
+        "id": 819,
+        "re": "だろう",
+        "word": "だろう",
+        "description": "I think; it seems; probably; right?",
+        "level": "N5"
+    },
+    {
+        "id": 820,
+        "re": "があります",
+        "word": "があります",
+        "description": "there is; is (non-living things)",
+        "level": "N5"
+    },
+    {
+        "id": 821,
+        "re": "たことがある",
+        "word": "たことがある",
+        "description": "to have done something before",
+        "level": "N5"
+    },
+    {
+        "id": 822,
+        "re": "がいます",
+        "word": "がいます",
+        "description": "there is; to be; is (living things)",
+        "level": "N5"
+    },
+    {
+        "id": 823,
+        "re": "てください",
+        "word": "てください",
+        "description": "please do",
+        "level": "N5"
+    },
+    {
+        "id": 824,
+        "re": "をください",
+        "word": "をください",
+        "description": "please give me ~",
+        "level": "N5"
+    },
+    {
+        "id": 825,
+        "re": "を",
+        "word": "を",
+        "description": "object marker particle",
+        "level": "N5"
+    },
+    {
+        "id": 826,
+        "re": "そして",
+        "word": "そして",
+        "description": "and; and then; thus; and now ~",
+        "level": "N5"
+    },
+    {
+        "id": 827,
+        "re": "たい",
+        "word": "たい",
+        "description": "want to do something",
+        "level": "N5"
+    },
+    {
+        "id": 828,
+        "re": "のが(?:好|す)き",
+        "word": "のが好き（のがすき）",
+        "description": "to like doing something",
+        "level": "N5"
+    },
+    {
+        "id": 829,
+        "re": "けれども",
+        "word": "けれども",
+        "description": "but; however; although ~",
+        "level": "N5"
+    },
+    {
+        "id": 830,
+        "re": "すぎる",
+        "word": "すぎる",
+        "description": "too much",
+        "level": "N5"
+    },
+    {
+        "id": 831,
+        "re": "んです",
+        "word": "んです",
+        "description": "to explain something; show emphasis",
+        "level": "N5"
+    }
+]
