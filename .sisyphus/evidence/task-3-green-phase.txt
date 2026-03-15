@@ -1,0 +1,34 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 23 items
+
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[empty] PASSED [  4%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[single_hit] PASSED [  8%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_non_overlapping] PASSED [ 13%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[two_overlapping_longer_wins] PASSED [ 17%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[longer_wins_input_order] PASSED [ 21%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_length_earlier_start_wins] PASSED [ 26%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[identical_span_lower_jlpt_wins] PASSED [ 30%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[adjacent_spans_both_preserved] PASSED [ 34%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[three_hits_first_third_kept] PASSED [ 39%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[min_length_filtered] PASSED [ 43%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[zero_length_filtered] PASSED [ 47%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[matched_parts_preserved] PASSED [ 52%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[same_rule_id_non_overlapping] PASSED [ 56%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[output_sorted_by_start_pos] PASSED [ 60%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_unit[hit_at_start_pos_zero] PASSED [ 65%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_matched_parts_content PASSED [ 69%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_identical_span_winner_attributes PASSED [ 73%]
+tests/test_grammar_resolution.py::test_resolve_overlaps_min_length_boundary PASSED [ 78%]
+tests/test_grammar_resolution.py::test_integration_koto_ni_suru_one_hit PASSED [ 82%]
+tests/test_grammar_resolution.py::test_integration_tekara_double_occurrence PASSED [ 86%]
+tests/test_grammar_resolution.py::test_integration_wake_dewa_nai_one_hit PASSED [ 91%]
+tests/test_grammar_resolution.py::test_integration_empty_string PASSED   [ 95%]
+tests/test_grammar_resolution.py::test_integration_no_overlaps_in_output PASSED [100%]
+
+============================== 23 passed in 0.06s ==============================

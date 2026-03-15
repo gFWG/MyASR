@@ -10,6 +10,8 @@ from src.models import GrammarHit
 
 logger = logging.getLogger(__name__)
 
+_MIN_MATCH_LEN: int = 2
+
 
 @dataclass(frozen=True, slots=True)
 class _CompiledRule:
@@ -72,16 +74,22 @@ class GrammarMatcher:
         logger.info("Loaded %d grammar rules from %s", len(self._rules), rules_path)
 
     def match_all(self, text: str) -> list[GrammarHit]:
-        """Find all grammar patterns in text.
+        """Find all grammar patterns in text, with overlap resolution.
 
         Returns ALL grammar matches with their JLPT levels, without filtering by user level.
         Display-time filtering should use SentenceResult.get_display_analysis().
+
+        Hits are post-processed by _resolve_overlaps():
+        - Hits shorter than _MIN_MATCH_LEN characters are filtered out.
+        - Overlapping hits are resolved greedily (earliest start wins; ties broken by
+          longest span, then lowest jlpt_level i.e. hardest grammar).
+        - Output is sorted by start_pos ascending.
 
         Args:
             text: Japanese text to analyze.
 
         Returns:
-            List of GrammarHit for all patterns found.
+            List of non-overlapping GrammarHit sorted by start_pos.
         """
         if not text:
             return []
@@ -105,4 +113,35 @@ class GrammarMatcher:
                         matched_parts=parts,
                     )
                 )
-        return hits
+        return self._resolve_overlaps(hits)
+
+    def _resolve_overlaps(self, hits: list[GrammarHit]) -> list[GrammarHit]:
+        """Filter and resolve overlapping grammar hits.
+
+        Algorithm:
+        1. Filter hits shorter than _MIN_MATCH_LEN (handles zero-length too).
+        2. Sort by start_pos ASC, length DESC, jlpt_level ASC (earliest first, longest
+           for same start, hardest JLPT for remaining ties).
+        3. Greedy interval selection: keep a hit only if it doesn't overlap any
+           already-selected hit. Overlap is strict: start_a < end_b AND start_b < end_a.
+        4. Re-sort selected hits by start_pos ascending.
+
+        Args:
+            hits: Raw grammar hits, possibly overlapping.
+
+        Returns:
+            Non-overlapping hits sorted by start_pos.
+        """
+        valid = [h for h in hits if h.end_pos - h.start_pos >= _MIN_MATCH_LEN]
+        sorted_hits = sorted(
+            valid, key=lambda h: (h.start_pos, -(h.end_pos - h.start_pos), h.jlpt_level)
+        )
+        selected: list[GrammarHit] = []
+        for candidate in sorted_hits:
+            overlaps = any(
+                s.start_pos < candidate.end_pos and candidate.start_pos < s.end_pos
+                for s in selected
+            )
+            if not overlaps:
+                selected.append(candidate)
+        return sorted(selected, key=lambda h: h.start_pos)
