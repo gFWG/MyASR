@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import importlib
 import logging
 import os
 import shutil
-import sys
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,7 +12,6 @@ from src.exceptions import ModelResourceError
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL_ROOT = Path("data/models")
-_OFFLINE_ENV_VARS = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
 _COMMON_REQUIRED_FILES = (
     "chat_template.json",
     "config.json",
@@ -34,6 +30,7 @@ class ModelSpec:
     display_name: str
     required_files: tuple[str, ...]
     managed_files: tuple[str, ...]
+    download_size_mb: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +47,7 @@ MODEL_SPECS: dict[str, ModelSpec] = {
         display_name="Qwen-ASR-0.6B",
         required_files=(*_COMMON_REQUIRED_FILES, "model.safetensors"),
         managed_files=(*_COMMON_MANAGED_FILES, "model.safetensors"),
+        download_size_mb=1200,
     ),
     "Qwen/Qwen3-ASR-1.7B": ModelSpec(
         repo_id="Qwen/Qwen3-ASR-1.7B",
@@ -66,6 +64,7 @@ MODEL_SPECS: dict[str, ModelSpec] = {
             "model-00002-of-00002.safetensors",
             "model.safetensors.index.json",
         ),
+        download_size_mb=3400,
     ),
 }
 
@@ -143,6 +142,14 @@ def resolve_model_load_path(repo_id: str, custom_path: str = "") -> str:
 
 
 def find_hf_cache_snapshot(repo_id: str) -> Path | None:
+    """Find the newest HF cache snapshot directory for a given repo.
+
+    This probes the internal HF Hub cache layout directly
+    (``models--{org}--{repo}/snapshots/<hash>/``) rather than using
+    ``huggingface_hub.scan_cache_dir()`` for speed.  The layout has been
+    stable since huggingface_hub 0.14, but a future reorganisation would
+    require updating the path construction below.
+    """
     hf_home = Path(os.environ.get("HF_HOME", "~/.cache/huggingface")).expanduser()
     hub_cache = Path(os.environ.get("HUGGINGFACE_HUB_CACHE", str(hf_home / "hub"))).expanduser()
     snapshots_root = hub_cache / f"models--{repo_id.replace('/', '--')}" / "snapshots"
@@ -165,37 +172,68 @@ def find_hf_cache_snapshot(repo_id: str) -> Path | None:
         return None
 
 
+_HF_RESOLVE_URL = "https://huggingface.co/{repo_id}/resolve/main/{filename}"
+_DOWNLOAD_CHUNK_SIZE = 8 * 1024 * 1024  # 8 MiB
+
+
 def download_model_snapshot(
     repo_id: str,
     target_directory: str | Path,
     progress_callback: Callable[[str], None] | None = None,
+    check_cancelled: Callable[[], bool] | None = None,
 ) -> Path:
+    import requests  # noqa: PLC0415
+
     spec = get_model_spec(repo_id)
     directory_path = Path(target_directory).expanduser()
     directory_path.mkdir(parents=True, exist_ok=True)
 
-    if progress_callback is not None:
-        progress_callback(f"Downloading {spec.display_name} to {directory_path}...")
+    files_to_download = list(spec.managed_files)
+    total_files = len(files_to_download)
 
-    with _temporary_online_hub_environment():
-        _reload_huggingface_hub_modules()
-        try:
-            from huggingface_hub import snapshot_download  # noqa: PLC0415
-        except ImportError as exc:
-            raise ModelResourceError(
-                "huggingface-hub is required for model downloads. Install the updated "
-                "dependencies and try again."
-            ) from exc
+    for file_index, filename in enumerate(files_to_download, start=1):
+        if check_cancelled is not None and check_cancelled():
+            raise ModelResourceError("Download cancelled.")
+
+        file_path = directory_path / filename
+        url = _HF_RESOLVE_URL.format(repo_id=repo_id, filename=filename)
+
+        if progress_callback is not None:
+            progress_callback(f"[{file_index}/{total_files}] Downloading {filename}...")
 
         try:
-            snapshot_download(
-                repo_id=repo_id,
-                local_dir=str(directory_path),
-                allow_patterns=list(spec.managed_files),
-            )
-        except Exception as exc:
+            response = requests.get(url, stream=True, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise ModelResourceError(f"Failed to download {filename} from {url}: {exc}") from exc
+
+        content_length = response.headers.get("Content-Length")
+        total_bytes = int(content_length) if content_length else None
+        downloaded_bytes = 0
+
+        try:
+            with file_path.open("wb") as f:
+                for chunk in response.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
+                    if check_cancelled is not None and check_cancelled():
+                        response.close()
+                        raise ModelResourceError("Download cancelled.")
+
+                    f.write(chunk)
+                    downloaded_bytes += len(chunk)
+
+                    if progress_callback is not None and total_bytes:
+                        pct = downloaded_bytes * 100 // total_bytes
+                        mb_done = downloaded_bytes / (1024 * 1024)
+                        mb_total = total_bytes / (1024 * 1024)
+                        progress_callback(
+                            f"[{file_index}/{total_files}] {filename}: "
+                            f"{mb_done:.1f} / {mb_total:.1f} MB ({pct}%)"
+                        )
+        except ModelResourceError:
+            raise
+        except OSError as exc:
             raise ModelResourceError(
-                f"Failed to download {spec.display_name} into {directory_path}: {exc}"
+                f"Failed to write {filename} to {directory_path}: {exc}"
             ) from exc
 
     validate_model_directory(repo_id, directory_path)
@@ -254,31 +292,6 @@ def delete_model_artifacts(directory: str | Path) -> DeleteReport:
         remaining_entries=remaining_entries,
         removed_directory=removed_directory,
     )
-
-
-@contextmanager
-def _temporary_online_hub_environment() -> Iterator[None]:
-    previous_values = {name: os.environ.pop(name, None) for name in _OFFLINE_ENV_VARS}
-    try:
-        yield
-    finally:
-        for name, value in previous_values.items():
-            if value is None:
-                os.environ.pop(name, None)
-            else:
-                os.environ[name] = value
-
-
-def _reload_huggingface_hub_modules() -> None:
-    for module_name in (
-        "huggingface_hub.constants",
-        "huggingface_hub.file_download",
-        "huggingface_hub._snapshot_download",
-        "huggingface_hub",
-    ):
-        module = sys.modules.get(module_name)
-        if module is not None:
-            importlib.reload(module)
 
 
 def _normalize_directory(path_value: str | Path | None) -> Path | None:

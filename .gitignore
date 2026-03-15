@@ -15,6 +15,7 @@ venv/
 .vscode/
 
 temp/
+data/config.json
 
 # Large binary files
 *.onnx

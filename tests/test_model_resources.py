@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -42,39 +41,32 @@ def test_resolve_model_load_path_returns_repo_id_without_local_copy(
     assert result == "Qwen/Qwen3-ASR-0.6B"
 
 
-def test_download_model_snapshot_restores_offline_env(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_download_model_snapshot_downloads_all_managed_files(
+    tmp_path: Path,
 ) -> None:
     repo_id = "Qwen/Qwen3-ASR-0.6B"
     target_directory = tmp_path / "downloaded-model"
-    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
-    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
+    spec = model_resources.get_model_spec(repo_id)
 
-    def _fake_snapshot_download(
-        *,
-        repo_id: str,
-        local_dir: str,
-        allow_patterns: list[str],
-        local_dir_use_symlinks: bool,
-    ) -> None:
-        assert "HF_HUB_OFFLINE" not in os.environ
-        assert "TRANSFORMERS_OFFLINE" not in os.environ
-        assert allow_patterns == list(model_resources.get_model_spec(repo_id).managed_files)
-        assert local_dir_use_symlinks is False
-        _create_model_directory(repo_id, Path(local_dir))
+    def _fake_get(url: str, *, stream: bool, timeout: int) -> MagicMock:
+        response = MagicMock()
+        response.headers = {"Content-Length": "5"}
+        response.iter_content.return_value = [b"ready"]
+        response.raise_for_status = MagicMock()
+        return response
 
-    with (
-        patch("src.asr.model_resources._reload_huggingface_hub_modules"),
-        patch(
-            "huggingface_hub.snapshot_download", side_effect=_fake_snapshot_download
-        ) as mock_download,
-    ):
-        result = model_resources.download_model_snapshot(repo_id, target_directory)
+    progress_messages: list[str] = []
 
-    mock_download.assert_called_once()
+    with patch("requests.get", side_effect=_fake_get) as mock_get:
+        result = model_resources.download_model_snapshot(
+            repo_id, target_directory, progress_callback=progress_messages.append
+        )
+
     assert result == target_directory
-    assert os.environ["HF_HUB_OFFLINE"] == "1"
-    assert os.environ["TRANSFORMERS_OFFLINE"] == "1"
+    assert mock_get.call_count == len(spec.managed_files)
+    for filename in spec.required_files:
+        assert (target_directory / filename).exists()
+    assert any("Download complete" in msg for msg in progress_messages)
 
 
 def test_delete_model_artifacts_preserves_unmanaged_files(tmp_path: Path) -> None:

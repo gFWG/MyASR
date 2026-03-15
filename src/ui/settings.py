@@ -32,6 +32,7 @@ from src.asr.model_resources import (
     delete_model_artifacts,
     download_model_snapshot,
     find_hf_cache_snapshot,
+    get_model_spec,
     resolve_model_directory,
     validate_model_directory,
 )
@@ -82,9 +83,10 @@ class _DownloadWorker(QThread):
                 repo_id=self._repo_id,
                 target_directory=self._target_directory,
                 progress_callback=self.progress.emit,
+                check_cancelled=self.isInterruptionRequested,
             )
         except ModelResourceError as exc:
-            if self.isInterruptionRequested():
+            if self.isInterruptionRequested() or "cancelled" in str(exc).lower():
                 self.finished_cancelled.emit()
                 return
             self.finished_err.emit(str(exc))
@@ -97,9 +99,6 @@ class _DownloadWorker(QThread):
             self.finished_err.emit(f"Unexpected download failure: {exc}")
             return
 
-        if self.isInterruptionRequested():
-            self.finished_cancelled.emit()
-            return
         self.finished_ok.emit(self._repo_id, self._target_directory)
 
 
@@ -170,6 +169,11 @@ class SettingsDialog(QDialog):
         self._populate_from_config(config)
 
         logger.debug("SettingsDialog initialized")
+
+    def select_tab(self, index: int) -> None:
+        """Switch to the tab at *index* (0=General, 1=Appearance, 2=Resource)."""
+        if 0 <= index < self._tabs.count():
+            self._tabs.setCurrentIndex(index)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._download_worker is not None and self._download_worker.isRunning():
@@ -577,7 +581,13 @@ class SettingsDialog(QDialog):
             return
 
         self._model_status_text.clear()
-        self._append_status(f"Preparing download into {target_directory}...")
+        repo_id = self._current_model_repo_id()
+        spec = get_model_spec(repo_id)
+        size_gb = spec.download_size_mb / 1000
+        self._append_status(
+            f"Preparing download of {spec.display_name} (~{size_gb:.1f} GB) "
+            f"into {target_directory}..."
+        )
         self._set_resource_controls_enabled(False)
         self._cancel_download_btn.show()
 

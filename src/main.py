@@ -4,10 +4,13 @@ Wires together the audio pipeline, overlay UI, and tooltip
 into a runnable application.
 """
 
+from __future__ import annotations
+
 import logging
 import signal
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
@@ -16,11 +19,13 @@ from src.asr.model_resources import resolve_model_load_path
 from src.config import AppConfig, load_config
 from src.exceptions import ModelResourceError
 from src.models import GrammarHit, SentenceResult, VocabHit
-from src.pipeline.orchestrator import PipelineOrchestrator
 from src.ui.overlay import OverlayWindow
 from src.ui.settings import SettingsDialog
 from src.ui.tooltip import TooltipPopup
 from src.ui.tray import SystemTrayManager
+
+if TYPE_CHECKING:
+    from src.pipeline.orchestrator import PipelineOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +96,8 @@ def main() -> None:
         active_model_directory = ""
 
         try:
+            from src.pipeline.orchestrator import PipelineOrchestrator  # noqa: PLC0415
+
             pipeline_config, active_model_directory = _build_pipeline_config(config)
             pipeline = PipelineOrchestrator(config=pipeline_config)
         except ModelResourceError as exc:
@@ -132,9 +139,10 @@ def main() -> None:
             if pipeline is not None:
                 pipeline.on_config_changed(new_config)
 
-        def _open_settings() -> None:
+        def _open_settings(*, tab_index: int = 0) -> None:
             nonlocal _settings_dialog
             if _settings_dialog is not None and _settings_dialog.isVisible():
+                _settings_dialog.select_tab(tab_index)
                 _settings_dialog.raise_()
                 _settings_dialog.activateWindow()
                 return
@@ -144,6 +152,7 @@ def main() -> None:
                 active_model_directory=active_model_directory,
             )
             _settings_dialog.config_changed.connect(_on_config_changed)
+            _settings_dialog.select_tab(tab_index)
             _settings_dialog.show()
 
         def _toggle_overlay() -> None:
@@ -156,7 +165,7 @@ def main() -> None:
         for source in (tray, overlay):
             source.quit_requested.connect(app.quit)
             source.toggle_overlay.connect(_toggle_overlay)
-            source.settings_requested.connect(_open_settings)
+            source.settings_requested.connect(lambda: _open_settings())
 
         signal.signal(signal.SIGINT, lambda *_: app.quit())
         app.aboutToQuit.connect(lambda: _cleanup(pipeline))
@@ -178,6 +187,9 @@ def main() -> None:
                 active_model_directory = ""
 
         overlay.show()
+
+        if pipeline is None:
+            _open_settings(tab_index=2)
 
         sys.exit(app.exec())
 
