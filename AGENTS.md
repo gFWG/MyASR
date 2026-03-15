@@ -76,6 +76,9 @@ MyASR/
 ## COMMANDS
 
 ```bash
+# Setup
+source /home/yuheng/MyASR/.venv/bin/activate
+
 # Lint
 ruff check . && ruff format --check .
 

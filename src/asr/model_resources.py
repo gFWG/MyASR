@@ -192,7 +192,6 @@ def download_model_snapshot(
                 repo_id=repo_id,
                 local_dir=str(directory_path),
                 allow_patterns=list(spec.managed_files),
-                local_dir_use_symlinks=False,
             )
         except Exception as exc:
             raise ModelResourceError(

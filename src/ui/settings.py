@@ -69,6 +69,7 @@ class _DownloadWorker(QThread):
     progress = Signal(str)
     finished_ok = Signal(str, str)
     finished_err = Signal(str)
+    finished_cancelled = Signal()
 
     def __init__(self, repo_id: str, target_directory: str) -> None:
         super().__init__()
@@ -83,12 +84,22 @@ class _DownloadWorker(QThread):
                 progress_callback=self.progress.emit,
             )
         except ModelResourceError as exc:
+            if self.isInterruptionRequested():
+                self.finished_cancelled.emit()
+                return
             self.finished_err.emit(str(exc))
             return
         except Exception as exc:
+            if self.isInterruptionRequested():
+                self.finished_cancelled.emit()
+                return
+            logger.exception("Unexpected download failure for %s", self._repo_id)
             self.finished_err.emit(f"Unexpected download failure: {exc}")
             return
 
+        if self.isInterruptionRequested():
+            self.finished_cancelled.emit()
+            return
         self.finished_ok.emit(self._repo_id, self._target_directory)
 
 
@@ -162,12 +173,22 @@ class SettingsDialog(QDialog):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._download_worker is not None and self._download_worker.isRunning():
-            self._show_resource_message(
-                title="Download In Progress",
-                text="Wait for the ASR model download to finish before closing Settings.",
-                informative_text="MyASR is still writing model files to disk.",
-                icon=QMessageBox.Icon.Warning,
-            )
+            if not self._download_worker.isInterruptionRequested():
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("Download In Progress")
+                msg_box.setText("An ASR model download is still running.")
+                msg_box.setInformativeText("Cancel the download and close Settings?")
+                msg_box.setIcon(QMessageBox.Icon.Warning)
+                msg_box.setStandardButtons(
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+                msg_box.setStyleSheet(_MESSAGE_BOX_STYLESHEET)
+                if msg_box.exec() != QMessageBox.StandardButton.Yes:
+                    event.ignore()
+                    return
+                self._on_cancel_download()
+            # Download was cancelled but thread hasn't exited yet — let it finish in background
             event.ignore()
             return
 
@@ -331,12 +352,16 @@ class SettingsDialog(QDialog):
         action_row = QHBoxLayout()
         action_row.addStretch()
         self._download_model_btn = QPushButton("Download")
+        self._cancel_download_btn = QPushButton("Cancel Download")
+        self._cancel_download_btn.hide()
         self._delete_model_btn = QPushButton("Delete")
         self._refresh_model_btn = QPushButton("Refresh")
         self._download_model_btn.clicked.connect(self._on_download_model)
+        self._cancel_download_btn.clicked.connect(self._on_cancel_download)
         self._delete_model_btn.clicked.connect(self._on_delete_model)
         self._refresh_model_btn.clicked.connect(self._on_refresh_model)
         action_row.addWidget(self._download_model_btn)
+        action_row.addWidget(self._cancel_download_btn)
         action_row.addWidget(self._delete_model_btn)
         action_row.addWidget(self._refresh_model_btn)
         layout.addLayout(action_row)
@@ -359,6 +384,7 @@ class SettingsDialog(QDialog):
     def _on_resource_inputs_changed(self, _value: object | None = None) -> None:
         self._update_resource_path_placeholder()
         self._update_restart_label()
+        self._model_status_text.clear()
 
     def _current_model_repo_id(self) -> str:
         repo_id = self._asr_model_combo.currentData()
@@ -553,6 +579,7 @@ class SettingsDialog(QDialog):
         self._model_status_text.clear()
         self._append_status(f"Preparing download into {target_directory}...")
         self._set_resource_controls_enabled(False)
+        self._cancel_download_btn.show()
 
         self._download_worker = _DownloadWorker(
             self._current_model_repo_id(),
@@ -561,8 +588,16 @@ class SettingsDialog(QDialog):
         self._download_worker.progress.connect(self._append_status)
         self._download_worker.finished_ok.connect(self._on_download_finished)
         self._download_worker.finished_err.connect(self._on_download_failed)
+        self._download_worker.finished_cancelled.connect(self._on_download_cancelled)
         self._download_worker.finished.connect(self._on_download_complete_cleanup)
         self._download_worker.start()
+
+    def _on_cancel_download(self) -> None:
+        if self._download_worker is None or not self._download_worker.isRunning():
+            return
+        self._download_worker.requestInterruption()
+        self._cancel_download_btn.setEnabled(False)
+        self._append_status("Cancellation requested — waiting for download to stop...")
 
     def _on_download_finished(self, repo_id: str, target_directory: str) -> None:
         self._resource_state_requires_restart = True
@@ -584,11 +619,17 @@ class SettingsDialog(QDialog):
             icon=QMessageBox.Icon.Critical,
         )
 
+    def _on_download_cancelled(self) -> None:
+        self._append_status("Download cancelled.")
+
     def _on_download_complete_cleanup(self) -> None:
         self._set_resource_controls_enabled(True)
+        self._cancel_download_btn.hide()
+        self._cancel_download_btn.setEnabled(True)
         if self._download_worker is None:
             return
 
+        self._download_worker.wait()
         self._download_worker.deleteLater()
         self._download_worker = None
 
@@ -732,7 +773,7 @@ class SettingsDialog(QDialog):
             overlay_font_size_jp=self._font_size_jp.value(),
             enable_vocab_highlight=self._vocab_highlight_check.isChecked(),
             enable_grammar_highlight=self._grammar_highlight_check.isChecked(),
-            asr_model=self._asr_model_combo.currentData(),
+            asr_model=self._current_model_repo_id(),
             asr_model_local_path=self._current_custom_model_path(),
             sample_rate=self._config.sample_rate,
             overlay_width=self._config.overlay_width,
@@ -745,10 +786,11 @@ class SettingsDialog(QDialog):
         )
 
     def _on_save(self) -> None:
+        repo_id = self._current_model_repo_id()
         custom_model_path = self._current_custom_model_path()
         if custom_model_path:
             try:
-                validate_model_directory(self._current_model_repo_id(), custom_model_path)
+                validate_model_directory(repo_id, custom_model_path)
             except ModelResourceError as exc:
                 self._append_status(str(exc), is_error=True)
                 self._show_resource_message(
@@ -758,6 +800,25 @@ class SettingsDialog(QDialog):
                     icon=QMessageBox.Icon.Warning,
                 )
                 return
+        else:
+            default_dir = default_model_directory(repo_id).expanduser().resolve(strict=False)
+            if not default_dir.exists():
+                cache_snapshot = find_hf_cache_snapshot(repo_id)
+                if cache_snapshot is None:
+                    self._append_status(
+                        f"No model files found at {default_dir} and no HF cache available.",
+                        is_error=True,
+                    )
+                    self._show_resource_message(
+                        title="No Model Available",
+                        text=(
+                            "No local model files were found for the selected ASR model. "
+                            "Download the model first, or set a custom directory."
+                        ),
+                        informative_text=str(default_dir),
+                        icon=QMessageBox.Icon.Warning,
+                    )
+                    return
 
         new_config = self._collect_config()
         save_config(new_config)
