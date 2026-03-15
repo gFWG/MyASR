@@ -130,7 +130,7 @@ def test_show_for_vocab_makes_widget_visible(tooltip: TooltipPopup) -> None:
 
 
 def test_show_for_grammar_sets_word_label(tooltip: TooltipPopup) -> None:
-    hit = _make_grammar_hit(matched_text="ながら")
+    hit = _make_grammar_hit(word="ながら")
     tooltip.show_for_grammar(hit, QPoint(100, 100))
     assert "ながら" in tooltip._word_label.text()
 

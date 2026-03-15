@@ -37,7 +37,14 @@ def _make_vocab(surface: str, start: int, end: int, level: int = 3) -> VocabHit:
     )
 
 
-def _make_grammar(rule_id: str, text: str, start: int, end: int, level: int = 2) -> GrammarHit:
+def _make_grammar(
+    rule_id: str,
+    text: str,
+    start: int,
+    end: int,
+    level: int = 2,
+    matched_parts: tuple[tuple[int, int], ...] = (),
+) -> GrammarHit:
     return GrammarHit(
         rule_id=rule_id,
         matched_text=text,
@@ -46,6 +53,7 @@ def _make_grammar(rule_id: str, text: str, start: int, end: int, level: int = 2)
         description="test grammar",
         start_pos=start,
         end_pos=end,
+        matched_parts=matched_parts,
     )
 
 
@@ -387,4 +395,117 @@ def test_apply_to_document_partial_overlap_both_present(
     # Position 1 should have grammar color
     cursor.setPosition(2)  # charFormat() returns format of char at position 1
     grammar_color = QColor("#F9A825")  # N2 grammar
+    assert cursor.charFormat().foreground().color().name() == grammar_color.name()
+
+
+# ------------------------------------------------------------------ #
+# Multi-part grammar highlighting (matched_parts)                     #
+# ------------------------------------------------------------------ #
+
+
+def test_get_highlight_at_position_grammar_parts_only(
+    renderer: HighlightRenderer,
+) -> None:
+    """Grammar hit with matched_parts: only part positions return the hit."""
+    # matched_parts=((0,1),(3,5)), full range [0,6), text length=6
+    grammar = [_make_grammar("g1", "がXXなら", 0, 6, level=2, matched_parts=((0, 1), (3, 5)))]
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=grammar)
+
+    # Positions inside keyword parts return the hit
+    assert isinstance(renderer.get_highlight_at_position(0, analysis), GrammarHit)
+    assert isinstance(renderer.get_highlight_at_position(3, analysis), GrammarHit)
+    assert isinstance(renderer.get_highlight_at_position(4, analysis), GrammarHit)
+
+    # Positions in filler (1, 2) return None
+    assert renderer.get_highlight_at_position(1, analysis) is None
+    assert renderer.get_highlight_at_position(2, analysis) is None
+
+    # Position at end (6) returns None
+    assert renderer.get_highlight_at_position(6, analysis) is None
+
+
+def test_get_highlight_at_position_grammar_fallback_full_range(
+    renderer: HighlightRenderer,
+) -> None:
+    """Grammar hit with empty matched_parts falls back to full range."""
+    grammar = [_make_grammar("g2", "てから", 0, 3, level=5, matched_parts=())]
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=grammar)
+
+    # All positions in [0, 3) return the hit
+    assert isinstance(renderer.get_highlight_at_position(0, analysis), GrammarHit)
+    assert isinstance(renderer.get_highlight_at_position(1, analysis), GrammarHit)
+    assert isinstance(renderer.get_highlight_at_position(2, analysis), GrammarHit)
+
+    # Position at end returns None
+    assert renderer.get_highlight_at_position(3, analysis) is None
+
+
+def test_apply_to_document_multi_part_grammar_partial_highlight(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Multi-part grammar only highlights keyword parts; filler gets no grammar color."""
+    doc = qtextbrowser.document()
+    # text: 'がXXなら' (6 chars), parts at (0,1) and (3,5)
+    text = "がXXなら"
+    grammar = [_make_grammar("g1", text, 0, 6, level=2, matched_parts=((0, 1), (3, 5)))]
+    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    cursor = QTextCursor(doc)
+    grammar_color = QColor("#F9A825")  # N2 grammar
+
+    # Position 0 (が) — keyword part → grammar color
+    cursor.setPosition(1)
+    assert cursor.charFormat().foreground().color().name() == grammar_color.name()
+
+    # Position 1 (X filler) — NOT a keyword part → no grammar color (default)
+    cursor.setPosition(2)
+    assert cursor.charFormat().foreground().color().name() != grammar_color.name()
+
+    # Position 3 (な) — keyword part → grammar color
+    cursor.setPosition(4)
+    assert cursor.charFormat().foreground().color().name() == grammar_color.name()
+
+
+def test_vocab_not_suppressed_in_grammar_filler_gap(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Vocab in the filler region between grammar parts is NOT suppressed."""
+    doc = qtextbrowser.document()
+    # grammar: parts=(0,1) and (3,5) in range [0,6); filler at [1,3)
+    # vocab: [1,3) — sits entirely in filler
+    text = "がXXなら "  # 6 chars (trailing space for end boundary clarity)
+    grammar = [_make_grammar("g1", "がXXなら", 0, 6, level=2, matched_parts=((0, 1), (3, 5)))]
+    vocab = [_make_vocab("XX", 1, 3, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    cursor = QTextCursor(doc)
+    vocab_color = QColor("#C8E6C9")  # N4 vocab
+
+    # Position 1 (filler, has vocab) → vocab color, not grammar color
+    cursor.setPosition(2)
+    assert cursor.charFormat().foreground().color().name() == vocab_color.name()
+
+
+def test_vocab_suppressed_within_grammar_part(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """Vocab fully inside a keyword part is suppressed by grammar color."""
+    doc = qtextbrowser.document()
+    # grammar: single part covering full range [0,3); vocab also [0,3)
+    text = "なら"
+    grammar = [_make_grammar("g1", text, 0, 2, level=2, matched_parts=((0, 2),))]
+    vocab = [_make_vocab("なら", 0, 2, level=4)]
+    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    cursor = QTextCursor(doc)
+    grammar_color = QColor("#F9A825")  # N2 grammar
+
+    # Position 1 (middle of matched part) → grammar color (vocab suppressed)
+    cursor.setPosition(2)
     assert cursor.charFormat().foreground().color().name() == grammar_color.name()

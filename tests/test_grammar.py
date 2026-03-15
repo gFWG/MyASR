@@ -32,6 +32,7 @@ def test_grammar_hit_fields() -> None:
         assert isinstance(h.description, str) and h.description
         assert isinstance(h.start_pos, int) and h.start_pos >= 0
         assert isinstance(h.end_pos, int) and h.end_pos > h.start_pos
+        assert isinstance(h.matched_parts, tuple)
 
 
 def test_grammar_hit_word_field_populated() -> None:
@@ -94,3 +95,39 @@ def test_match_empty_text_returns_empty() -> None:
 def test_match_non_japanese_returns_empty() -> None:
     gm = GrammarMatcher(RULES_PATH)
     assert gm.match_all("hello world") == []
+
+
+NARI_SENTENCE = "なりとなり"
+NARI_RULE_ID = "164"
+
+
+def test_grammar_hit_matched_parts_populated_for_capturing_groups() -> None:
+    gm = GrammarMatcher(RULES_PATH)
+    hits = gm.match_all(NARI_SENTENCE)
+    nari_hits = [h for h in hits if h.rule_id == NARI_RULE_ID]
+    assert len(nari_hits) >= 1
+    hit = nari_hits[0]
+    assert len(hit.matched_parts) > 0
+    for start, end in hit.matched_parts:
+        assert 0 <= start < end <= len(NARI_SENTENCE)
+        assert NARI_SENTENCE[start:end] != ""
+
+
+def test_grammar_hit_matched_parts_empty_for_simple_rules() -> None:
+    gm = GrammarMatcher(RULES_PATH)
+    hits = gm.match_all(TEKARA_SENTENCE)
+    tekara_hits = [h for h in hits if h.rule_id == TEKARA_N5_RULE_ID]
+    assert len(tekara_hits) >= 1
+    assert tekara_hits[0].matched_parts == ()
+
+
+def test_grammar_hit_matched_parts_spans_are_absolute_positions() -> None:
+    gm = GrammarMatcher(RULES_PATH)
+    hits = gm.match_all(NARI_SENTENCE)
+    nari_hits = [h for h in hits if h.rule_id == NARI_RULE_ID]
+    assert len(nari_hits) >= 1
+    hit = nari_hits[0]
+    assert len(hit.matched_parts) > 0
+    for s, e in hit.matched_parts:
+        assert 0 <= s < e <= len(NARI_SENTENCE)
+        assert NARI_SENTENCE[s:e] != ""
