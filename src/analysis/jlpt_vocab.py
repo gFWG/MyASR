@@ -114,6 +114,11 @@ class JLPTVocabLookup:
             for lemma, level in raw.items()
         }
 
+    @property
+    def vocab_entries(self) -> dict[str, VocabEntry]:
+        """Read-only access to vocab dict for compound merging."""
+        return self._vocab
+
     def lookup(self, lemma: str) -> int | None:
         """Return JLPT level (1-5) for a lemma, or None if not found.
 
@@ -137,9 +142,7 @@ class JLPTVocabLookup:
         """
         return self._vocab.get(lemma)
 
-    def find_all_vocab(
-        self, tokens: list[Token], text: str = ""
-    ) -> list[VocabHit]:
+    def find_all_vocab(self, tokens: list[Token], text: str = "") -> list[VocabHit]:
         """Find all JLPT vocabulary in tokens.
 
         Returns ALL vocab matches with their JLPT levels, without filtering by user level.
@@ -157,7 +160,9 @@ class JLPTVocabLookup:
         """
         hits: list[VocabHit] = []
         search_start = 0
-        for token in tokens:
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
             clean_lemma = token.lemma.split("-")[0]
             entry = self.lookup_entry(clean_lemma)
             if entry is not None:
@@ -186,4 +191,5 @@ class JLPTVocabLookup:
                         definition=entry.definition,
                     )
                 )
+            i += 1
         return hits

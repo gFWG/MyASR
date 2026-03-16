@@ -5,7 +5,7 @@ import time
 
 from src.analysis.grammar import GrammarMatcher
 from src.analysis.jlpt_vocab import JLPTVocabLookup
-from src.analysis.tokenizer import FugashiTokenizer
+from src.analysis.tokenizer import FugashiTokenizer, merge_prefix_compounds
 from src.models import AnalysisResult
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ class PreprocessingPipeline:
         start = time.perf_counter()
 
         tokens = self._tokenizer.tokenize(text)
+        tokens = merge_prefix_compounds(tokens, self._vocab_lookup.vocab_entries)
         vocab_hits = self._vocab_lookup.find_all_vocab(tokens, text=text)
         grammar_hits = self._grammar_matcher.match_all(text)
 
