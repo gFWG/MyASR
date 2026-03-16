@@ -11,6 +11,9 @@ class Token:
     surface: str
     lemma: str
     pos: str
+    pos2: str = ""
+    cType: str = ""
+    cForm: str = ""
 
 
 @dataclass

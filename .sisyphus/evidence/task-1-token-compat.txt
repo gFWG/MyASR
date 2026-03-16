@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 22 items
+
+tests/test_tokenizer.py::test_tokenize_known_sentence_returns_tokens PASSED [  4%]
+tests/test_tokenizer.py::test_tokenize_known_sentence_contains_expected_lemmas PASSED [  9%]
+tests/test_tokenizer.py::test_tokenize_empty_string_returns_empty PASSED [ 13%]
+tests/test_tokenizer.py::test_tokenize_punctuation_only_returns_empty PASSED [ 18%]
+tests/test_tokenizer.py::test_tagger_property_returns_fugashi_tagger PASSED [ 22%]
+tests/test_tokenizer.py::test_tokenize_mixed_content PASSED              [ 27%]
+tests/test_jlpt_vocab.py::test_lookup_returns_correct_level_n5 PASSED    [ 31%]
+tests/test_jlpt_vocab.py::test_lookup_returns_correct_level_n1 PASSED    [ 36%]
+tests/test_jlpt_vocab.py::test_lookup_returns_none_for_unknown PASSED    [ 40%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_returns_all_matches PASSED [ 45%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_with_positions PASSED      [ 50%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_with_positions_duplicate_tokens PASSED [ 54%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_without_text_returns_zeros PASSED [ 59%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_empty_tokens PASSED        [ 63%]
+tests/test_jlpt_vocab.py::test_lookup_parametrize[\u98df\u3079\u308b-5] PASSED [ 68%]
+tests/test_jlpt_vocab.py::test_lookup_parametrize[\u9a5a\u304f-4] PASSED [ 72%]
+tests/test_jlpt_vocab.py::test_lookup_parametrize[\u6982\u5ff5-1] PASSED [ 77%]
+tests/test_jlpt_vocab.py::test_lookup_entry_returns_vocab_entry PASSED   [ 81%]
+tests/test_jlpt_vocab.py::test_lookup_entry_returns_none_for_unknown PASSED [ 86%]
+tests/test_jlpt_vocab.py::test_find_all_vocab_populates_vocab_entry_fields PASSED [ 90%]
+tests/test_jlpt_vocab.py::test_dash_stripping_in_find_all_vocab PASSED   [ 95%]
+tests/test_jlpt_vocab.py::test_duplicate_lemma_keeps_easiest_level PASSED [100%]
+
+============================== 22 passed in 0.55s ==============================
