@@ -56,6 +56,7 @@ class PipelineOrchestrator:
             min_silence_ms=config.get("vad_min_silence_ms", 300),
             min_speech_ms=config.get("vad_min_speech_ms", 400),
             sample_rate=config.get("sample_rate", 16000),
+            pre_buffer_ms=config.get("pre_buffer_ms", 300),
         )
 
         asr_model = QwenASR(model_path=config.get("model_path"))
@@ -195,6 +196,7 @@ class PipelineOrchestrator:
         - vad_threshold
         - vad_min_silence_ms
         - vad_min_speech_ms
+        - pre_buffer_ms
 
         Note: Some config changes (sample_rate, model_path) require
         a full pipeline restart and cannot be hot-reloaded.
@@ -206,18 +208,21 @@ class PipelineOrchestrator:
         self._config["vad_threshold"] = config.vad_threshold
         self._config["vad_min_silence_ms"] = config.vad_min_silence_ms
         self._config["vad_min_speech_ms"] = config.vad_min_speech_ms
+        self._config["pre_buffer_ms"] = config.pre_buffer_ms
 
         # Update VAD parameters dynamically
         self._vad_worker.update_vad_params(
             threshold=config.vad_threshold,
             min_silence_ms=config.vad_min_silence_ms,
             min_speech_ms=config.vad_min_speech_ms,
+            pre_buffer_ms=config.pre_buffer_ms,
         )
 
         logger.info(
             "PipelineOrchestrator config updated: threshold=%.2f, min_silence=%dms, "
-            "min_speech=%dms",
+            "min_speech=%dms, pre_buffer=%dms",
             config.vad_threshold,
             config.vad_min_silence_ms,
             config.vad_min_speech_ms,
+            config.pre_buffer_ms,
         )

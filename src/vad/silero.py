@@ -221,6 +221,7 @@ class SileroVAD:
         threshold: float | None = None,
         min_silence_ms: int | None = None,
         min_speech_ms: int | None = None,
+        pre_buffer_ms: int | None = None,
     ) -> None:
         """Update VAD parameters dynamically without reloading the model.
 
@@ -231,6 +232,7 @@ class SileroVAD:
             threshold: New speech probability threshold (0.0–1.0). Higher = less sensitive.
             min_silence_ms: New minimum silence duration in ms to consider speech ended.
             min_speech_ms: New minimum speech duration in ms; shorter segments are discarded.
+            pre_buffer_ms: New pre-buffer duration in ms to prepend before speech onset.
         """
         if threshold is not None:
             self._vad_iterator.threshold = threshold
@@ -243,3 +245,11 @@ class SileroVAD:
         if min_speech_ms is not None:
             self._min_speech_samples = int(min_speech_ms * self._sample_rate / 1000)
             logger.info("VAD min_speech_ms updated: %d", min_speech_ms)
+
+        if pre_buffer_ms is not None:
+            pre_buffer_samples = int(pre_buffer_ms * self._sample_rate / 1000)
+            chunk_size = self._CHUNK_SAMPLES
+            new_maxlen = math.ceil(pre_buffer_samples / chunk_size)
+            old_chunks = list(self._pre_buffer)
+            self._pre_buffer = deque(old_chunks[-new_maxlen:], maxlen=new_maxlen)
+            logger.info("VAD pre_buffer_ms updated: %d", pre_buffer_ms)

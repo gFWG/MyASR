@@ -376,4 +376,5 @@ def test_on_config_changed_calls_vad_worker_update(
         threshold=0.7,
         min_silence_ms=500,
         min_speech_ms=300,
+        pre_buffer_ms=300,
     )

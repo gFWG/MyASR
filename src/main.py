@@ -64,6 +64,7 @@ def _build_pipeline_config(config: AppConfig) -> tuple[dict[str, object], str]:
         "vad_threshold": config.vad_threshold,
         "vad_min_silence_ms": config.vad_min_silence_ms,
         "vad_min_speech_ms": config.vad_min_speech_ms,
+        "pre_buffer_ms": config.pre_buffer_ms,
         "model_path": model_path,
     }
     return pipeline_config, _active_model_directory(model_path)

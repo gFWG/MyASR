@@ -114,6 +114,7 @@ class VadWorker(QThread):
         threshold: float | None = None,
         min_silence_ms: int | None = None,
         min_speech_ms: int | None = None,
+        pre_buffer_ms: int | None = None,
     ) -> None:
         """Update VAD parameters dynamically.
 
@@ -124,9 +125,11 @@ class VadWorker(QThread):
             threshold: New speech probability threshold (0.0–1.0).
             min_silence_ms: New minimum silence duration in ms.
             min_speech_ms: New minimum speech duration in ms.
+            pre_buffer_ms: New pre-buffer duration in ms.
         """
         self._vad.update_params(
             threshold=threshold,
             min_silence_ms=min_silence_ms,
             min_speech_ms=min_speech_ms,
+            pre_buffer_ms=pre_buffer_ms,
         )

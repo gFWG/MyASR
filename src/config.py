@@ -33,6 +33,7 @@ class AppConfig:
     vad_threshold: float = 0.5
     vad_min_silence_ms: int = 300
     vad_min_speech_ms: int = 400
+    pre_buffer_ms: int = 300
     overlay_opacity: float = 0.78
     overlay_width: int = 800
     overlay_height: int = 120

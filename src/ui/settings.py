@@ -226,6 +226,13 @@ class SettingsDialog(QDialog):
         self._vad_min_speech.setSuffix(" ms")
         layout.addRow("VAD Min Speech", self._vad_min_speech)
 
+        # Pre-buffer - integer slider + spinbox
+        self._pre_buffer = SliderSpinBox()
+        self._pre_buffer.setRange(0, 1000)
+        self._pre_buffer.setSingleStep(50)
+        self._pre_buffer.setSuffix(" ms")
+        layout.addRow("Pre-buffer", self._pre_buffer)
+
         # Max Sentence History - integer slider + spinbox
         self._max_history = SliderSpinBox()
         self._max_history.setRange(1, 50)
@@ -745,6 +752,7 @@ class SettingsDialog(QDialog):
         self._vad_threshold.setValue(config.vad_threshold)
         self._vad_min_silence.setValue(config.vad_min_silence_ms)
         self._vad_min_speech.setValue(config.vad_min_speech_ms)
+        self._pre_buffer.setValue(config.pre_buffer_ms)
         self._max_history.setValue(config.max_history)
 
         opacity_pct = round(config.overlay_opacity * 100)
@@ -778,6 +786,7 @@ class SettingsDialog(QDialog):
             vad_threshold=self._vad_threshold.value(),
             vad_min_silence_ms=self._vad_min_silence.value(),
             vad_min_speech_ms=self._vad_min_speech.value(),
+            pre_buffer_ms=self._pre_buffer.value(),
             max_history=self._max_history.value(),
             overlay_opacity=self._opacity.value() / 100.0,
             overlay_font_size_jp=self._font_size_jp.value(),
