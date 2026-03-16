@@ -1,0 +1,300 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/yuheng/MyASR/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/yuheng/MyASR
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.12.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 12 items
+
+tests/test_chain_extension.py::test_ac4_tsuzukesaseru_full_chain FAILED  [  8%]
+tests/test_chain_extension.py::test_ac4_tsuzukesaseru_span_matches_text FAILED [ 16%]
+tests/test_chain_extension.py::test_ac5_conservative_hashiteimasu FAILED [ 25%]
+tests/test_chain_extension.py::test_ac6_taberumovie_no_extension FAILED  [ 33%]
+tests/test_chain_extension.py::test_ac7_unmatched_verb_no_phantom_hit FAILED [ 41%]
+tests/test_chain_extension.py::test_no_vocab_hit_for_unmatched_chain FAILED [ 50%]
+tests/test_chain_extension.py::test_taberarenai_three_token_chain FAILED [ 58%]
+tests/test_chain_extension.py::test_conservative_tabeteshimau FAILED     [ 66%]
+tests/test_chain_extension.py::test_conservative_tabetandakedo FAILED    [ 75%]
+tests/test_chain_extension.py::test_conservative_tabereba FAILED         [ 83%]
+tests/test_chain_extension.py::test_lemma_unchanged_after_chain FAILED   [ 91%]
+tests/test_chain_extension.py::test_ac10_pipeline_latency FAILED         [100%]
+
+=================================== FAILURES ===================================
+______________________ test_ac4_tsuzukesaseru_full_chain _______________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac4_tsuzukesaseru_full_chain(pipeline: PreprocessingPipeline) -> None:
+        """AC4: 続けさせる must produce a VocabHit with surface='続けさせる', lemma='続ける'."""
+        result: AnalysisResult = pipeline.process("続けさせる")
+        hit = next((h for h in result.vocab_hits if h.lemma == "続ける"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='続ける' but got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "続けさせる", (
+            f"Expected chain surface '続けさせる' but got '{hit.surface}'"
+        )
+E       AssertionError: Expected chain surface '続けさせる' but got '続け'
+E       assert '続け' == '続けさせる'
+E         
+E         - 続けさせる
+E         + 続け
+
+tests/test_chain_extension.py:48: AssertionError
+___________________ test_ac4_tsuzukesaseru_span_matches_text ___________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac4_tsuzukesaseru_span_matches_text(pipeline: PreprocessingPipeline) -> None:
+        """AC4: VocabHit positions must span the full chained surface in source text."""
+        text = "続けさせる"
+        result: AnalysisResult = pipeline.process(text)
+        hit = next((h for h in result.vocab_hits if h.lemma == "続ける"), None)
+        assert hit is not None, "No VocabHit with lemma='続ける' found"
+>       assert text[hit.start_pos : hit.end_pos] == "続けさせる", (
+            f"text[{hit.start_pos}:{hit.end_pos}] = '{text[hit.start_pos : hit.end_pos]}' "
+            f"!= '続けさせる'"
+        )
+E       AssertionError: text[0:2] = '続け' != '続けさせる'
+E       assert '続け' == '続けさせる'
+E         
+E         - 続けさせる
+E         + 続け
+
+tests/test_chain_extension.py:59: AssertionError
+______________________ test_ac5_conservative_hashiteimasu ______________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac5_conservative_hashiteimasu(pipeline: PreprocessingPipeline) -> None:
+        """AC5: 走っています must stop at い/動詞/非自立可能; surface='走って', lemma='走る'."""
+        result: AnalysisResult = pipeline.process("走っています")
+        hit = next((h for h in result.vocab_hits if h.lemma == "走る"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='走る' but got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "走って", (
+            f"Expected conservative surface '走って' (stops before い/動詞/非自立可能) "
+            f"but got '{hit.surface}'"
+        )
+E       AssertionError: Expected conservative surface '走って' (stops before い/動詞/非自立可能) but got '走っ'
+E       assert '走っ' == '走って'
+E         
+E         - 走って
+E         ?   -
+E         + 走っ
+
+tests/test_chain_extension.py:78: AssertionError
+______________________ test_ac6_taberumovie_no_extension _______________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac6_taberumovie_no_extension(pipeline: PreprocessingPipeline) -> None:
+        """AC6: 食べられない映画 — chain extends to '食べられない' then stops at 映画/名詞."""
+        result: AnalysisResult = pipeline.process("食べられない映画")
+        hit = next((h for h in result.vocab_hits if h.lemma == "食べる"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='食べる' in '食べられない映画', got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "食べられない", (
+            f"Expected chain surface '食べられない' (stops before 映画/名詞) but got '{hit.surface}'"
+        )
+E       AssertionError: Expected chain surface '食べられない' (stops before 映画/名詞) but got '食べ'
+E       assert '食べ' == '食べられない'
+E         
+E         - 食べられない
+E         + 食べ
+
+tests/test_chain_extension.py:97: AssertionError
+____________________ test_ac7_unmatched_verb_no_phantom_hit ____________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac7_unmatched_verb_no_phantom_hit(pipeline: PreprocessingPipeline) -> None:
+        """AC7: 歩かせる — 歩く not in vocab → no VocabHit with lemma='歩く' or surface matching."""
+        result: AnalysisResult = pipeline.process("歩かせる")
+        aruku_hits = [h for h in result.vocab_hits if h.lemma == "歩く"]
+>       assert len(aruku_hits) == 0, (
+            f"No phantom VocabHit expected for 歩かせる (歩く not in N1-N5), "
+            f"got: {[(h.surface, h.lemma) for h in aruku_hits]}"
+        )
+E       AssertionError: No phantom VocabHit expected for 歩かせる (歩く not in N1-N5), got: [('歩か', '歩く')]
+E       assert 1 == 0
+E        +  where 1 = len([VocabHit(surface='歩か', lemma='歩く', pos='動詞', jlpt_level=5, start_pos=0, end_pos=2, vocab_id=8649, pronunciation='アルク', definition='to walk')])
+
+tests/test_chain_extension.py:111: AssertionError
+____________________ test_no_vocab_hit_for_unmatched_chain _____________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_no_vocab_hit_for_unmatched_chain(pipeline: PreprocessingPipeline) -> None:
+        """Chain extension must never create a VocabHit when head verb has no vocab entry."""
+        result: AnalysisResult = pipeline.process("歩かせる")
+        surfaces = [h.surface for h in result.vocab_hits]
+        # Neither the base form nor the chained form should appear
+        assert "歩かせる" not in surfaces, (
+            f"Phantom chain surface '歩かせる' should not appear in vocab_hits: {surfaces}"
+        )
+>       assert "歩か" not in surfaces, (
+            f"Phantom surface '歩か' should not appear in vocab_hits: {surfaces}"
+        )
+E       AssertionError: Phantom surface '歩か' should not appear in vocab_hits: ['歩か']
+E       assert '歩か' not in ['歩か']
+
+tests/test_chain_extension.py:125: AssertionError
+______________________ test_taberarenai_three_token_chain ______________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_taberarenai_three_token_chain(pipeline: PreprocessingPipeline) -> None:
+        """食べられない: chain extends via られ/助動詞 + ない/助動詞; surface='食べられない'."""
+        result: AnalysisResult = pipeline.process("食べられない")
+        hit = next((h for h in result.vocab_hits if h.lemma == "食べる"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='食べる' in '食べられない', got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "食べられない", (
+            f"Expected full 3-token chain '食べられない' but got '{hit.surface}'"
+        )
+E       AssertionError: Expected full 3-token chain '食べられない' but got '食べ'
+E       assert '食べ' == '食べられない'
+E         
+E         - 食べられない
+E         + 食べ
+
+tests/test_chain_extension.py:143: AssertionError
+________________________ test_conservative_tabeteshimau ________________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_conservative_tabeteshimau(pipeline: PreprocessingPipeline) -> None:
+        """食べてしまう: te-form bridge, STOP at しまう/動詞/非自立可能; surface='食べて'."""
+        result: AnalysisResult = pipeline.process("食べてしまう")
+        hit = next((h for h in result.vocab_hits if h.lemma == "食べる"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='食べる' in '食べてしまう', got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "食べて", (
+            f"Expected conservative surface '食べて' (stop before しまう/動詞/非自立可能) "
+            f"but got '{hit.surface}'"
+        )
+E       AssertionError: Expected conservative surface '食べて' (stop before しまう/動詞/非自立可能) but got '食べ'
+E       assert '食べ' == '食べて'
+E         
+E         - 食べて
+E         ?   -
+E         + 食べ
+
+tests/test_chain_extension.py:161: AssertionError
+_______________________ test_conservative_tabetandakedo ________________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_conservative_tabetandakedo(pipeline: PreprocessingPipeline) -> None:
+        """食べたんだけど: chain extends via た/助動詞, stops at ん/助詞/準体助詞; surface='食べた'."""
+        result: AnalysisResult = pipeline.process("食べたんだけど")
+        hit = next((h for h in result.vocab_hits if h.lemma == "食べる"), None)
+        assert hit is not None, (
+            f"Expected VocabHit with lemma='食べる' in '食べたんだけど', got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert hit.surface == "食べた", (
+            f"Expected chain '食べた' (stops at ん/助詞/準体助詞) but got '{hit.surface}'"
+        )
+E       AssertionError: Expected chain '食べた' (stops at ん/助詞/準体助詞) but got '食べ'
+E       assert '食べ' == '食べた'
+E         
+E         - 食べた
+E         ?   -
+E         + 食べ
+
+tests/test_chain_extension.py:180: AssertionError
+__________________________ test_conservative_tabereba __________________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_conservative_tabereba(pipeline: PreprocessingPipeline) -> None:
+        """食べれば in context: 続けさせる chain must exist AND 食べれ must not extend past ば."""
+        result: AnalysisResult = pipeline.process("食べれば続けさせる")
+        tsuzuke_hit = next((h for h in result.vocab_hits if h.lemma == "続ける"), None)
+        assert tsuzuke_hit is not None, (
+            f"Expected VocabHit with lemma='続ける' in '食べれば続けさせる', got: "
+            f"{[(h.surface, h.lemma) for h in result.vocab_hits]}"
+        )
+>       assert tsuzuke_hit.surface == "続けさせる", (
+            f"Expected chain surface '続けさせる' but got '{tsuzuke_hit.surface}'"
+        )
+E       AssertionError: Expected chain surface '続けさせる' but got '続け'
+E       assert '続け' == '続けさせる'
+E         
+E         - 続けさせる
+E         + 続け
+
+tests/test_chain_extension.py:198: AssertionError
+_______________________ test_lemma_unchanged_after_chain _______________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_lemma_unchanged_after_chain(pipeline: PreprocessingPipeline) -> None:
+        """VocabHit.lemma must remain the base form (続ける) after chain extends surface."""
+        result: AnalysisResult = pipeline.process("続けさせる")
+        hit = next((h for h in result.vocab_hits if h.lemma == "続ける"), None)
+        assert hit is not None, "Expected a VocabHit with lemma='続ける'"
+>       assert hit.surface == "続けさせる", (
+            f"Expected chained surface '続けさせる' (chain extension must have run) "
+            f"but got '{hit.surface}'"
+        )
+E       AssertionError: Expected chained surface '続けさせる' (chain extension must have run) but got '続け'
+E       assert '続け' == '続けさせる'
+E         
+E         - 続けさせる
+E         + 続け
+
+tests/test_chain_extension.py:218: AssertionError
+__________________________ test_ac10_pipeline_latency __________________________
+
+pipeline = <src.analysis.pipeline.PreprocessingPipeline object at 0x7d747846b5c0>
+
+    def test_ac10_pipeline_latency(pipeline: PreprocessingPipeline) -> None:
+        """AC10: chain extension must produce correct surface AND stay under 50ms avg."""
+        text = "続けさせる"
+        iterations = 5
+        elapsed_ms = []
+        last_result: AnalysisResult | None = None
+        for _ in range(iterations):
+            start = time.perf_counter()
+            last_result = pipeline.process(text)
+            elapsed_ms.append((time.perf_counter() - start) * 1000)
+        assert last_result is not None
+        hit = next((h for h in last_result.vocab_hits if h.lemma == "続ける"), None)
+        assert hit is not None, "Chain extension must produce VocabHit with lemma='続ける'"
+>       assert hit.surface == "続けさせる", (
+            f"Chain extension must run: expected surface '続けさせる' but got '{hit.surface}'"
+        )
+E       AssertionError: Chain extension must run: expected surface '続けさせる' but got '続け'
+E       assert '続け' == '続けさせる'
+E         
+E         - 続けさせる
+E         + 続け
+
+tests/test_chain_extension.py:245: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_chain_extension.py::test_ac4_tsuzukesaseru_full_chain - Ass...
+FAILED tests/test_chain_extension.py::test_ac4_tsuzukesaseru_span_matches_text
+FAILED tests/test_chain_extension.py::test_ac5_conservative_hashiteimasu - As...
+FAILED tests/test_chain_extension.py::test_ac6_taberumovie_no_extension - Ass...
+FAILED tests/test_chain_extension.py::test_ac7_unmatched_verb_no_phantom_hit
+FAILED tests/test_chain_extension.py::test_no_vocab_hit_for_unmatched_chain
+FAILED tests/test_chain_extension.py::test_taberarenai_three_token_chain - As...
+FAILED tests/test_chain_extension.py::test_conservative_tabeteshimau - Assert...
+FAILED tests/test_chain_extension.py::test_conservative_tabetandakedo - Asser...
+FAILED tests/test_chain_extension.py::test_conservative_tabereba - AssertionE...
+FAILED tests/test_chain_extension.py::test_lemma_unchanged_after_chain - Asse...
+FAILED tests/test_chain_extension.py::test_ac10_pipeline_latency - AssertionE...
+============================== 12 failed in 0.15s ==============================
