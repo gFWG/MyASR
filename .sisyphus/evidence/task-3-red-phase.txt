@@ -1,0 +1,33 @@
+=== Task 3: TDD RED Phase Evidence ===
+Date: 2026-03-16
+
+COLLECTION:
+  pytest tests/test_compound_merging.py --co -q
+  → 13 tests collected
+
+TEST RESULTS:
+  12 failed, 1 passed
+  PASSED: test_ac3_gohan_single_token_vocab_hit  (ご飯 is already single token — regression guard)
+
+FAILURES (expected):
+  FAILED test_ac1_osejji_compound_vocab_hit    — surfaces=['お', '世辞', '言う'], no 'お世辞'
+  FAILED test_ac1_osejji_jlpt_level            — no VocabHit surface='お世辞'
+  FAILED test_ac2_seji_standalone_suppressed   — VocabHit(surface='世辞') present (should be suppressed)
+  FAILED test_ac8_compound_start_end_positions — no compound hit
+  FAILED test_ac11_compound_appears_as_single_token — tokens=[('お','接頭辞'),('世辞','名詞')]
+  FAILED test_ac11_compound_token_pos_uses_content_word — compound token not found
+  FAILED test_ec1_onegaishimasu_compound       — surfaces=['よろしく','お','願い','し']
+  FAILED test_ec1_onegaishimasu_jlpt_level     — no compound hit
+  FAILED test_ec3_duplicate_compound_two_hits  — 0 hits, expected 2
+  FAILED test_ec3_duplicate_compound_distinct_positions — 0 hits
+  FAILED test_ec6_gobusata_compound            — surfaces=['ご','無','し','おり']
+  FAILED test_ec6_gobusata_jlpt_level          — no compound hit
+
+RUFF: All checks passed
+COMMIT: 12cd605 test(compound): add failing tests for prefix-compound merging (TDD RED)
+
+CURRENT TOKEN SPLITS CONFIRMED:
+  お世辞     → [('お','接頭辞'), ('世辞','名詞')]           — 2 tokens
+  お願いします → [('お','接頭辞'), ('願い','動詞'), ('し','動詞'), ('ます','助動詞')] — 4 tokens  
+  ご無沙汰   → [('ご','接頭辞'), ('無','接頭辞'), ('沙汰','名詞')]  — 3 tokens
+  ご飯       → [('ご飯','名詞')]                           — 1 token (already merged)

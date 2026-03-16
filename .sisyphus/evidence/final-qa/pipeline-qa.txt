@@ -1,0 +1,70 @@
+--- お世辞を言う ---
+  surface=お世辞, lemma=お世辞, N1, span=0-3 ('お世辞')
+  surface=言う, lemma=言う, N5, span=4-6 ('言う')
+
+--- 続けさせる ---
+  surface=続けさせる, lemma=続ける, N4, span=0-5 ('続けさせる')
+
+--- 走っています ---
+  surface=走って, lemma=走る, N5, span=0-3 ('走って')
+  surface=います, lemma=居る, N5, span=3-6 ('います')
+
+--- ご飯を食べられない ---
+  surface=ご飯, lemma=御飯, N5, span=0-2 ('ご飯')
+  surface=食べられない, lemma=食べる, N5, span=3-9 ('食べられない')
+
+--- お願いします ---
+  surface=お願いします, lemma=お願いします, N1, span=0-6 ('お願いします')
+
+--- 食べてしまう ---
+  surface=食べて, lemma=食べる, N5, span=0-3 ('食べて')
+  surface=しまう, lemma=仕舞う, N3, span=3-6 ('しまう')
+
+--- 食べたんだけど ---
+  surface=食べた, lemma=食べる, N5, span=0-3 ('食べた')
+  surface=けど, lemma=けれど, N4, span=5-7 ('けど')
+
+--- 彼はお世辞を言って続けさせた ---
+  surface=彼, lemma=彼, N4, span=0-1 ('彼')
+  surface=お世辞, lemma=お世辞, N1, span=2-5 ('お世辞')
+  surface=言って, lemma=言う, N5, span=6-9 ('言って')
+  surface=続けさせた, lemma=続ける, N4, span=9-14 ('続けさせた')
+
+
+=== QA EVALUATION ===
+
+Test 1: お世辞を言う — compound detection
+  PASS: お世辞 in surfaces (compound VocabHit)
+  PASS: 世辞 NOT standalone (suppressed by compound-wins rule)
+  PASS: 言う present as VocabHit
+
+Test 2: 続けさせる — conjugation chain
+  PASS: surface=続けさせる, lemma=続ける, span=0-5
+
+Test 3: 走っています — conservative chain (stop at 非自立可能)
+  PASS: surface=走って, lemma=走る (stopped before い/動詞/非自立可能)
+  PASS: NOT surface=走っています
+
+Test 4: ご飯を食べられない — compound + chain in same sentence
+  PASS: ご飯 as single VocabHit
+  PASS: 食べられない as chain VocabHit, lemma=食べる
+
+Test 5: お願いします — 4-token compound
+  PASS: surface=お願いします, span=0-6 (full text)
+
+Test 6: 食べてしまう — conservative chain (stop at 非自立可能)
+  PASS: surface=食べて, lemma=食べる (stopped before しまう/動詞/非自立可能)
+  PASS: NOT surface=食べてしまう
+
+Test 7: 食べたんだけど — chain conservative stop at ん/助詞
+  PASS: surface=食べた, lemma=食べる (stopped at ん/助詞/準体助詞)
+  PASS: NOT 食べたんだ
+
+Test 8: 彼はお世辞を言って続けさせた — compound + chain together
+  PASS: お世辞 compound VocabHit, span=2-5 (correct position)
+  PASS: 続けさせた chain VocabHit, lemma=続ける, span=9-14 (correct position)
+  PASS: NO standalone 世辞
+  PASS: spans match actual character positions
+
+=== VERDICT ===
+Sentences [8/8 correct] | Compounds [3/3] | Chains [5/5] | VERDICT: APPROVE

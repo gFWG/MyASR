@@ -171,7 +171,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
 
 > Implementation + Test = ONE Task where noted. EVERY task has QA Scenarios.
 
-- [ ] 1. Extend Token model with pos2, cType, cForm fields
+- [x] 1. Extend Token model with pos2, cType, cForm fields
 
   **What to do**:
   - Add `pos2: str = ""`, `cType: str = ""`, `cForm: str = ""` to the `Token` dataclass in `src/models.py`
@@ -246,7 +246,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   - Files: `src/models.py`
   - Pre-commit: `pytest tests/test_tokenizer.py tests/test_jlpt_vocab.py && mypy src/models.py`
 
-- [ ] 2. Extract pos2, cType, cForm from UniDic features in tokenizer
+- [x] 2. Extract pos2, cType, cForm from UniDic features in tokenizer
 
   **What to do**:
   - In `src/analysis/tokenizer.py`, inside the `tokenize()` method's loop, extract `word.feature.pos2`, `word.feature.cType`, `word.feature.cForm` alongside existing surface/lemma/pos1
@@ -337,7 +337,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   - Files: `src/analysis/tokenizer.py`, `tests/test_tokenizer.py`
   - Pre-commit: `pytest tests/test_tokenizer.py && ruff check src/analysis/tokenizer.py`
 
-- [ ] 3. Write failing tests for prefix-compound merging (TDD RED phase)
+- [x] 3. Write failing tests for prefix-compound merging (TDD RED phase)
 
   **What to do**:
   - Create `tests/test_compound_merging.py` with comprehensive test cases
@@ -430,7 +430,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   - Files: `tests/test_compound_merging.py`
   - Pre-commit: `pytest tests/test_compound_merging.py --co && ruff check tests/test_compound_merging.py`
 
-- [ ] 4. Implement prefix-compound merging (TDD GREEN phase)
+- [x] 4. Implement prefix-compound merging (TDD GREEN phase)
 
   **What to do**:
   - Create a `merge_prefix_compounds(tokens: list[Token], text: str, vocab: dict[str, VocabEntry]) -> list[Token]` function
@@ -549,7 +549,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   - Files: `src/analysis/tokenizer.py`, `src/analysis/jlpt_vocab.py`, `src/analysis/pipeline.py`
   - Pre-commit: `pytest tests/test_compound_merging.py && pytest tests/ && ruff check . && mypy src/`
 
-- [ ] 5. Write failing tests for conjugation chain extension (TDD RED phase)
+- [x] 5. Write failing tests for conjugation chain extension (TDD RED phase)
 
   **What to do**:
   - Create `tests/test_chain_extension.py` with comprehensive test cases
@@ -642,7 +642,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   - Files: `tests/test_chain_extension.py`
   - Pre-commit: `pytest tests/test_chain_extension.py --co && ruff check tests/test_chain_extension.py`
 
-- [ ] 6. Implement conjugation chain extension in find_all_vocab (TDD GREEN phase)
+- [x] 6. Implement conjugation chain extension in find_all_vocab (TDD GREEN phase)
 
   **What to do**:
   - In `src/analysis/jlpt_vocab.py`, after a VocabHit is created for a 動詞 or 形容詞 token, scan forward to extend the hit's span across the conjugation chain
@@ -804,15 +804,15 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
 
 > 4 review agents run in PARALLEL. ALL must APPROVE. Rejection → fix → re-run.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists (read file, run python REPL). For each "Must NOT Have": search codebase for forbidden patterns — reject with file:line if found. Check evidence files exist in .sisyphus/evidence/. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `ruff check . && ruff format --check . && mypy src/ && pytest tests/`. Review all changed files for: unused imports, empty catches, console.log/print in prod, commented-out code. Check AI slop: excessive comments, over-abstraction, generic names (data/result/item/temp). Verify Token backward compatibility.
   Output: `Lint [PASS/FAIL] | Types [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Full Pipeline QA** — `unspecified-high`
+- [x] F3. **Full Pipeline QA** — `unspecified-high`
   Run the full PreprocessingPipeline on these test sentences and verify output:
   - "お世辞を言う" → compound お世辞 found, no standalone 世辞
   - "続けさせる" → full chain highlighted (助動詞 only), lemma=続ける, surface=続けさせる
@@ -825,7 +825,7 @@ Critical Path: Task 1 → Task 2 → Task 4 → Task 6 → F1-F4
   Save all outputs to `.sisyphus/evidence/final-qa/`.
   Output: `Sentences [N/N correct] | Compounds [N/N] | Chains [N/N] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: read "What to do", read actual diff (git log/diff). Verify 1:1 — everything in spec was built (no missing), nothing beyond spec was built (no creep). Check "Must NOT do" compliance: grammar.py untouched, highlight.py untouched, tooltip.py untouched, no kana/pron usage. Detect cross-task contamination. Flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 

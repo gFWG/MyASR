@@ -1,0 +1,34 @@
+Task 6 — TDD GREEN phase: conjugation chain extension
+Commit: 3a62441
+Date: 2026-03-16
+
+=== Chain tests (12/12 PASSED) ===
+tests/test_chain_extension.py::test_ac4_tsuzukesaseru_full_chain PASSED
+tests/test_chain_extension.py::test_ac4_tsuzukesaseru_span_matches_text PASSED
+tests/test_chain_extension.py::test_ac5_conservative_hashiteimasu PASSED
+tests/test_chain_extension.py::test_ac6_taberumovie_no_extension PASSED
+tests/test_chain_extension.py::test_ac7_unmatched_verb_no_phantom_hit PASSED
+tests/test_chain_extension.py::test_no_vocab_hit_for_unmatched_chain PASSED
+tests/test_chain_extension.py::test_taberarenai_three_token_chain PASSED
+tests/test_chain_extension.py::test_conservative_tabeteshimau PASSED
+tests/test_chain_extension.py::test_conservative_tabetandakedo PASSED
+tests/test_chain_extension.py::test_conservative_tabereba PASSED
+tests/test_chain_extension.py::test_lemma_unchanged_after_chain PASSED
+tests/test_chain_extension.py::test_ac10_pipeline_latency PASSED
+
+=== Full suite ===
+442 passed, 14 skipped, 1 xfailed in 12.39s
+
+=== Lint & types ===
+ruff check .: All checks passed!
+ruff format --check .: pre-existing overlay.py format issue (not touched)
+mypy src/: Success: no issues found in 38 source files
+
+=== Changes ===
+src/analysis/jlpt_vocab.py:
+  - Added CHAIN_BRIDGE_SURFACES = frozenset({"て", "で"}) at module level
+  - After VocabHit created for 動詞/形容詞, scan forward consuming 助動詞 and て/で bridges
+  - Extend hit surface+end_pos; never modify lemma; advance loop index to chain_end
+
+tests/test_chain_extension.py:
+  - AC7 tests: changed 歩かせる → 頑張らせる (歩く IS in N5 vocab; 頑張る is NOT)
