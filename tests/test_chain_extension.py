@@ -105,25 +105,25 @@ def test_ac6_taberumovie_no_extension(pipeline: PreprocessingPipeline) -> None:
 
 
 def test_ac7_unmatched_verb_no_phantom_hit(pipeline: PreprocessingPipeline) -> None:
-    """AC7: 歩かせる — 歩く not in vocab → no VocabHit with lemma='歩く' or surface matching."""
-    result: AnalysisResult = pipeline.process("歩かせる")
-    aruku_hits = [h for h in result.vocab_hits if h.lemma == "歩く"]
-    assert len(aruku_hits) == 0, (
-        f"No phantom VocabHit expected for 歩かせる (歩く not in N1-N5), "
-        f"got: {[(h.surface, h.lemma) for h in aruku_hits]}"
+    """AC7: 頑張らせる — 頑張る not in vocab → no phantom VocabHit."""
+    result: AnalysisResult = pipeline.process("頑張らせる")
+    ganbaru_hits = [h for h in result.vocab_hits if h.lemma == "頑張る"]
+    assert len(ganbaru_hits) == 0, (
+        f"No phantom VocabHit expected for 頑張らせる (頑張る not in N1-N5), "
+        f"got: {[(h.surface, h.lemma) for h in ganbaru_hits]}"
     )
 
 
 def test_no_vocab_hit_for_unmatched_chain(pipeline: PreprocessingPipeline) -> None:
     """Chain extension must never create a VocabHit when head verb has no vocab entry."""
-    result: AnalysisResult = pipeline.process("歩かせる")
+    result: AnalysisResult = pipeline.process("頑張らせる")
     surfaces = [h.surface for h in result.vocab_hits]
     # Neither the base form nor the chained form should appear
-    assert "歩かせる" not in surfaces, (
-        f"Phantom chain surface '歩かせる' should not appear in vocab_hits: {surfaces}"
+    assert "頑張らせる" not in surfaces, (
+        f"Phantom chain surface '頑張らせる' should not appear in vocab_hits: {surfaces}"
     )
-    assert "歩か" not in surfaces, (
-        f"Phantom surface '歩か' should not appear in vocab_hits: {surfaces}"
+    assert "頑張ら" not in surfaces, (
+        f"Phantom surface '頑張ら' should not appear in vocab_hits: {surfaces}"
     )
 
 

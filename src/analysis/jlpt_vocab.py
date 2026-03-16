@@ -10,6 +10,8 @@ from src.models import Token, VocabHit
 
 logger = logging.getLogger(__name__)
 
+CHAIN_BRIDGE_SURFACES: frozenset[str] = frozenset({"て", "で"})
+
 
 @dataclass(frozen=True, slots=True)
 class VocabEntry:
@@ -191,5 +193,44 @@ class JLPTVocabLookup:
                         definition=entry.definition,
                     )
                 )
+                if token.pos in ("動詞", "形容詞"):
+                    hit = hits[-1]
+                    chain_end = i + 1
+                    while chain_end < len(tokens):
+                        next_tok = tokens[chain_end]
+                        if next_tok.pos == "助動詞" or next_tok.surface in CHAIN_BRIDGE_SURFACES:
+                            chain_end += 1
+                        else:
+                            break
+                    if chain_end > i + 1:
+                        extended_surface = "".join(t.surface for t in tokens[i:chain_end])
+                        if text:
+                            pos = text.find(extended_surface, search_start - len(token.surface))
+                            if pos >= 0:
+                                hits[-1] = VocabHit(
+                                    surface=extended_surface,
+                                    lemma=hit.lemma,
+                                    pos=hit.pos,
+                                    jlpt_level=hit.jlpt_level,
+                                    start_pos=hit.start_pos,
+                                    end_pos=pos + len(extended_surface),
+                                    vocab_id=hit.vocab_id,
+                                    pronunciation=hit.pronunciation,
+                                    definition=hit.definition,
+                                )
+                                search_start = pos + len(extended_surface)
+                        else:
+                            hits[-1] = VocabHit(
+                                surface=extended_surface,
+                                lemma=hit.lemma,
+                                pos=hit.pos,
+                                jlpt_level=hit.jlpt_level,
+                                start_pos=0,
+                                end_pos=0,
+                                vocab_id=hit.vocab_id,
+                                pronunciation=hit.pronunciation,
+                                definition=hit.definition,
+                            )
+                        i = chain_end - 1
             i += 1
         return hits
