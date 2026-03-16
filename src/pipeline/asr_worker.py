@@ -3,14 +3,17 @@
 import logging
 import queue
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QThread, Signal
 
 from src.asr.qwen_asr import QwenASR
 from src.exceptions import ASRError
-from src.pipeline.perf import StageTimer
 from src.pipeline.types import ASRResult, SpeechSegment
+from src.profiling.timer import StageTimer
+
+if TYPE_CHECKING:
+    from src.profiling.profiler import PipelineProfiler
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +51,14 @@ class AsrWorker(QThread):
         text_queue: queue.Queue[ASRResult],
         asr: QwenASR,
         config: dict[str, Any],
+        profiler: "PipelineProfiler | None" = None,
     ) -> None:
         super().__init__()
         self._segment_queue = segment_queue
         self._text_queue = text_queue
         self._asr = asr
         self._config = config
+        self._profiler = profiler
         self._running: bool = False
 
     def run(self) -> None:
@@ -95,7 +100,7 @@ class AsrWorker(QThread):
 
     def _flush_batch(self, batch: list[SpeechSegment]) -> None:
         """Run a batch through ASR and dispatch each result."""
-        with StageTimer("asr_batch") as timer:
+        with StageTimer("asr_batch", self._profiler) as timer:
             try:
                 results = self._asr.transcribe_batch(batch)
             except ASRError as exc:
@@ -111,7 +116,7 @@ class AsrWorker(QThread):
             "ASR batch: %d in → %d results in %.1f ms",
             len(batch),
             len(results),
-            timer.result.elapsed_ms,
+            timer.elapsed_ms,
         )
 
         for result in results:

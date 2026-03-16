@@ -56,14 +56,14 @@ class StageTimer:
             self._profiler.record(self._stage_name, self._elapsed_ms)
 
         # Log individual stage timing
-        if self._profiler is not None and self._profiler._config.log_individual_stages:
+        if self._profiler is not None and self._profiler.config.log_individual_stages:
             self._log_stage()
 
     def _log_stage(self) -> None:
         """Log the stage timing, with warning if slow."""
         threshold = self._slow_threshold_ms
         if threshold is None and self._profiler is not None:
-            threshold = self._profiler._config.slow_threshold_ms
+            threshold = self._profiler.config.slow_threshold_ms
 
         if threshold is not None and self._elapsed_ms > threshold:
             logger.warning(

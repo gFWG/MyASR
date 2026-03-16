@@ -1,6 +1,7 @@
 """Pipeline profiler for aggregating and reporting performance metrics."""
 
 import logging
+import threading
 from dataclasses import dataclass, field
 
 from src.profiling.config import ProfilingConfig
@@ -77,9 +78,15 @@ class PipelineProfiler:
 
     def __init__(self, config: ProfilingConfig) -> None:
         self._config = config
+        self._lock = threading.Lock()
         self._stats = ProfilingStats()
         self._current_sentence: dict[str, float] = {}
         self._sentence_start_time: float = 0.0
+
+    @property
+    def config(self) -> ProfilingConfig:
+        """Public accessor for profiling configuration."""
+        return self._config
 
     def record(self, stage: str, elapsed_ms: float) -> None:
         """Record a stage execution timing.
@@ -91,14 +98,15 @@ class PipelineProfiler:
         if not self._config.enabled:
             return
 
-        # Update current sentence timing
-        self._current_sentence[stage] = elapsed_ms
+        with self._lock:
+            # Update current sentence timing
+            self._current_sentence[stage] = elapsed_ms
 
-        # Update aggregate stats
-        if stage not in self._stats.stages:
-            self._stats.stages[stage] = StageMetrics()
-        self._stats.stages[stage].record(elapsed_ms)
-        self._stats.total_pipeline_ms += elapsed_ms
+            # Update aggregate stats
+            if stage not in self._stats.stages:
+                self._stats.stages[stage] = StageMetrics()
+            self._stats.stages[stage].record(elapsed_ms)
+            self._stats.total_pipeline_ms += elapsed_ms
 
     def start_sentence(self) -> None:
         """Mark the start of a new sentence processing cycle.
@@ -110,8 +118,9 @@ class PipelineProfiler:
 
         import time
 
-        self._current_sentence = {}
-        self._sentence_start_time = time.perf_counter()
+        with self._lock:
+            self._current_sentence = {}
+            self._sentence_start_time = time.perf_counter()
 
     def end_sentence(self) -> dict[str, float]:
         """Mark the end of the current sentence processing cycle.
@@ -127,34 +136,35 @@ class PipelineProfiler:
 
         import time
 
-        # Calculate total time for this sentence
-        total_ms = (time.perf_counter() - self._sentence_start_time) * 1000.0
-        self._current_sentence["_total"] = total_ms
+        with self._lock:
+            # Calculate total time for this sentence
+            total_ms = (time.perf_counter() - self._sentence_start_time) * 1000.0
+            self._current_sentence["_total"] = total_ms
 
-        self._stats.sentences_processed += 1
+            self._stats.sentences_processed += 1
 
-        # Log sentence summary
-        if self._config.log_individual_stages:
-            stage_strs = [
-                f"{k}={v:.1f}ms" for k, v in self._current_sentence.items() if k != "_total"
-            ]
-            logger.info(
-                "Sentence #%d: %s total=%.1fms",
-                self._stats.sentences_processed,
-                " ".join(stage_strs),
-                total_ms,
-            )
+            # Log sentence summary
+            if self._config.log_individual_stages:
+                stage_strs = [
+                    f"{k}={v:.1f}ms" for k, v in self._current_sentence.items() if k != "_total"
+                ]
+                logger.info(
+                    "Sentence #%d: %s total=%.1fms",
+                    self._stats.sentences_processed,
+                    " ".join(stage_strs),
+                    total_ms,
+                )
 
-        # Log aggregate summary at intervals
-        if (
-            self._config.log_summary
-            and self._stats.sentences_processed % self._config.summary_interval == 0
-        ):
-            self._log_summary()
+            # Log aggregate summary at intervals
+            if (
+                self._config.log_summary
+                and self._stats.sentences_processed % self._config.summary_interval == 0
+            ):
+                self._log_summary()
 
-        result = self._current_sentence.copy()
-        self._current_sentence = {}
-        return result
+            result = self._current_sentence.copy()
+            self._current_sentence = {}
+            return result
 
     def get_stats(self) -> ProfilingStats:
         """Get a snapshot of current profiling statistics.
@@ -162,21 +172,25 @@ class PipelineProfiler:
         Returns:
             ProfilingStats with current aggregate metrics.
         """
-        stages_copy = {
-            k: StageMetrics(count=v.count, total_ms=v.total_ms, min_ms=v.min_ms, max_ms=v.max_ms)
-            for k, v in self._stats.stages.items()
-        }
-        return ProfilingStats(
-            stages=stages_copy,
-            sentences_processed=self._stats.sentences_processed,
-            total_pipeline_ms=self._stats.total_pipeline_ms,
-        )
+        with self._lock:
+            stages_copy = {
+                k: StageMetrics(
+                    count=v.count, total_ms=v.total_ms, min_ms=v.min_ms, max_ms=v.max_ms
+                )
+                for k, v in self._stats.stages.items()
+            }
+            return ProfilingStats(
+                stages=stages_copy,
+                sentences_processed=self._stats.sentences_processed,
+                total_pipeline_ms=self._stats.total_pipeline_ms,
+            )
 
     def reset(self) -> None:
         """Reset all profiling statistics to initial state."""
-        self._stats = ProfilingStats()
-        self._current_sentence = {}
-        self._sentence_start_time = 0.0
+        with self._lock:
+            self._stats = ProfilingStats()
+            self._current_sentence = {}
+            self._sentence_start_time = 0.0
         logger.debug("Profiling statistics reset")
 
     def _log_summary(self) -> None:

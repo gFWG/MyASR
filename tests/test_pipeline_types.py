@@ -5,7 +5,7 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
-from src.pipeline.types import ASRResult, PipelineStageMetrics, SpeechSegment
+from src.pipeline.types import ASRResult, SpeechSegment
 
 
 class TestSpeechSegment:
@@ -65,33 +65,3 @@ class TestASRResult:
 
         with pytest.raises(FrozenInstanceError):
             result.text = "modified"  # type: ignore[misc]
-
-
-class TestPipelineStageMetrics:
-    """Tests for PipelineStageMetrics dataclass."""
-
-    def test_construct_with_valid_data(self) -> None:
-        """Test constructing PipelineStageMetrics with valid data."""
-        metrics = PipelineStageMetrics(
-            stage="vad",
-            start_time=100.0,
-            end_time=100.5,
-            elapsed_ms=500.0,
-        )
-
-        assert metrics.stage == "vad"
-        assert metrics.start_time == 100.0
-        assert metrics.end_time == 100.5
-        assert metrics.elapsed_ms == 500.0
-
-    def test_fields_are_immutable(self) -> None:
-        """Test that PipelineStageMetrics fields cannot be modified (frozen)."""
-        metrics = PipelineStageMetrics(
-            stage="asr",
-            start_time=200.0,
-            end_time=201.0,
-            elapsed_ms=1000.0,
-        )
-
-        with pytest.raises(FrozenInstanceError):
-            metrics.stage = "modified"  # type: ignore[misc]
