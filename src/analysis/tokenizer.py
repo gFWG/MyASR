@@ -45,5 +45,12 @@ class FugashiTokenizer:
             lemma = word.feature.lemma
             if lemma is None:
                 lemma = word.surface
-            tokens.append(Token(surface=word.surface, lemma=lemma, pos=pos))
+            pos2 = word.feature.pos2 or ""
+            ctype = word.feature.cType or ""
+            cform = word.feature.cForm or ""
+            tokens.append(
+                Token(
+                    surface=word.surface, lemma=lemma, pos=pos, pos2=pos2, cType=ctype, cForm=cform
+                )
+            )
         return tokens

@@ -46,3 +46,21 @@ def test_tokenize_mixed_content() -> None:
     t = FugashiTokenizer()
     tokens = t.tokenize("東京タワーへ行きます")
     assert len(tokens) >= 2
+
+
+def test_tokenize_verb_extracts_ctype_cform() -> None:
+    """Tokenizing 食べる extracts non-empty cType and cForm for verb tokens."""
+    t = FugashiTokenizer()
+    tokens = t.tokenize("食べる")
+    assert len(tokens) >= 1
+    assert any(tok.cType != "" for tok in tokens), "Expected non-empty cType for verb token"
+    assert any(tok.cForm != "" for tok in tokens), "Expected non-empty cForm for verb token"
+
+
+def test_tokenize_prefix_has_接頭辞_pos() -> None:
+    """Prefix お in お世辞を言う should have pos='接頭辞'."""
+    t = FugashiTokenizer()
+    tokens = t.tokenize("お世辞を言う")
+    assert len(tokens) >= 1
+    assert tokens[0].surface == "お"
+    assert tokens[0].pos == "接頭辞", f"Expected pos='接頭辞', got '{tokens[0].pos}'"

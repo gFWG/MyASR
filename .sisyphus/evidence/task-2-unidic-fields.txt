@@ -1,0 +1,3 @@
+食べ pos=動詞 pos2=一般 cType=下一段-バ行 cForm=連用形-一般
+させる pos=助動詞 pos2=* cType=下一段-サ行 cForm=終止形-一般
+PASS
