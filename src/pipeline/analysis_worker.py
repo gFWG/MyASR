@@ -3,12 +3,16 @@
 import logging
 import queue
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QThread, Signal
 
 from src.models import SentenceResult
 from src.pipeline.types import ASRResult
+from src.profiling.timer import StageTimer
+
+if TYPE_CHECKING:
+    from src.profiling.profiler import PipelineProfiler
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +42,13 @@ class AnalysisWorker(QThread):
         text_queue: queue.Queue[ASRResult],
         analysis_pipeline: Any,
         config: dict[str, Any],
+        profiler: "PipelineProfiler | None" = None,
     ) -> None:
         super().__init__()
         self._text_queue = text_queue
         self._analysis_pipeline = analysis_pipeline
         self._config = config
+        self._profiler = profiler
         self._running: bool = False
 
     def run(self) -> None:
@@ -72,7 +78,8 @@ class AnalysisWorker(QThread):
             asr_result: The transcription result to process.
         """
 
-        analysis = self._analysis_pipeline.process(asr_result.text)
+        with StageTimer("analysis", self._profiler):
+            analysis = self._analysis_pipeline.process(asr_result.text)
 
         # Emit SentenceResult
         sentence_result = SentenceResult(

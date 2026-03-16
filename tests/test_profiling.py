@@ -84,7 +84,7 @@ class TestStageTimer:
         assert timer.elapsed_ms >= 10.0
         assert timer.elapsed_ms < 100.0  # Should not take 100ms
 
-    def timer_records_to_profiler(self) -> None:
+    def test_timer_records_to_profiler(self) -> None:
         """Test that timer records to profiler."""
         config = ProfilingConfig(enabled=True)
         profiler = PipelineProfiler(config)

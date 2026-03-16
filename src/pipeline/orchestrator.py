@@ -21,6 +21,8 @@ from src.pipeline.analysis_worker import AnalysisWorker
 from src.pipeline.asr_worker import AsrWorker
 from src.pipeline.types import ASRResult, SpeechSegment
 from src.pipeline.vad_worker import VadWorker
+from src.profiling.config import ProfilingConfig
+from src.profiling.profiler import PipelineProfiler
 from src.vad.silero import SileroVAD
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,13 @@ class PipelineOrchestrator:
     def __init__(self, config: dict[str, Any]) -> None:
         self._config = config
 
+        # ── Profiling ───────────────────────────────────────────────────────
+        profiling_config = config.get("profiling_config")
+        if isinstance(profiling_config, ProfilingConfig):
+            self._profiler: PipelineProfiler | None = PipelineProfiler(profiling_config)
+        else:
+            self._profiler = None
+
         # ── Inter-stage queues ──────────────────────────────────────────────
         self._audio_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1000)
         self._segment_queue: queue.Queue[SpeechSegment] = queue.Queue(maxsize=20)
@@ -66,12 +75,14 @@ class PipelineOrchestrator:
             segment_queue=self._segment_queue,
             vad=vad_model,
             config=config,
+            profiler=self._profiler,
         )
         self._asr_worker = AsrWorker(
             segment_queue=self._segment_queue,
             text_queue=self._text_queue,
             asr=asr_model,
             config=config,
+            profiler=self._profiler,
         )
 
         # ── Analysis worker (ASRResult → SentenceResult) ──
@@ -81,6 +92,7 @@ class PipelineOrchestrator:
             text_queue=self._text_queue,
             analysis_pipeline=analysis_pipeline,
             config=config,
+            profiler=self._profiler,
         )
 
         # ── Audio capture (started in start(), stopped in stop()) ────────────
@@ -187,6 +199,10 @@ class PipelineOrchestrator:
         ]
 
     # ── Hot-reload config ─────────────────────────────────────────────────────
+
+    @property
+    def profiler(self) -> PipelineProfiler | None:
+        return self._profiler
 
     def on_config_changed(self, config: AppConfig) -> None:
         """Apply live config changes to pipeline components.

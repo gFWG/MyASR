@@ -40,21 +40,4 @@ class ASRResult:
     db_row_id: int | None = field(default=None)
 
 
-@dataclass(frozen=True, slots=True)
-class PipelineStageMetrics:
-    """Metrics for a single pipeline stage execution.
-
-    Attributes:
-        stage: Name of the pipeline stage (e.g., 'vad', 'asr', 'translation').
-        start_time: Start time in seconds (from time.perf_counter()).
-        end_time: End time in seconds (from time.perf_counter()).
-        elapsed_ms: Processing time in milliseconds.
-    """
-
-    stage: str
-    start_time: float
-    end_time: float
-    elapsed_ms: float
-
-
-__all__ = ["ASRResult", "PipelineStageMetrics", "SpeechSegment"]
+__all__ = ["ASRResult", "SpeechSegment"]

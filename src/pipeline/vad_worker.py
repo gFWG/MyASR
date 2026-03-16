@@ -4,15 +4,18 @@ import logging
 import queue
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from PySide6.QtCore import QThread, Signal
 
 from src.models import AudioSegment
-from src.pipeline.perf import StageTimer
 from src.pipeline.types import SpeechSegment
+from src.profiling.timer import StageTimer
 from src.vad.silero import SileroVAD
+
+if TYPE_CHECKING:
+    from src.profiling.profiler import PipelineProfiler
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +53,14 @@ class VadWorker(QThread):
         segment_queue: queue.Queue[SpeechSegment],
         vad: SileroVAD,
         config: dict[str, Any],
+        profiler: "PipelineProfiler | None" = None,
     ) -> None:
         super().__init__()
         self._audio_queue = audio_queue
         self._segment_queue = segment_queue
         self._vad = vad
         self._config = config
+        self._profiler = profiler
         self._running: bool = False
 
     def run(self) -> None:
@@ -77,7 +82,7 @@ class VadWorker(QThread):
                 continue
 
             try:
-                with StageTimer("vad_process") as _timer:
+                with StageTimer("vad_process", self._profiler) as _timer:
                     result: list[AudioSegment] | None = self._vad.process_chunk(chunk)
             except Exception as exc:
                 logger.error("VAD process_chunk failed: %s", exc, exc_info=True)
