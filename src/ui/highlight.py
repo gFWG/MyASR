@@ -2,6 +2,10 @@
 
 Renders highlighted Japanese text directly to QTextDocument, ensuring
 cursor positions align perfectly with VocabHit/GrammarHit offsets.
+
+Note: Conflict resolution between vocab and grammar is handled by
+AnalysisResult.resolve_conflicts(), which is called by SentenceResult.get_display_analysis().
+This ensures that HighlightRenderer and hover detection use the exact same data.
 """
 
 import logging
@@ -13,18 +17,16 @@ from src.models import AnalysisResult, GrammarHit, VocabHit
 
 logger = logging.getLogger(__name__)
 
-_TYPE_GRAMMAR = "grammar"
-_TYPE_VOCAB = "vocab"
-
-_Span: TypeAlias = tuple[int, int, str, str]
-_GrammarSpan: TypeAlias = tuple[int, int, GrammarHit]
-_VocabSpan: TypeAlias = tuple[int, int, VocabHit]
+_Span: TypeAlias = tuple[int, int, str]
 
 
 class HighlightRenderer:
     """Renders Japanese text with JLPT-level color highlights using QTextCharFormat.
 
     Works directly with QTextDocument to ensure position alignment.
+
+    The input AnalysisResult must already have conflicts resolved via
+    AnalysisResult.resolve_conflicts() (typically called by get_display_analysis()).
 
     Attributes:
         JLPT_COLORS: Default mapping from JLPT level (1–5) to vocab/grammar hex colors.
@@ -40,8 +42,6 @@ class HighlightRenderer:
 
     def __init__(self, jlpt_colors: dict[int, dict[str, str]] | None = None) -> None:
         self._colors: dict[int, dict[str, str]] = jlpt_colors or dict(self.JLPT_COLORS)
-        self._cached_analysis: AnalysisResult | None = None
-        self._cached_spans: tuple[list[_GrammarSpan], list[_VocabSpan]] | None = None
 
     def update_colors(self, jlpt_colors: dict[int, dict[str, str]]) -> None:
         """Update the JLPT color mapping at runtime.
@@ -67,10 +67,16 @@ class HighlightRenderer:
         This method bypasses HTML entirely, ensuring that cursor positions
         align perfectly with VocabHit/GrammarHit start_pos/end_pos values.
 
+        IMPORTANT: The analysis must be conflict-resolved (via get_display_analysis())
+        before passing to this method. No vocab/grammar conflict resolution is performed here.
+
+        Note: For GrammarHit with matched_parts, only the keyword parts are highlighted,
+        not the filler text between them.
+
         Args:
             document: The QTextDocument to format.
             japanese_text: The raw Japanese string to render.
-            analysis: Pipeline analysis result containing vocab and grammar hits.
+            analysis: Conflict-resolved analysis result (from get_display_analysis()).
             user_level: The user's current JLPT level (1–5). Unused but kept for API parity.
         """
         # Set plain text first - this ensures position alignment
@@ -79,28 +85,26 @@ class HighlightRenderer:
         if not japanese_text:
             return
 
-        resolved_grammar_spans, resolved_vocab_spans = self._get_resolved_highlight_spans(analysis)
+        # Build spans for rendering
+        # For grammar with matched_parts, only highlight those parts (not filler)
+        grammar_spans: list[_Span] = []
+        for gh in analysis.grammar_hits:
+            parts = gh.matched_parts if gh.matched_parts else ((gh.start_pos, gh.end_pos),)
+            for part_start, part_end in parts:
+                grammar_spans.append((part_start, part_end, self._grammar_color(gh.jlpt_level)))
 
-        grammar_spans: list[_Span] = [
-            (start, end, self._grammar_color(hit.jlpt_level), _TYPE_GRAMMAR)
-            for start, end, hit in resolved_grammar_spans
-        ]
         vocab_spans: list[_Span] = [
-            (start, end, self._vocab_color(hit.jlpt_level), _TYPE_VOCAB)
-            for start, end, hit in resolved_vocab_spans
+            (vh.start_pos, vh.end_pos, self._vocab_color(vh.jlpt_level))
+            for vh in analysis.vocab_hits
         ]
 
-        def _sort_key(span: _Span) -> tuple[int, int]:
-            start, _end, _color, span_type = span
-            type_priority = 0 if span_type == _TYPE_GRAMMAR else 1
-            return (start, type_priority)
-
+        # Since resolve_conflicts() ensures no overlaps, sort by start position only
         all_spans = grammar_spans + vocab_spans
-        all_spans.sort(key=_sort_key)
+        all_spans.sort(key=lambda span: span[0])
 
         cursor = QTextCursor(document)
 
-        for start, end, color, _span_type in all_spans:
+        for start, end, color in all_spans:
             cursor.setPosition(start)
             cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
 
@@ -116,23 +120,32 @@ class HighlightRenderer:
     ) -> VocabHit | GrammarHit | None:
         """Return the highlight hit at a character position, grammar-first.
 
+        IMPORTANT: The analysis must be conflict-resolved (via get_display_analysis())
+        before passing to this method. No vocab/grammar conflict resolution is performed here.
+
+        Note: For GrammarHit with matched_parts, only positions within those parts
+        are considered as matching the grammar hit (filler positions return None or vocab).
+
         Args:
             position: Zero-based character index into the Japanese text.
-            analysis: Pipeline analysis result.
+            analysis: Conflict-resolved analysis result (from get_display_analysis()).
 
         Returns:
             The first ``GrammarHit`` whose range contains *position*, or the
             first ``VocabHit`` if no grammar hit matches, or ``None``.
         """
-        grammar_spans, vocab_spans = self._get_resolved_highlight_spans(analysis)
+        # Grammar first (higher priority for hover display)
+        # For matched_parts, only check keyword positions
+        for gh in analysis.grammar_hits:
+            parts = gh.matched_parts if gh.matched_parts else ((gh.start_pos, gh.end_pos),)
+            for part_start, part_end in parts:
+                if part_start <= position < part_end:
+                    return gh
 
-        for start, end, grammar_hit in grammar_spans:
-            if start <= position < end:
-                return grammar_hit
-
-        for start, end, vocab_hit in vocab_spans:
-            if start <= position < end:
-                return vocab_hit
+        # Then vocab
+        for vh in analysis.vocab_hits:
+            if vh.start_pos <= position < vh.end_pos:
+                return vh
 
         return None
 
@@ -147,128 +160,3 @@ class HighlightRenderer:
     def _vocab_color(self, jlpt_level: int) -> str:
         """Return the vocab hex color for a JLPT level, defaulting to N4."""
         return self._colors.get(jlpt_level, self._colors.get(4, self.JLPT_COLORS[4]))["vocab"]
-
-    def _resolve_highlight_spans(
-        self,
-        analysis: AnalysisResult,
-    ) -> tuple[list[_GrammarSpan], list[_VocabSpan]]:
-        sorted_vocab_hits = sorted(
-            analysis.vocab_hits,
-            key=lambda hit: (hit.start_pos, -hit.end_pos),
-        )
-
-        grammar_spans: list[_GrammarSpan] = []
-        dominant_single_grammar_spans: list[tuple[int, int]] = []
-
-        for gh in analysis.grammar_hits:
-            fragments = gh.matched_parts if gh.matched_parts else ((gh.start_pos, gh.end_pos),)
-
-            if len(fragments) == 1:
-                start, end = fragments[0]
-                if self._single_fragment_grammar_wins(start, end, sorted_vocab_hits):
-                    grammar_spans.append((start, end, gh))
-                    dominant_single_grammar_spans.append((start, end))
-                continue
-
-            if any(
-                self._overlaps_any_vocab(part_start, part_end, sorted_vocab_hits)
-                for part_start, part_end in fragments
-            ):
-                logger.debug(
-                    "Grammar rule %s suppressed because one or more fragments overlap vocab",
-                    gh.rule_id,
-                )
-                continue
-
-            for part_start, part_end in fragments:
-                grammar_spans.append((part_start, part_end, gh))
-
-        vocab_spans: list[_VocabSpan] = []
-        for vh in sorted_vocab_hits:
-            if self._is_fully_covered_by_grammar(
-                vh.start_pos, vh.end_pos, dominant_single_grammar_spans
-            ):
-                logger.debug(
-                    "Vocab span [%d,%d] suppressed by grammar coverage",
-                    vh.start_pos,
-                    vh.end_pos,
-                )
-                continue
-            vocab_spans.append((vh.start_pos, vh.end_pos, vh))
-
-        return grammar_spans, vocab_spans
-
-    def _get_resolved_highlight_spans(
-        self,
-        analysis: AnalysisResult,
-    ) -> tuple[list[_GrammarSpan], list[_VocabSpan]]:
-        if self._cached_analysis is analysis and self._cached_spans is not None:
-            return self._cached_spans
-
-        resolved_spans = self._resolve_highlight_spans(analysis)
-        self._cached_analysis = analysis
-        self._cached_spans = resolved_spans
-        return resolved_spans
-
-    @staticmethod
-    def _single_fragment_grammar_wins(
-        grammar_start: int,
-        grammar_end: int,
-        vocab_hits: list[VocabHit],
-    ) -> bool:
-        grammar_length = grammar_end - grammar_start
-
-        for vh in vocab_hits:
-            if vh.start_pos >= grammar_end:
-                break
-            if vh.end_pos <= grammar_start:
-                continue
-            if not HighlightRenderer._contains_span(
-                grammar_start,
-                grammar_end,
-                vh.start_pos,
-                vh.end_pos,
-            ):
-                continue
-
-            vocab_length = vh.end_pos - vh.start_pos
-            if vocab_length > grammar_length:
-                logger.debug(
-                    "Grammar span [%d,%d] suppressed by longer vocab span [%d,%d]",
-                    grammar_start,
-                    grammar_end,
-                    vh.start_pos,
-                    vh.end_pos,
-                )
-                return False
-
-        return True
-
-    @staticmethod
-    def _overlaps_any_vocab(start: int, end: int, vocab_hits: list[VocabHit]) -> bool:
-        for vh in vocab_hits:
-            if vh.start_pos >= end:
-                break
-            if start < vh.end_pos and vh.start_pos < end:
-                return True
-        return False
-
-    @staticmethod
-    def _contains_span(
-        outer_start: int,
-        outer_end: int,
-        inner_start: int,
-        inner_end: int,
-    ) -> bool:
-        return outer_start <= inner_start and inner_end <= outer_end
-
-    @staticmethod
-    def _is_fully_covered_by_grammar(
-        start: int,
-        end: int,
-        grammar_spans: list[tuple[int, int]],
-    ) -> bool:
-        for gs_start, gs_end in grammar_spans:
-            if gs_start <= start and end <= gs_end:
-                return True
-        return False

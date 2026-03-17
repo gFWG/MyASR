@@ -48,7 +48,7 @@ class SileroVAD:
                 threshold=threshold,
                 sampling_rate=sample_rate,
                 min_silence_duration_ms=min_silence_ms,
-                speech_pad_ms=300,
+                speech_pad_ms=0,  # Disabled; pre_buffer_ms handles audio padding
             )
         except Exception as exc:
             raise VADError(f"Failed to load Silero VAD model: {exc}") from exc

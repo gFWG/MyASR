@@ -80,9 +80,12 @@ class GrammarMatcher:
         Display-time filtering should use SentenceResult.get_display_analysis().
 
         Hits are post-processed by _resolve_overlaps():
-        - Hits shorter than _MIN_MATCH_LEN characters are filtered out.
-        - Overlapping hits are resolved greedily (earliest start wins; ties broken by
-          longest span, then lowest jlpt_level i.e. hardest grammar).
+        - Hits with effective_length < _MIN_MATCH_LEN are filtered out.
+          effective_length = sum of captured group lengths (matched_parts),
+          or full span if no capturing groups.
+        - Overlapping hits are resolved greedily (longest effective_length wins;
+          ties broken by earliest start, then earliest end, then hardest JLPT).
+        - Overlap detection uses matched_parts when available, otherwise full span.
         - Output is sorted by start_pos ascending.
 
         Args:
@@ -116,14 +119,19 @@ class GrammarMatcher:
         return self._resolve_overlaps(hits)
 
     def _resolve_overlaps(self, hits: list[GrammarHit]) -> list[GrammarHit]:
-        """Filter and resolve overlapping grammar hits.
+        """Filter and resolve overlapping grammar hits using matched_parts.
 
         Algorithm:
-        1. Filter hits shorter than _MIN_MATCH_LEN (handles zero-length too).
-        2. Sort by start_pos ASC, length DESC, jlpt_level ASC (earliest first, longest
-           for same start, hardest JLPT for remaining ties).
-        3. Greedy interval selection: keep a hit only if it doesn't overlap any
-           already-selected hit. Overlap is strict: start_a < end_b AND start_b < end_a.
+        1. Filter hits with effective_length < _MIN_MATCH_LEN.
+           effective_length = sum of captured group lengths (matched_parts),
+           or full span if no capturing groups.
+        2. Sort by effective_length DESC, start_pos ASC, end_pos ASC, jlpt_level ASC
+           (longest effective length first, earliest start, earliest end, hardest JLPT).
+        3. Greedy interval selection based on matched_parts overlap:
+           - For hits with matched_parts: check each part against all selected parts.
+           - For hits without matched_parts: use full span for overlap check.
+           - Any part overlaps → whole hit is suppressed.
+           - Overlap is strict: start_a < end_b AND start_b < end_a.
         4. Re-sort selected hits by start_pos ascending.
 
         Args:
@@ -132,16 +140,43 @@ class GrammarMatcher:
         Returns:
             Non-overlapping hits sorted by start_pos.
         """
-        valid = [h for h in hits if h.end_pos - h.start_pos >= _MIN_MATCH_LEN]
+
+        def effective_length(h: GrammarHit) -> int:
+            """Calculate length based only on capturing groups, not .* content."""
+            if h.matched_parts:
+                return max(sum(end - start for start, end in h.matched_parts), 0)
+            return max(h.end_pos - h.start_pos, 0)
+
+        def get_parts(h: GrammarHit) -> list[tuple[int, int]]:
+            """Get spans for overlap detection. Uses matched_parts if present."""
+            if h.matched_parts:
+                return list(h.matched_parts)
+            return [(h.start_pos, h.end_pos)]
+
+        def parts_overlap(
+            parts_a: list[tuple[int, int]], parts_b: list[tuple[int, int]]
+        ) -> bool:
+            """Check if any span in parts_a overlaps any span in parts_b."""
+            for start_a, end_a in parts_a:
+                for start_b, end_b in parts_b:
+                    if start_a < end_b and start_b < end_a:
+                        return True
+            return False
+
+        valid = [h for h in hits if effective_length(h) >= _MIN_MATCH_LEN]
         sorted_hits = sorted(
-            valid, key=lambda h: (h.start_pos, -(h.end_pos - h.start_pos), h.jlpt_level)
+            valid,
+            key=lambda h: (-effective_length(h), h.start_pos, h.end_pos, h.jlpt_level),
         )
-        selected: list[GrammarHit] = []
+
+        selected_parts: list[tuple[int, int]] = []
+        selected_hits: list[GrammarHit] = []
+
         for candidate in sorted_hits:
-            overlaps = any(
-                s.start_pos < candidate.end_pos and candidate.start_pos < s.end_pos
-                for s in selected
-            )
-            if not overlaps:
-                selected.append(candidate)
-        return sorted(selected, key=lambda h: h.start_pos)
+            candidate_parts = get_parts(candidate)
+            if parts_overlap(candidate_parts, selected_parts):
+                continue
+            selected_hits.append(candidate)
+            selected_parts.extend(candidate_parts)
+
+        return sorted(selected_hits, key=lambda h: h.start_pos)
