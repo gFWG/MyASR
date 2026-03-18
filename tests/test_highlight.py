@@ -245,7 +245,9 @@ def test_apply_to_document_grammar_suppresses_vocab(
     doc = qtextbrowser.document()
     vocab = [_make_vocab("食べ", 0, 2, level=3)]
     grammar = [_make_grammar("g1", "食べている", 0, 5, level=2)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    # Resolve conflicts (simulates get_display_analysis behavior)
+    analysis = raw_analysis.resolve_conflicts()
 
     renderer.apply_to_document(doc, "食べている", analysis, user_level=4)
 
@@ -448,7 +450,8 @@ def test_apply_to_document_multi_part_grammar_partial_highlight(
     # text: 'がXXなら' (6 chars), parts at (0,1) and (3,5)
     text = "がXXなら"
     grammar = [_make_grammar("g1", text, 0, 6, level=2, matched_parts=((0, 1), (3, 5)))]
-    analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=grammar)
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=[], grammar_hits=grammar)
+    analysis = raw_analysis.resolve_conflicts()
 
     renderer.apply_to_document(doc, text, analysis, user_level=4)
 
@@ -478,7 +481,8 @@ def test_vocab_not_suppressed_in_grammar_filler_gap(
     text = "がXXなら "  # 6 chars (trailing space for end boundary clarity)
     grammar = [_make_grammar("g1", "がXXなら", 0, 6, level=2, matched_parts=((0, 1), (3, 5)))]
     vocab = [_make_vocab("XX", 1, 3, level=4)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    analysis = raw_analysis.resolve_conflicts()
 
     renderer.apply_to_document(doc, text, analysis, user_level=4)
 
@@ -493,19 +497,83 @@ def test_vocab_not_suppressed_in_grammar_filler_gap(
 def test_vocab_suppressed_within_grammar_part(
     renderer: HighlightRenderer, qtextbrowser: QTextBrowser
 ) -> None:
-    """Vocab fully inside a keyword part is suppressed by grammar color."""
+    """Vocab fully inside a keyword part is suppressed by grammar color (only when vocab is shorter)."""
     doc = qtextbrowser.document()
-    # grammar: single part covering full range [0,3); vocab also [0,3)
+    # grammar: single part covering full range [0,3); vocab [1,2) is shorter
     text = "なら"
     grammar = [_make_grammar("g1", text, 0, 2, level=2, matched_parts=((0, 2),))]
-    vocab = [_make_vocab("なら", 0, 2, level=4)]
-    analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    vocab = [_make_vocab("な", 0, 1, level=4)]  # Shorter vocab, grammar wins
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    analysis = raw_analysis.resolve_conflicts()
 
     renderer.apply_to_document(doc, text, analysis, user_level=4)
 
     cursor = QTextCursor(doc)
     grammar_color = QColor("#F9A825")  # N2 grammar
 
-    # Position 1 (middle of matched part) → grammar color (vocab suppressed)
-    cursor.setPosition(2)
+    # Position 1 (middle of matched part) → grammar color (shorter vocab suppressed)
+    cursor.setPosition(1)
     assert cursor.charFormat().foreground().color().name() == grammar_color.name()
+
+
+def test_vocab_equal_length_wins_over_grammar(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """When vocab length equals grammar length, vocab wins (new rule)."""
+    doc = qtextbrowser.document()
+    # grammar: [0,2); vocab: [0,2) - equal length
+    text = "なら"
+    grammar = [_make_grammar("g1", text, 0, 2, level=2, matched_parts=((0, 2),))]
+    vocab = [_make_vocab("なら", 0, 2, level=4)]
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    analysis = raw_analysis.resolve_conflicts()
+
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    cursor = QTextCursor(doc)
+    vocab_color = QColor("#C8E6C9")  # N4 vocab
+
+    # Vocab wins because length >= grammar length
+    cursor.setPosition(1)
+    assert cursor.charFormat().foreground().color().name() == vocab_color.name()
+
+
+def test_vocab_partial_overlap_wins_over_grammar(
+    renderer: HighlightRenderer, qtextbrowser: QTextBrowser
+) -> None:
+    """When vocab partially overlaps grammar, vocab wins (new rule)."""
+    doc = qtextbrowser.document()
+    # grammar: [2,5); vocab: [3,6) - partial overlap (vocab extends beyond grammar)
+    text = "XX食べて"
+    grammar = [_make_grammar("g1", "食べて", 2, 5, level=2, matched_parts=((2, 5),))]
+    vocab = [_make_vocab("べて", 3, 5, level=4)]  # Same length but different position
+    raw_analysis = AnalysisResult(tokens=[], vocab_hits=vocab, grammar_hits=grammar)
+    analysis = raw_analysis.resolve_conflicts()
+
+    renderer.apply_to_document(doc, text, analysis, user_level=4)
+
+    cursor = QTextCursor(doc)
+    vocab_color = QColor("#C8E6C9")  # N4 vocab
+
+    # Vocab wins because it's fully contained but grammar can only win if vocab is shorter
+    # Here vocab length (2) < grammar length (3), but vocab partially overlaps
+    # Actually vocab is fully contained, so grammar should win since vocab is shorter
+    # Let me fix this test case to show partial overlap properly
+
+    # grammar: [2,5); vocab: [3,6) - vocab starts inside grammar, extends beyond
+    text2 = "XX食べてY"
+    grammar2 = [_make_grammar("g1", "食べて", 2, 5, level=2, matched_parts=((2, 5),))]
+    vocab2 = [_make_vocab("べてY", 3, 6, level=4)]  # Extends beyond grammar [3,6) vs [2,5)
+    raw_analysis2 = AnalysisResult(tokens=[], vocab_hits=vocab2, grammar_hits=grammar2)
+    analysis2 = raw_analysis2.resolve_conflicts()
+
+    doc2 = qtextbrowser.document()
+    doc2.clear()
+    renderer.apply_to_document(doc2, text2, analysis2, user_level=4)
+
+    cursor2 = QTextCursor(doc2)
+    # Vocab wins due to partial overlap (not fully contained)
+    cursor2.setPosition(4)
+    assert cursor2.charFormat().foreground().color().name() == vocab_color.name()
+    # Grammar should be suppressed, vocab should be returned at grammar position
+    assert isinstance(renderer.get_highlight_at_position(3, analysis2), VocabHit)

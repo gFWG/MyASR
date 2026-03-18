@@ -58,8 +58,10 @@ class AnalysisResult:
            - Vocab wins if length >= grammar length (including equal length)
            - Vocab wins if partially overlapping (not fully contained in grammar)
            - Grammar wins only if vocab is fully contained AND shorter than grammar
-        2. Multi-fragment grammar: If any fragment overlaps with vocab, the entire grammar is suppressed.
-        3. Vocab that is fully covered by a dominant single-fragment grammar is suppressed.
+        2. Multi-fragment grammar: Each fragment is checked independently using the
+           same rules as single-fragment grammar. If ALL fragments win, the grammar
+           is preserved. If ANY fragment loses, the entire grammar is suppressed.
+        3. Vocab that is fully covered by a dominant grammar fragment is suppressed.
 
         Returns:
             A new AnalysisResult with non-overlapping vocab_hits and grammar_hits.
@@ -71,7 +73,7 @@ class AnalysisResult:
         sorted_vocab = sorted(self.vocab_hits, key=lambda h: (h.start_pos, -h.end_pos))
 
         resolved_grammar: list[GrammarHit] = []
-        dominant_single_grammar_spans: list[tuple[int, int]] = []
+        dominant_grammar_spans: list[tuple[int, int]] = []
 
         # Process grammar hits
         for gh in self.grammar_hits:
@@ -81,20 +83,22 @@ class AnalysisResult:
                 start, end = fragments[0]
                 if self._single_fragment_grammar_wins(start, end, sorted_vocab):
                     resolved_grammar.append(gh)
-                    dominant_single_grammar_spans.append((start, end))
+                    dominant_grammar_spans.append((start, end))
                 continue
 
-            # Multi-fragment grammar: suppress if any fragment overlaps vocab
-            if any(self._overlaps_any_vocab(part_start, part_end, sorted_vocab)
-                   for part_start, part_end in fragments):
-                continue
-
-            resolved_grammar.append(gh)
+            # Multi-fragment grammar: all fragments must win for grammar to be preserved
+            all_fragments_win = all(
+                self._single_fragment_grammar_wins(part_start, part_end, sorted_vocab)
+                for part_start, part_end in fragments
+            )
+            if all_fragments_win:
+                resolved_grammar.append(gh)
+                dominant_grammar_spans.extend(fragments)
 
         # Process vocab hits
         resolved_vocab: list[VocabHit] = []
         for vh in sorted_vocab:
-            if self._is_fully_covered_by_grammar(vh.start_pos, vh.end_pos, dominant_single_grammar_spans):
+            if self._is_fully_covered_by_grammar(vh.start_pos, vh.end_pos, dominant_grammar_spans):
                 continue
             resolved_vocab.append(vh)
 
