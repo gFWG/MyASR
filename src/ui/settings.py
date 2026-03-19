@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -41,6 +44,9 @@ from src.exceptions import ModelResourceError
 from src.ui.widgets import JlptLevelSelector, SliderDoubleSpinBox, SliderSpinBox
 
 logger = logging.getLogger(__name__)
+
+_VOCABULARY_RESOURCE_PATH = Path("data/vocabulary.csv")
+_GRAMMAR_RESOURCE_PATH = Path("data/grammar.json")
 
 _MESSAGE_BOX_STYLESHEET = (
     "QMessageBox {"
@@ -171,7 +177,7 @@ class SettingsDialog(QDialog):
         logger.debug("SettingsDialog initialized")
 
     def select_tab(self, index: int) -> None:
-        """Switch to the tab at *index* (0=General, 1=Appearance, 2=Resource)."""
+        """Switch to the tab at *index* (0=General, 1=Appearance, 2=Resources)."""
         if 0 <= index < self._tabs.count():
             self._tabs.setCurrentIndex(index)
 
@@ -320,6 +326,23 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(widget)
         layout.setSpacing(12)
 
+        analysis_desc = QLabel("Manage vocabulary and grammar files used for JLPT analysis.")
+        analysis_desc.setWordWrap(True)
+        analysis_desc.setStyleSheet("color: palette(mid);")
+        layout.addWidget(analysis_desc)
+
+        analysis_row = QHBoxLayout()
+        self._replace_vocab_btn = QPushButton("Replace Vocabulary (CSV)")
+        self._replace_grammar_btn = QPushButton("Replace Grammar (JSON)")
+        self._replace_vocab_btn.clicked.connect(self._on_replace_vocab)
+        self._replace_grammar_btn.clicked.connect(self._on_replace_grammar)
+        analysis_row.addWidget(self._replace_vocab_btn)
+        analysis_row.addWidget(self._replace_grammar_btn)
+        analysis_row.addStretch()
+        layout.addLayout(analysis_row)
+
+        layout.addSpacing(12)
+
         description = QLabel(
             "Manage the local Qwen ASR files used for startup, downloads, and cleanup. "
             "Leave the path blank to use MyASR's default model directory."
@@ -338,7 +361,7 @@ class SettingsDialog(QDialog):
         model_row.addWidget(self._asr_model_combo, 1)
         layout.addLayout(model_row)
 
-        self._restart_label = QLabel("Restart required to apply ASR resource changes.")
+        self._restart_label = QLabel("Restart required to apply resource changes.")
         self._restart_label.setStyleSheet("color: #D32F2F; font-weight: 600;")
         self._restart_label.hide()
         layout.addWidget(self._restart_label)
@@ -390,7 +413,7 @@ class SettingsDialog(QDialog):
         self._resource_tab = widget
         self._asr_model_combo.currentIndexChanged.connect(self._on_resource_inputs_changed)
         self._model_path_edit.textChanged.connect(self._on_resource_inputs_changed)
-        self._tabs.addTab(widget, "Resource")
+        self._tabs.addTab(widget, "Resources")
 
     def _on_resource_inputs_changed(self, _value: object | None = None) -> None:
         self._update_resource_path_placeholder()
@@ -443,6 +466,8 @@ class SettingsDialog(QDialog):
         )
 
     def _set_resource_controls_enabled(self, enabled: bool) -> None:
+        self._replace_vocab_btn.setEnabled(enabled)
+        self._replace_grammar_btn.setEnabled(enabled)
         self._asr_model_combo.setEnabled(enabled)
         self._model_path_edit.setEnabled(enabled)
         self._select_path_btn.setEnabled(enabled)
@@ -711,6 +736,82 @@ class SettingsDialog(QDialog):
             target_directory=self._current_target_directory(),
             custom_path_selected=bool(self._current_custom_model_path()),
         )
+
+    def _on_replace_vocab(self) -> None:
+        from src.analysis.jlpt_vocab import JLPTVocabLookup  # noqa: PLC0415
+
+        self._replace_analysis_resource(
+            dialog_title="Select Vocabulary CSV",
+            dialog_filter="CSV Files (*.csv)",
+            target_path=_VOCABULARY_RESOURCE_PATH,
+            resource_label="vocabulary list",
+            validate_resource=lambda file_path: JLPTVocabLookup(file_path),
+        )
+
+    def _on_replace_grammar(self) -> None:
+        from src.analysis.grammar import GrammarMatcher  # noqa: PLC0415
+
+        self._replace_analysis_resource(
+            dialog_title="Select Grammar JSON",
+            dialog_filter="JSON Files (*.json)",
+            target_path=_GRAMMAR_RESOURCE_PATH,
+            resource_label="grammar rules",
+            validate_resource=lambda file_path: GrammarMatcher(file_path),
+        )
+
+    def _replace_analysis_resource(
+        self,
+        *,
+        dialog_title: str,
+        dialog_filter: str,
+        target_path: Path,
+        resource_label: str,
+        validate_resource: Callable[[str], object],
+    ) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            dialog_title,
+            str(target_path.parent.resolve(strict=False)),
+            dialog_filter,
+        )
+        if not file_path:
+            return
+
+        selected_path = Path(file_path)
+        try:
+            validate_resource(str(selected_path))
+            self._atomic_replace_file(selected_path, target_path)
+        except Exception as exc:
+            self._append_status(
+                f"Failed to replace {resource_label} from {selected_path}: {exc}",
+                is_error=True,
+            )
+            self._show_resource_message(
+                title="Replace Failed",
+                text=f"MyASR could not replace the {resource_label}.",
+                informative_text=str(exc),
+                icon=QMessageBox.Icon.Warning,
+            )
+            return
+
+        self._model_status_text.clear()
+        self._append_status(f"Replaced {resource_label} from {selected_path}.")
+        self._append_status(f"Managed file updated: {target_path}")
+        self._resource_state_requires_restart = True
+        self._update_restart_label()
+
+    def _atomic_replace_file(self, source: Path, target: Path) -> None:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, temp_path = tempfile.mkstemp(dir=target.parent, prefix=target.name + ".tmp")
+        os.close(fd)
+        temp_file = Path(temp_path)
+        try:
+            shutil.copy2(source, temp_file)
+            os.replace(temp_file, target)
+        except Exception:
+            if temp_file.exists():
+                temp_file.unlink()
+            raise
 
     def _append_status(self, text: str, is_error: bool = False) -> None:
         """Append text to the status area with optional red highlighting for errors."""
