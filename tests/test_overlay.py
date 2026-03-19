@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
+from PySide6.QtGui import QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import QApplication
 
 from src.config import AppConfig
@@ -437,14 +439,138 @@ def test_spacing_distribution_browse_mode_is_balanced(overlay: OverlayWindow) ->
 def test_sync_manual_spacing_from_height_uses_base_plus_delta(overlay: OverlayWindow) -> None:
     overlay._preview_browser.setVisible(False)
     overlay.resize(overlay.width(), 180)
+    metrics = replace(overlay._height_metrics(), base_auto_height=130)
 
-    with patch.object(overlay, "_base_auto_height", return_value=130):
+    with patch.object(overlay, "_height_metrics", return_value=metrics):
         overlay._sync_manual_spacing_from_current_height()
 
     assert overlay._manual_spacing_delta == 50
 
 
-def test_spacing_distribution_allows_negative_compaction_single_mode(overlay: OverlayWindow) -> None:
+def test_adjust_height_to_content_preserves_negative_manual_spacing(
+    overlay: OverlayWindow,
+) -> None:
+    overlay._preview_browser.setVisible(False)
+    overlay._manual_spacing_delta = -4
+
+    metrics = overlay._height_metrics()
+
+    with patch.object(overlay, "resize") as mock_resize:
+        overlay._adjust_height_to_content()
+
+    mock_resize.assert_called_once_with(overlay.width(), metrics.base_auto_height - 4)
+
+
+def test_request_height_adjustment_coalesces_pending_adjustments(
+    overlay: OverlayWindow,
+    qapp: QApplication,
+) -> None:
+    calls: list[int] = []
+    overlay._height_adjust_timer.timeout.disconnect()
+    overlay._height_adjust_timer.timeout.connect(lambda: calls.append(1))
+
+    overlay._request_height_adjustment()
+    overlay._request_height_adjustment()
+    overlay._request_height_adjustment()
+    qapp.processEvents()
+
+    assert calls == [1]
+
+
+def test_on_sentence_ready_live_mode_requests_one_height_adjustment(
+    overlay: OverlayWindow,
+) -> None:
+    result = _make_result()
+
+    with patch.object(overlay, "_request_height_adjustment") as mock_request:
+        with patch(
+            "src.ui.overlay.HighlightRenderer.apply_to_document",
+            return_value=None,
+        ):
+            overlay.on_sentence_ready(result)
+
+    mock_request.assert_called_once()
+
+
+def test_on_config_changed_browse_mode_requests_one_height_adjustment(
+    overlay: OverlayWindow,
+) -> None:
+    result = _make_result()
+    overlay._current_result = result
+    overlay._history.add(result)
+    overlay._preview_browser.setVisible(True)
+
+    with patch.object(overlay, "_request_height_adjustment") as mock_request:
+        with patch(
+            "src.ui.overlay.HighlightRenderer.apply_to_document",
+            return_value=None,
+        ):
+            overlay.on_config_changed(AppConfig())
+
+    mock_request.assert_called_once()
+
+
+def test_resize_event_debounces_size_saves(overlay: OverlayWindow) -> None:
+    calls: list[int] = []
+    overlay._save_size_timer.timeout.disconnect()
+    overlay._save_size_timer.timeout.connect(lambda: calls.append(1))
+
+    resize_event = QResizeEvent(overlay.size(), overlay.size())
+    overlay.resizeEvent(resize_event)
+    overlay.resizeEvent(resize_event)
+    overlay.resizeEvent(resize_event)
+
+    assert overlay._save_size_timer.isActive()
+    assert calls == []
+
+
+def test_horizontal_resize_release_saves_after_height_adjustment(overlay: OverlayWindow) -> None:
+    overlay._resize_edge = "r"
+    overlay._resize_origin = QPoint(overlay.x(), overlay.y())
+    overlay._resize_geo = overlay.geometry()
+    overlay._is_manual_resize = True
+    overlay._save_after_height_adjust = False
+
+    release_event = QMouseEvent(
+        QEvent.Type.MouseButtonRelease,
+        QPoint(overlay.width() - 1, overlay.height() // 2),
+        QPoint(overlay.width() - 1, overlay.height() // 2),
+        QPoint(overlay.width() - 1, overlay.height() // 2),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+
+    with patch.object(overlay, "_sync_manual_spacing_from_current_height") as mock_sync:
+        with patch.object(overlay, "_request_height_adjustment") as mock_request:
+            with patch.object(overlay, "_save_size") as mock_save:
+                overlay.mouseReleaseEvent(release_event)
+
+    mock_sync.assert_called_once()
+    mock_request.assert_called_once()
+    mock_save.assert_not_called()
+    assert overlay._save_after_height_adjust is True
+
+
+def test_adjust_height_to_content_flushes_pending_save_after_resize(
+    overlay: OverlayWindow,
+) -> None:
+    overlay._save_after_height_adjust = True
+    overlay._save_size_timer.start()
+    metrics = overlay._height_metrics()
+
+    with patch.object(overlay, "_height_metrics", return_value=metrics):
+        with patch.object(overlay, "_save_size") as mock_save:
+            overlay._adjust_height_to_content()
+
+    mock_save.assert_called_once()
+    assert overlay._save_after_height_adjust is False
+    assert not overlay._save_size_timer.isActive()
+
+
+def test_spacing_distribution_allows_negative_compaction_single_mode(
+    overlay: OverlayWindow,
+) -> None:
     overlay._preview_browser.setVisible(False)
     overlay._manual_spacing_delta = -100
 

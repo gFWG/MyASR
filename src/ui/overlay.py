@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
+from dataclasses import dataclass
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
@@ -104,9 +105,7 @@ def _make_browser(font_size: int) -> QTextBrowser:
     return browser
 
 
-def _set_centered_plain_text(
-    browser: QTextBrowser, text: str, color: str = "#EEEEEE"
-) -> None:
+def _set_centered_plain_text(browser: QTextBrowser, text: str, color: str = "#EEEEEE") -> None:
     """Set plain text with center alignment in a QTextBrowser.
 
     Args:
@@ -145,6 +144,17 @@ def _make_arrow_button(text: str) -> QPushButton:
     btn.setStyleSheet(_ARROW_BTN_STYLE.format(opacity=30, text_opacity=180))
     btn.setEnabled(False)
     return btn
+
+
+@dataclass(frozen=True, slots=True)
+class _OverlayHeightMetrics:
+    base_top: int
+    base_middle: int
+    base_bottom: int
+    scaled_outer_margins: int
+    base_auto_height: int
+    min_spacing_delta: int
+    max_spacing_delta: int
 
 
 class OverlayWindow(QWidget):
@@ -202,6 +212,16 @@ class OverlayWindow(QWidget):
         self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
         self._history = HistoryManager(config.max_history)
         self._manual_spacing_delta = config.overlay_manual_spacing_delta
+
+        self._height_adjust_timer = QTimer(self)
+        self._height_adjust_timer.setSingleShot(True)
+        self._height_adjust_timer.timeout.connect(self._adjust_height_to_content)
+
+        self._save_size_timer = QTimer(self)
+        self._save_size_timer.setSingleShot(True)
+        self._save_size_timer.setInterval(500)
+        self._save_size_timer.timeout.connect(self._save_size)
+        self._save_after_height_adjust = False
 
         self._outer_layout = QVBoxLayout(self)
         self._outer_layout.setContentsMargins(
@@ -298,6 +318,7 @@ class OverlayWindow(QWidget):
             if self._history.latest is not None:
                 self._render_in_browser(self._preview_browser, self._history.latest)
             self._preview_browser.setVisible(True)
+            self._request_height_adjustment()
         else:
             # LIVE mode - show latest in main browser
             if self._history.current is not None:
@@ -306,7 +327,6 @@ class OverlayWindow(QWidget):
             self.dedup_reset.emit()
 
         self._update_arrow_visibility()
-        QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug(
             "on_sentence_ready: text=%s is_browsing=%s",
             result.japanese_text[:20] if result.japanese_text else "",
@@ -347,11 +367,15 @@ class OverlayWindow(QWidget):
         block_fmt.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cursor.setBlockFormat(block_fmt)
 
-    def _render_result(self, result: SentenceResult) -> None:
+    def _render_result(
+        self,
+        result: SentenceResult,
+        schedule_height_adjustment: bool = True,
+    ) -> None:
         """Render a result into the active browser and schedule height adjustment."""
         self._render_in_browser(self._jp_browser, result)
-        # Defer height adjustment to allow document layout
-        QTimer.singleShot(0, self._adjust_height_to_content)
+        if schedule_height_adjustment:
+            self._request_height_adjustment()
 
     def on_asr_ready(self, result: ASRResult) -> None:
         """Show ASR text immediately.
@@ -363,7 +387,7 @@ class OverlayWindow(QWidget):
             _set_centered_plain_text(self._preview_browser, result.text)
         else:
             _set_centered_plain_text(self._jp_browser, result.text)
-        QTimer.singleShot(0, self._adjust_height_to_content)
+        self._request_height_adjustment()
         logger.debug("on_asr_ready: segment_id=%s", result.segment_id)
 
     def on_config_changed(self, config: AppConfig) -> None:
@@ -393,7 +417,10 @@ class OverlayWindow(QWidget):
 
         # Re-render current sentence in main browser
         if self._current_result is not None:
-            self._render_result(self._current_result)
+            self._render_result(
+                self._current_result,
+                schedule_height_adjustment=not self._preview_browser.isVisible(),
+            )
 
         # Re-render latest sentence in preview browser (if in BROWSE mode)
         # This ensures config changes affect both browsers immediately
@@ -401,11 +428,10 @@ class OverlayWindow(QWidget):
             self._render_in_browser(self._preview_browser, self._history.latest)
 
         # Adjust height if no content
-        if self._current_result is None:
-            QTimer.singleShot(0, self._adjust_height_to_content)
+        if self._current_result is None or self._preview_browser.isVisible():
+            self._request_height_adjustment()
 
         self._update_arrow_visibility()
-        self._apply_spacing_distribution()
 
         logger.debug(
             "on_config_changed: opacity=%.2f user_level=%d jp_font=%d vocab=%s grammar=%s"
@@ -425,7 +451,7 @@ class OverlayWindow(QWidget):
             text: Status string to display in the JP browser.
         """
         _set_centered_plain_text(self._jp_browser, text)
-        QTimer.singleShot(0, self._adjust_height_to_content)
+        self._request_height_adjustment()
         logger.debug("set_status: %s", text)
 
     def _prev_sentence(self) -> None:
@@ -473,25 +499,80 @@ class OverlayWindow(QWidget):
         self._prev_btn.setEnabled(self._history.can_go_prev)
         self._next_btn.setEnabled(self._history.can_go_next)
 
-    def _spacing_distribution(self) -> tuple[int, int, int]:
-        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
+    def _request_height_adjustment(self) -> None:
+        self._height_adjust_timer.start(0)
+
+    def _request_size_save(self) -> None:
+        self._save_size_timer.start()
+
+    def _font_scale(self) -> float:
+        return max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
+
+    def _height_metrics(self) -> _OverlayHeightMetrics:
+        preview_visible = self._preview_browser.isVisible()
+        font_scale = self._font_scale()
         base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
+        base_middle_gap = (
+            max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
+            if preview_visible
+            else 0
+        )
+        scaled_outer_margins = max(_MIN_OUTER_MARGINS, int(round(_OUTER_MARGINS * font_scale)))
 
-        if self._preview_browser.isVisible():
-            base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
-            base_top = base_outer_gap
-            base_middle = base_middle_gap
-            base_bottom = base_outer_gap
-            segments = 3
-        else:
-            base_top = base_outer_gap
-            base_middle = 0
-            base_bottom = base_outer_gap
-            segments = 2
+        jp_height = self._content_height(self._jp_browser)
+        preview_height = self._content_height(self._preview_browser) if preview_visible else 0.0
+        spacing_height = (2 * base_outer_gap) + base_middle_gap
+        content_padding = _CONTENT_SAFETY_PADDING * (2 if preview_visible else 1)
+        total_height = (
+            jp_height
+            + preview_height
+            + (2 * scaled_outer_margins)
+            + spacing_height
+            + content_padding
+        )
+        base_auto_height = int(math.ceil(total_height))
+        min_spacing_delta, max_spacing_delta = self._spacing_delta_bounds(
+            base_outer_gap,
+            base_middle_gap,
+            base_outer_gap,
+            base_auto_height=base_auto_height,
+        )
 
-        min_delta, max_delta = self._spacing_delta_bounds(base_top, base_middle, base_bottom)
-        clamped_delta = max(min_delta, min(max_delta, self._manual_spacing_delta))
-        self._manual_spacing_delta = clamped_delta
+        return _OverlayHeightMetrics(
+            base_top=base_outer_gap,
+            base_middle=base_middle_gap,
+            base_bottom=base_outer_gap,
+            scaled_outer_margins=scaled_outer_margins,
+            base_auto_height=base_auto_height,
+            min_spacing_delta=min_spacing_delta,
+            max_spacing_delta=max_spacing_delta,
+        )
+
+    def _clamped_manual_spacing_delta(
+        self,
+        metrics: _OverlayHeightMetrics | None = None,
+        spacing_delta: int | None = None,
+    ) -> int:
+        if metrics is None:
+            metrics = self._height_metrics()
+        delta = self._manual_spacing_delta if spacing_delta is None else spacing_delta
+        return max(metrics.min_spacing_delta, min(metrics.max_spacing_delta, delta))
+
+    def _spacing_distribution(
+        self,
+        metrics: _OverlayHeightMetrics | None = None,
+        spacing_delta: int | None = None,
+    ) -> tuple[int, int, int]:
+        if metrics is None:
+            metrics = self._height_metrics()
+
+        clamped_delta = self._clamped_manual_spacing_delta(
+            metrics=metrics, spacing_delta=spacing_delta
+        )
+        base_top = metrics.base_top
+        base_middle = metrics.base_middle
+        base_bottom = metrics.base_bottom
+        segments = 3 if metrics.base_middle > 0 else 2
 
         if clamped_delta >= 0:
             extra_per_segment, remainder = divmod(clamped_delta, segments)
@@ -514,41 +595,53 @@ class OverlayWindow(QWidget):
 
         return top, middle, bottom
 
-    def _spacing_delta_bounds(self, base_top: int, base_middle: int, base_bottom: int) -> tuple[int, int]:
+    def _spacing_delta_bounds(
+        self,
+        base_top: int,
+        base_middle: int,
+        base_bottom: int,
+        base_auto_height: int | None = None,
+    ) -> tuple[int, int]:
         base_total = base_top + base_middle + base_bottom
-        min_total = (
-            (_MIN_OUTER_GAP * 2) + (_MIN_MIDDLE_GAP if self._preview_browser.isVisible() else 0)
+        min_total = (_MIN_OUTER_GAP * 2) + (
+            _MIN_MIDDLE_GAP if self._preview_browser.isVisible() else 0
         )
         min_delta = min_total - base_total
-        max_delta = max(0, self.maximumHeight() - self._base_auto_height())
+        if base_auto_height is None:
+            base_auto_height = self._base_auto_height()
+        max_delta = max(0, self.maximumHeight() - base_auto_height)
         return min_delta, max_delta
 
-    def _dynamic_min_height(self) -> int:
-        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
-        base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
-        base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
-        base_top = base_outer_gap
-        base_bottom = base_outer_gap
-        base_middle = base_middle_gap if self._preview_browser.isVisible() else 0
+    def _dynamic_min_height(self, metrics: _OverlayHeightMetrics | None = None) -> int:
+        if metrics is None:
+            metrics = self._height_metrics()
+        return int(math.ceil(metrics.base_auto_height + metrics.min_spacing_delta))
 
-        min_delta, _ = self._spacing_delta_bounds(base_top, base_middle, base_bottom)
-        return int(math.ceil(self._base_auto_height() + min_delta))
+    def _apply_spacing_distribution(
+        self,
+        top: int | None = None,
+        middle: int | None = None,
+        bottom: int | None = None,
+        metrics: _OverlayHeightMetrics | None = None,
+    ) -> None:
+        if metrics is None:
+            metrics = self._height_metrics()
+        if top is None or middle is None or bottom is None:
+            top, middle, bottom = self._spacing_distribution(metrics=metrics)
 
-    def _apply_spacing_distribution(self) -> None:
-        top, middle, bottom = self._spacing_distribution()
-        scaled_outer_margins = max(
-            _MIN_OUTER_MARGINS,
-            int(round(_OUTER_MARGINS * max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0))),
-        )
         self._outer_layout.setContentsMargins(
-            scaled_outer_margins,
-            scaled_outer_margins,
-            scaled_outer_margins,
-            scaled_outer_margins,
+            metrics.scaled_outer_margins,
+            metrics.scaled_outer_margins,
+            metrics.scaled_outer_margins,
+            metrics.scaled_outer_margins,
         )
         self._top_spacer.changeSize(0, top, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        self._middle_spacer.changeSize(0, middle, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        self._bottom_spacer.changeSize(0, bottom, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self._middle_spacer.changeSize(
+            0, middle, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
+        )
+        self._bottom_spacer.changeSize(
+            0, bottom, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed
+        )
 
         layout = self.layout()
         if layout is not None:
@@ -561,27 +654,22 @@ class OverlayWindow(QWidget):
         return doc.size().height()
 
     def _base_auto_height(self) -> int:
-        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
-        base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
-        base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
-        scaled_outer_margins = max(_MIN_OUTER_MARGINS, int(round(_OUTER_MARGINS * font_scale)))
+        return self._height_metrics().base_auto_height
 
-        jp_height = self._content_height(self._jp_browser)
-        preview_height = self._content_height(self._preview_browser) if self._preview_browser.isVisible() else 0.0
-        spacing_height = (2 * base_outer_gap) + (base_middle_gap if self._preview_browser.isVisible() else 0)
-        content_padding = _CONTENT_SAFETY_PADDING * (2 if self._preview_browser.isVisible() else 1)
-        total_height = jp_height + preview_height + (2 * scaled_outer_margins) + spacing_height + content_padding
-        return int(math.ceil(total_height))
-
-    def _clamp_height(self, height: int) -> int:
-        min_height = max(self.minimumHeight(), _MIN_WINDOW_HEIGHT, self._dynamic_min_height())
+    def _clamp_height(self, height: int, dynamic_min_height: int | None = None) -> int:
+        if dynamic_min_height is None:
+            dynamic_min_height = self._dynamic_min_height()
+        min_height = max(self.minimumHeight(), _MIN_WINDOW_HEIGHT, dynamic_min_height)
         return max(min_height, min(self.maximumHeight(), height))
 
     def _sync_manual_spacing_from_current_height(self) -> None:
-        base_height = self._base_auto_height()
-        self._manual_spacing_delta = self.height() - base_height
-        self._spacing_distribution()
-        self._apply_spacing_distribution()
+        metrics = self._height_metrics()
+        self._manual_spacing_delta = self.height() - metrics.base_auto_height
+        top, middle, bottom = self._spacing_distribution(
+            metrics=metrics,
+            spacing_delta=self._manual_spacing_delta,
+        )
+        self._apply_spacing_distribution(top=top, middle=middle, bottom=bottom, metrics=metrics)
 
     def _adjust_height_to_content(self) -> None:
         """Resize overlay height to fit text content.
@@ -590,13 +678,27 @@ class OverlayWindow(QWidget):
         the window while respecting minimum and maximum height constraints.
         When in BROWSE mode (both browsers visible) the heights are summed.
         """
-        self._apply_spacing_distribution()
-        total_height = self._base_auto_height() + max(0, self._manual_spacing_delta)
-        new_height = self._clamp_height(total_height)
+        metrics = self._height_metrics()
+        effective_spacing_delta = self._clamped_manual_spacing_delta(metrics=metrics)
+        top, middle, bottom = self._spacing_distribution(
+            metrics=metrics,
+            spacing_delta=effective_spacing_delta,
+        )
+        self._apply_spacing_distribution(top=top, middle=middle, bottom=bottom, metrics=metrics)
+        total_height = metrics.base_auto_height + effective_spacing_delta
+        new_height = self._clamp_height(
+            total_height,
+            dynamic_min_height=self._dynamic_min_height(metrics=metrics),
+        )
 
         # Only resize if height differs significantly (avoid jitter)
         if abs(self.height() - new_height) > 2:
             self.resize(self.width(), new_height)
+
+        if self._save_after_height_adjust:
+            self._save_after_height_adjust = False
+            self._save_size_timer.stop()
+            self._save_size()
 
     def _handle_hover_at_viewport_pos(
         self,
@@ -702,19 +804,21 @@ class OverlayWindow(QWidget):
         dy = global_pos.y() - self._resize_origin.y()
         geo = QRect(self._resize_geo)
         edge = self._resize_edge
-        min_w, min_h = self.minimumWidth(), self._dynamic_min_height()
+        min_w = self.minimumWidth()
         max_w, max_h = self.maximumWidth(), self.maximumHeight()
 
         if "r" in edge:
             new_w = max(min_w, min(max_w, geo.width() + dx))
             geo.setWidth(new_w)
         if "b" in edge:
+            min_h = self._dynamic_min_height()
             new_h = max(min_h, min(max_h, geo.height() + dy))
             geo.setHeight(new_h)
         if "l" in edge:
             new_w = max(min_w, min(max_w, geo.width() - dx))
             geo.setLeft(geo.right() - new_w + 1)
         if "t" in edge:
+            min_h = self._dynamic_min_height()
             new_h = max(min_h, min(max_h, geo.height() - dy))
             geo.setTop(geo.bottom() - new_h + 1)
 
@@ -730,8 +834,8 @@ class OverlayWindow(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         if not self._is_manual_resize and event.oldSize().width() != event.size().width():
-            QTimer.singleShot(0, self._adjust_height_to_content)
-        QTimer.singleShot(500, self._save_size)
+            self._request_height_adjustment()
+        self._request_size_save()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
@@ -764,7 +868,8 @@ class OverlayWindow(QWidget):
             if had_resize:
                 self._sync_manual_spacing_from_current_height()
                 if "l" in resize_edge or "r" in resize_edge:
-                    QTimer.singleShot(0, self._adjust_height_to_content)
+                    self._save_after_height_adjust = True
+                    self._request_height_adjustment()
 
             self._drag_pos = None
             self._resize_edge = ""
@@ -773,7 +878,9 @@ class OverlayWindow(QWidget):
             self._is_manual_resize = False
 
             if had_resize:
-                self._save_size()
+                if not self._save_after_height_adjust:
+                    self._save_size_timer.stop()
+                    self._save_size()
         super().mouseReleaseEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
