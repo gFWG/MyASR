@@ -62,6 +62,7 @@ def test_config_new_fields_have_defaults() -> None:
     assert c.overlay_opacity == 0.78
     assert c.overlay_width == 800
     assert c.overlay_height == 120
+    assert c.overlay_manual_spacing_delta == 0
     assert c.overlay_font_size_jp == 16
     assert c.enable_vocab_highlight is True
     assert c.enable_grammar_highlight is True
@@ -90,9 +91,11 @@ def test_save_load_roundtrip_new_fields(tmp_path: Path) -> None:
     config = AppConfig(
         asr_model="Qwen/Qwen3-ASR-1.7B",
         asr_model_local_path=str(tmp_path / "custom-model"),
+        overlay_manual_spacing_delta=24,
     )
     path = str(tmp_path / "config.json")
     save_config(config, path)
     loaded = load_config(path)
     assert loaded.asr_model == "Qwen/Qwen3-ASR-1.7B"
     assert loaded.asr_model_local_path == str(tmp_path / "custom-model")
+    assert loaded.overlay_manual_spacing_delta == 24

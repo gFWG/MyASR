@@ -781,6 +781,10 @@ class SettingsDialog(QDialog):
         logger.debug("SettingsDialog: widgets populated from config")
 
     def _collect_config(self) -> AppConfig:
+        runtime_overlay_width = self._runtime_config.overlay_width
+        runtime_overlay_height = self._runtime_config.overlay_height
+        runtime_spacing_delta = self._runtime_config.overlay_manual_spacing_delta
+
         return AppConfig(
             user_jlpt_level=self._jlpt_level.value(),
             vad_threshold=self._vad_threshold.value(),
@@ -795,8 +799,9 @@ class SettingsDialog(QDialog):
             asr_model=self._current_model_repo_id(),
             asr_model_local_path=self._current_custom_model_path(),
             sample_rate=self._config.sample_rate,
-            overlay_width=self._config.overlay_width,
-            overlay_height=self._config.overlay_height,
+            overlay_width=runtime_overlay_width,
+            overlay_height=runtime_overlay_height,
+            overlay_manual_spacing_delta=runtime_spacing_delta,
             jlpt_colors={
                 key: btn.property("hex_color") or DEFAULT_JLPT_COLORS.get(key, "#FFFFFF")
                 for key, btn in self._jlpt_color_buttons.items()

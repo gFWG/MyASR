@@ -7,6 +7,7 @@ sentence history navigation, and hover detection for vocabulary/grammar tooltips
 from __future__ import annotations
 
 import logging
+import math
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
@@ -26,6 +27,8 @@ from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QPushButton,
+    QSizePolicy,
+    QSpacerItem,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -40,11 +43,19 @@ from src.ui.menu_factory import create_context_menu
 
 logger = logging.getLogger(__name__)
 
-_JP_FONT_SIZE = 16
 _BG_COLOR = QColor(30, 30, 30, 200)
 _CORNER_RADIUS = 12
 _RESIZE_MARGIN = 8
 _ARROW_BTN_WIDTH = 28
+_BASE_OUTER_GAP = 6
+_BASE_MIDDLE_GAP = 6
+_OUTER_MARGINS = 12
+_MIN_OUTER_GAP = 2
+_MIN_MIDDLE_GAP = 2
+_MIN_OUTER_MARGINS = 6
+_MIN_WINDOW_HEIGHT = 56
+_DOC_MARGIN = 1.0
+_CONTENT_SAFETY_PADDING = 2
 
 _FONT_FAMILIES = ["Segoe UI", "Yu Gothic UI", "Noto Sans CJK JP", "sans-serif"]
 
@@ -81,6 +92,7 @@ def _make_browser(font_size: int) -> QTextBrowser:
     browser = QTextBrowser()
     browser.setReadOnly(True)
     browser.setFont(_make_font(font_size))
+    browser.document().setDocumentMargin(_DOC_MARGIN)
     browser.setFrameShape(QTextBrowser.Shape.NoFrame)
     browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -180,7 +192,7 @@ class OverlayWindow(QWidget):
         self.resize(config.overlay_width, config.overlay_height)
 
         screen_width = QApplication.primaryScreen().geometry().width()
-        self.setMinimumSize(400, 80)
+        self.setMinimumSize(400, _MIN_WINDOW_HEIGHT)
         self.setMaximumSize(screen_width, 400)
 
         self._center_on_screen()
@@ -189,18 +201,37 @@ class OverlayWindow(QWidget):
         self._current_result: SentenceResult | None = None
         self._renderer = HighlightRenderer(jlpt_colors_to_renderer_format(config.jlpt_colors))
         self._history = HistoryManager(config.max_history)
+        self._manual_spacing_delta = config.overlay_manual_spacing_delta
 
-        outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(8, 8, 8, 8)
-        outer_layout.setSpacing(2)
+        self._outer_layout = QVBoxLayout(self)
+        self._outer_layout.setContentsMargins(
+            _OUTER_MARGINS,
+            _OUTER_MARGINS,
+            _OUTER_MARGINS,
+            _OUTER_MARGINS,
+        )
+        self._outer_layout.setSpacing(0)
 
-        # Top stretch for vertical centering
-        outer_layout.addStretch(1)
+        self._top_spacer = QSpacerItem(
+            0,
+            _BASE_OUTER_GAP,
+            QSizePolicy.Policy.Minimum,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._outer_layout.addItem(self._top_spacer)
 
         # Preview browser: shown when browsing history, displays the latest result
         self._preview_browser = _make_browser(config.overlay_font_size_jp)
         self._preview_browser.setVisible(False)
-        outer_layout.addWidget(self._preview_browser)
+        self._outer_layout.addWidget(self._preview_browser)
+
+        self._middle_spacer = QSpacerItem(
+            0,
+            0,
+            QSizePolicy.Policy.Minimum,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._outer_layout.addItem(self._middle_spacer)
 
         content_layout = QHBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -217,10 +248,15 @@ class OverlayWindow(QWidget):
         content_layout.addWidget(self._prev_btn)
         content_layout.addWidget(self._jp_browser, 1)
         content_layout.addWidget(self._next_btn)
-        outer_layout.addLayout(content_layout)
+        self._outer_layout.addLayout(content_layout)
 
-        # Bottom stretch for vertical centering
-        outer_layout.addStretch(1)
+        self._bottom_spacer = QSpacerItem(
+            0,
+            _BASE_OUTER_GAP,
+            QSizePolicy.Policy.Minimum,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._outer_layout.addItem(self._bottom_spacer)
 
         self._jp_browser.setMouseTracking(True)
         self._jp_browser.viewport().setMouseTracking(True)
@@ -234,6 +270,7 @@ class OverlayWindow(QWidget):
         self._resize_edge: str = ""
         self._resize_origin: QPoint | None = None
         self._resize_geo: QRect | None = None
+        self._is_manual_resize: bool = False
 
         self.set_status("Initializing...")
         self._update_arrow_visibility()
@@ -269,6 +306,7 @@ class OverlayWindow(QWidget):
             self.dedup_reset.emit()
 
         self._update_arrow_visibility()
+        QTimer.singleShot(0, self._adjust_height_to_content)
         logger.debug(
             "on_sentence_ready: text=%s is_browsing=%s",
             result.japanese_text[:20] if result.japanese_text else "",
@@ -339,6 +377,7 @@ class OverlayWindow(QWidget):
         self._user_level = config.user_jlpt_level
         self._enable_vocab = config.enable_vocab_highlight
         self._enable_grammar = config.enable_grammar_highlight
+        self._manual_spacing_delta = config.overlay_manual_spacing_delta
 
         # Update font on both widget and document for HTML content
         new_font = _make_font(config.overlay_font_size_jp)
@@ -366,6 +405,7 @@ class OverlayWindow(QWidget):
             QTimer.singleShot(0, self._adjust_height_to_content)
 
         self._update_arrow_visibility()
+        self._apply_spacing_distribution()
 
         logger.debug(
             "on_config_changed: opacity=%.2f user_level=%d jp_font=%d vocab=%s grammar=%s"
@@ -433,6 +473,116 @@ class OverlayWindow(QWidget):
         self._prev_btn.setEnabled(self._history.can_go_prev)
         self._next_btn.setEnabled(self._history.can_go_next)
 
+    def _spacing_distribution(self) -> tuple[int, int, int]:
+        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
+        base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
+
+        if self._preview_browser.isVisible():
+            base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
+            base_top = base_outer_gap
+            base_middle = base_middle_gap
+            base_bottom = base_outer_gap
+            segments = 3
+        else:
+            base_top = base_outer_gap
+            base_middle = 0
+            base_bottom = base_outer_gap
+            segments = 2
+
+        min_delta, max_delta = self._spacing_delta_bounds(base_top, base_middle, base_bottom)
+        clamped_delta = max(min_delta, min(max_delta, self._manual_spacing_delta))
+        self._manual_spacing_delta = clamped_delta
+
+        if clamped_delta >= 0:
+            extra_per_segment, remainder = divmod(clamped_delta, segments)
+            top = base_top + extra_per_segment + (1 if remainder > 0 else 0)
+            middle = base_middle + extra_per_segment + (1 if remainder > 1 else 0)
+            bottom = base_bottom + extra_per_segment
+        else:
+            reduction = -clamped_delta
+            dec_per_segment, remainder = divmod(reduction, segments)
+            top = base_top - dec_per_segment - (1 if remainder > 0 else 0)
+            middle = base_middle - dec_per_segment - (1 if remainder > 1 else 0)
+            bottom = base_bottom - dec_per_segment
+
+        top = max(_MIN_OUTER_GAP, top)
+        bottom = max(_MIN_OUTER_GAP, bottom)
+        if self._preview_browser.isVisible():
+            middle = max(_MIN_MIDDLE_GAP, middle)
+        else:
+            middle = 0
+
+        return top, middle, bottom
+
+    def _spacing_delta_bounds(self, base_top: int, base_middle: int, base_bottom: int) -> tuple[int, int]:
+        base_total = base_top + base_middle + base_bottom
+        min_total = (
+            (_MIN_OUTER_GAP * 2) + (_MIN_MIDDLE_GAP if self._preview_browser.isVisible() else 0)
+        )
+        min_delta = min_total - base_total
+        max_delta = max(0, self.maximumHeight() - self._base_auto_height())
+        return min_delta, max_delta
+
+    def _dynamic_min_height(self) -> int:
+        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
+        base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
+        base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
+        base_top = base_outer_gap
+        base_bottom = base_outer_gap
+        base_middle = base_middle_gap if self._preview_browser.isVisible() else 0
+
+        min_delta, _ = self._spacing_delta_bounds(base_top, base_middle, base_bottom)
+        return int(math.ceil(self._base_auto_height() + min_delta))
+
+    def _apply_spacing_distribution(self) -> None:
+        top, middle, bottom = self._spacing_distribution()
+        scaled_outer_margins = max(
+            _MIN_OUTER_MARGINS,
+            int(round(_OUTER_MARGINS * max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0))),
+        )
+        self._outer_layout.setContentsMargins(
+            scaled_outer_margins,
+            scaled_outer_margins,
+            scaled_outer_margins,
+            scaled_outer_margins,
+        )
+        self._top_spacer.changeSize(0, top, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self._middle_spacer.changeSize(0, middle, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self._bottom_spacer.changeSize(0, bottom, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        layout = self.layout()
+        if layout is not None:
+            layout.invalidate()
+
+    def _content_height(self, browser: "QTextBrowser") -> float:
+        doc = browser.document()
+        viewport_width = max(1, browser.viewport().width())
+        doc.setTextWidth(viewport_width)
+        return doc.size().height()
+
+    def _base_auto_height(self) -> int:
+        font_scale = max(0.7, self._jp_browser.fontInfo().pointSizeF() / 16.0)
+        base_outer_gap = max(_MIN_OUTER_GAP, int(round(_BASE_OUTER_GAP * font_scale)))
+        base_middle_gap = max(_MIN_MIDDLE_GAP, int(round(_BASE_MIDDLE_GAP * font_scale)))
+        scaled_outer_margins = max(_MIN_OUTER_MARGINS, int(round(_OUTER_MARGINS * font_scale)))
+
+        jp_height = self._content_height(self._jp_browser)
+        preview_height = self._content_height(self._preview_browser) if self._preview_browser.isVisible() else 0.0
+        spacing_height = (2 * base_outer_gap) + (base_middle_gap if self._preview_browser.isVisible() else 0)
+        content_padding = _CONTENT_SAFETY_PADDING * (2 if self._preview_browser.isVisible() else 1)
+        total_height = jp_height + preview_height + (2 * scaled_outer_margins) + spacing_height + content_padding
+        return int(math.ceil(total_height))
+
+    def _clamp_height(self, height: int) -> int:
+        min_height = max(self.minimumHeight(), _MIN_WINDOW_HEIGHT, self._dynamic_min_height())
+        return max(min_height, min(self.maximumHeight(), height))
+
+    def _sync_manual_spacing_from_current_height(self) -> None:
+        base_height = self._base_auto_height()
+        self._manual_spacing_delta = self.height() - base_height
+        self._spacing_distribution()
+        self._apply_spacing_distribution()
+
     def _adjust_height_to_content(self) -> None:
         """Resize overlay height to fit text content.
 
@@ -440,28 +590,9 @@ class OverlayWindow(QWidget):
         the window while respecting minimum and maximum height constraints.
         When in BROWSE mode (both browsers visible) the heights are summed.
         """
-        # Main browser height
-        jp_doc = self._jp_browser.document()
-        jp_doc.setTextWidth(self._jp_browser.width())
-        jp_height = jp_doc.size().height()
-
-        # Preview browser height (only when visible)
-        preview_height = 0.0
-        if self._preview_browser.isVisible():
-            prev_doc = self._preview_browser.document()
-            prev_doc.setTextWidth(self._preview_browser.width())
-            preview_height = prev_doc.size().height()
-
-        # Calculate total height: margins (top + bottom = 16) + content padding
-        margins = 16  # 8px top + 8px bottom from outer_layout.setContentsMargins
-        padding = 16  # Extra padding for visual comfort
-
-        total_height = int(jp_height + preview_height + margins + padding)
-
-        # Clamp to min/max bounds
-        min_h = self.minimumHeight()
-        max_h = self.maximumHeight()
-        new_height = max(min_h, min(max_h, total_height))
+        self._apply_spacing_distribution()
+        total_height = self._base_auto_height() + max(0, self._manual_spacing_delta)
+        new_height = self._clamp_height(total_height)
 
         # Only resize if height differs significantly (avoid jitter)
         if abs(self.height() - new_height) > 2:
@@ -510,6 +641,7 @@ class OverlayWindow(QWidget):
     def _save_size(self) -> None:
         self._config.overlay_width = self.width()
         self._config.overlay_height = self.height()
+        self._config.overlay_manual_spacing_delta = self._manual_spacing_delta
         save_config(self._config)
 
     def _edge_at(self, pos: QPoint) -> str:
@@ -570,7 +702,7 @@ class OverlayWindow(QWidget):
         dy = global_pos.y() - self._resize_origin.y()
         geo = QRect(self._resize_geo)
         edge = self._resize_edge
-        min_w, min_h = self.minimumWidth(), self.minimumHeight()
+        min_w, min_h = self.minimumWidth(), self._dynamic_min_height()
         max_w, max_h = self.maximumWidth(), self.maximumHeight()
 
         if "r" in edge:
@@ -597,6 +729,8 @@ class OverlayWindow(QWidget):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
+        if not self._is_manual_resize and event.oldSize().width() != event.size().width():
+            QTimer.singleShot(0, self._adjust_height_to_content)
         QTimer.singleShot(500, self._save_size)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -606,6 +740,7 @@ class OverlayWindow(QWidget):
                 self._resize_edge = edge
                 self._resize_origin = event.globalPosition().toPoint()
                 self._resize_geo = QRect(self.geometry())
+                self._is_manual_resize = True
                 return
             self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
@@ -624,10 +759,21 @@ class OverlayWindow(QWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            had_resize = bool(self._resize_edge)
+            resize_edge = self._resize_edge
+            if had_resize:
+                self._sync_manual_spacing_from_current_height()
+                if "l" in resize_edge or "r" in resize_edge:
+                    QTimer.singleShot(0, self._adjust_height_to_content)
+
             self._drag_pos = None
             self._resize_edge = ""
             self._resize_origin = None
             self._resize_geo = None
+            self._is_manual_resize = False
+
+            if had_resize:
+                self._save_size()
         super().mouseReleaseEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:

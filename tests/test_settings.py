@@ -117,6 +117,18 @@ def test_collect_config_returns_appconfig(dialog: SettingsDialog) -> None:
     assert config.asr_model_local_path == "/tmp/my-model"
 
 
+def test_collect_config_preserves_runtime_overlay_geometry(qapp: QApplication) -> None:
+    saved_config = AppConfig(overlay_width=700, overlay_height=130, overlay_manual_spacing_delta=4)
+    runtime_config = AppConfig(overlay_width=920, overlay_height=220, overlay_manual_spacing_delta=36)
+    dialog = SettingsDialog(saved_config, runtime_config=runtime_config)
+
+    collected = dialog._collect_config()
+
+    assert collected.overlay_width == 920
+    assert collected.overlay_height == 220
+    assert collected.overlay_manual_spacing_delta == 36
+
+
 def test_collect_config_preserves_sample_rate(qapp: QApplication) -> None:
     """Test that non-UI fields like sample_rate are preserved in _collect_config."""
     config = AppConfig(sample_rate=48000)

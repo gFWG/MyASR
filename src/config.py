@@ -37,6 +37,7 @@ class AppConfig:
     overlay_opacity: float = 0.78
     overlay_width: int = 800
     overlay_height: int = 120
+    overlay_manual_spacing_delta: int = 0
     overlay_font_size_jp: int = 16
     enable_vocab_highlight: bool = True
     enable_grammar_highlight: bool = True

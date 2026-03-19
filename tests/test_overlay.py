@@ -50,8 +50,8 @@ def test_overlay_has_tool_hint(overlay: OverlayWindow) -> None:
 
 def test_overlay_initial_size(overlay: OverlayWindow) -> None:
     assert overlay.width() == 800
-    # Height is adjusted to minimum (80) after set_status("Initializing...")
-    assert overlay.height() >= 80
+    # Height is adjusted to compact dynamic minimum after set_status("Initializing...")
+    assert overlay.height() >= 56
 
 
 def test_overlay_highlight_hovered_signal_exists() -> None:
@@ -205,7 +205,7 @@ def test_overlay_uses_config_dimensions(qapp: QApplication) -> None:
 
 def test_overlay_minimum_size(overlay: OverlayWindow) -> None:
     assert overlay.minimumWidth() >= 400
-    assert overlay.minimumHeight() >= 80
+    assert overlay.minimumHeight() >= 56
 
 
 def test_overlay_center_on_screen_method_exists(overlay: OverlayWindow) -> None:
@@ -409,3 +409,57 @@ def test_resize_state_initially_empty(overlay: OverlayWindow) -> None:
 
 
 # ── Single mode height shrink tests ──
+
+
+def test_spacing_distribution_single_mode_is_symmetric(overlay: OverlayWindow) -> None:
+    overlay._preview_browser.setVisible(False)
+    overlay._manual_spacing_delta = 5
+
+    top, middle, bottom = overlay._spacing_distribution()
+
+    assert middle == 0
+    assert top == 9
+    assert bottom == 8
+
+
+def test_spacing_distribution_browse_mode_is_balanced(overlay: OverlayWindow) -> None:
+    overlay.show()
+    overlay._preview_browser.setVisible(True)
+    overlay._manual_spacing_delta = 4
+
+    top, middle, bottom = overlay._spacing_distribution()
+
+    assert top == 8
+    assert middle == 7
+    assert bottom == 7
+
+
+def test_sync_manual_spacing_from_height_uses_base_plus_delta(overlay: OverlayWindow) -> None:
+    overlay._preview_browser.setVisible(False)
+    overlay.resize(overlay.width(), 180)
+
+    with patch.object(overlay, "_base_auto_height", return_value=130):
+        overlay._sync_manual_spacing_from_current_height()
+
+    assert overlay._manual_spacing_delta == 50
+
+
+def test_spacing_distribution_allows_negative_compaction_single_mode(overlay: OverlayWindow) -> None:
+    overlay._preview_browser.setVisible(False)
+    overlay._manual_spacing_delta = -100
+
+    top, middle, bottom = overlay._spacing_distribution()
+
+    assert middle == 0
+    assert top == 2
+    assert bottom == 2
+
+
+def test_dynamic_min_height_tracks_mode_content_floor(overlay: OverlayWindow) -> None:
+    overlay._preview_browser.setVisible(True)
+
+    with patch.object(overlay, "_base_auto_height", return_value=120):
+        min_height = overlay._dynamic_min_height()
+
+    assert min_height <= 120
+    assert min_height >= 56
