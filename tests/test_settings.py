@@ -36,6 +36,11 @@ def test_settings_dialog_has_three_tabs(dialog: SettingsDialog) -> None:
     assert dialog._tabs.count() == 3
 
 
+def test_resource_tab_has_analysis_replace_buttons(dialog: SettingsDialog) -> None:
+    assert dialog._replace_vocab_btn.text() == "Replace Vocabulary (CSV)"
+    assert dialog._replace_grammar_btn.text() == "Replace Grammar (JSON)"
+
+
 def test_widgets_populate_from_config(qapp: QApplication, tmp_path: Path) -> None:
     config = AppConfig(
         user_jlpt_level=2,
@@ -252,3 +257,186 @@ def test_max_history_slider_spinbox_sync(qapp: QApplication) -> None:
     d._max_history._spinbox.setValue(25)
     assert d._max_history._slider.value() == 25
     assert d._max_history.value() == 25
+
+
+def test_replace_vocab_success(
+    dialog: SettingsDialog, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_csv = tmp_path / "source_vocab.csv"
+    source_csv.write_text("id,pronBase,lemma,definition,level\n1,ア,あ,ah,N5")
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: (str(source_csv), ""),
+    )
+
+    replace_calls = []
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        replace_calls.append((source, target))
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+
+    dialog._on_replace_vocab()
+
+    assert len(replace_calls) == 1
+    assert replace_calls[0][0] == source_csv
+    assert replace_calls[0][1] == Path("data/vocabulary.csv")
+    assert dialog._resource_state_requires_restart is True
+    assert dialog._restart_label.isHidden() is False
+    assert "Replaced vocabulary list" in dialog._model_status_text.toPlainText()
+
+
+def test_replace_grammar_success(
+    dialog: SettingsDialog, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_json = tmp_path / "source_grammar.json"
+    source_json.write_text(
+        (
+            '[{"id": "test_1", "word": "grammar", '
+            '"re": "^test", "level": "N5", "description": "test"}]'
+        )
+    )
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: (str(source_json), ""),
+    )
+
+    replace_calls = []
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        replace_calls.append((source, target))
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+
+    dialog._on_replace_grammar()
+
+    assert len(replace_calls) == 1
+    assert replace_calls[0][0] == source_json
+    assert replace_calls[0][1] == Path("data/grammar.json")
+    assert dialog._resource_state_requires_restart is True
+    assert dialog._restart_label.isHidden() is False
+    assert "Replaced grammar rules" in dialog._model_status_text.toPlainText()
+
+
+def test_replace_vocab_cancel_is_noop(
+    dialog: SettingsDialog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_status = dialog._model_status_text.toPlainText()
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: ("", ""),
+    )
+
+    replace_called = False
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        nonlocal replace_called
+        replace_called = True
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+
+    dialog._on_replace_vocab()
+
+    assert replace_called is False
+    assert dialog._resource_state_requires_restart is False
+    assert dialog._model_status_text.toPlainText() == original_status
+
+
+def test_replace_grammar_cancel_is_noop(
+    dialog: SettingsDialog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_status = dialog._model_status_text.toPlainText()
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: ("", ""),
+    )
+
+    replace_called = False
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        nonlocal replace_called
+        replace_called = True
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+
+    dialog._on_replace_grammar()
+
+    assert replace_called is False
+    assert dialog._resource_state_requires_restart is False
+    assert dialog._model_status_text.toPlainText() == original_status
+
+
+def test_replace_vocab_validation_failure(
+    dialog: SettingsDialog, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_csv = tmp_path / "bad_vocab.csv"
+    source_csv.write_text("wrong,format\n1,2")
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: (str(source_csv), ""),
+    )
+
+    replace_called = False
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        nonlocal replace_called
+        replace_called = True
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+    show_calls: list[tuple[str, str, str, object]] = []
+
+    def mock_show_resource_message(
+        title: str, text: str, informative_text: str, icon: object
+    ) -> None:
+        show_calls.append((title, text, informative_text, icon))
+
+    monkeypatch.setattr(dialog, "_show_resource_message", mock_show_resource_message)
+
+    dialog._on_replace_vocab()
+
+    assert not replace_called
+    assert len(show_calls) == 1
+    assert show_calls[0][0] == "Replace Failed"
+    assert "could not replace the vocabulary list" in show_calls[0][1]
+    assert "Failed to replace vocabulary list" in dialog._model_status_text.toPlainText()
+
+
+def test_replace_grammar_validation_failure(
+    dialog: SettingsDialog, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_json = tmp_path / "bad_grammar.json"
+    source_json.write_text('{"not_an_array": true}')
+
+    monkeypatch.setattr(
+        "src.ui.settings.QFileDialog.getOpenFileName",
+        lambda *args, **kwargs: (str(source_json), ""),
+    )
+
+    replace_called = False
+
+    def mock_atomic_replace(source: Path, target: Path) -> None:
+        nonlocal replace_called
+        replace_called = True
+
+    monkeypatch.setattr(dialog, "_atomic_replace_file", mock_atomic_replace)
+    show_calls: list[tuple[str, str, str, object]] = []
+
+    def mock_show_resource_message(
+        title: str, text: str, informative_text: str, icon: object
+    ) -> None:
+        show_calls.append((title, text, informative_text, icon))
+
+    monkeypatch.setattr(dialog, "_show_resource_message", mock_show_resource_message)
+
+    dialog._on_replace_grammar()
+
+    assert not replace_called
+    assert len(show_calls) == 1
+    assert show_calls[0][0] == "Replace Failed"
+    assert "could not replace the grammar rules" in show_calls[0][1]
+    assert "Failed to replace grammar rules" in dialog._model_status_text.toPlainText()
