@@ -324,32 +324,16 @@ class SettingsDialog(QDialog):
     def _build_resource_tab(self) -> None:
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(12)
-
-        analysis_desc = QLabel("Manage vocabulary and grammar files used for JLPT analysis.")
-        analysis_desc.setWordWrap(True)
-        analysis_desc.setStyleSheet("color: palette(mid);")
-        layout.addWidget(analysis_desc)
 
         analysis_row = QHBoxLayout()
-        self._replace_vocab_btn = QPushButton("Replace Vocabulary (CSV)")
-        self._replace_grammar_btn = QPushButton("Replace Grammar (JSON)")
+        self._replace_vocab_btn = QPushButton("Update Vocabulary (CSV)")
+        self._replace_grammar_btn = QPushButton("Update Grammar (JSON)")
         self._replace_vocab_btn.clicked.connect(self._on_replace_vocab)
         self._replace_grammar_btn.clicked.connect(self._on_replace_grammar)
         analysis_row.addWidget(self._replace_vocab_btn)
         analysis_row.addWidget(self._replace_grammar_btn)
         analysis_row.addStretch()
         layout.addLayout(analysis_row)
-
-        layout.addSpacing(12)
-
-        description = QLabel(
-            "Manage the local Qwen ASR files used for startup, downloads, and cleanup. "
-            "Leave the path blank to use MyASR's default model directory."
-        )
-        description.setWordWrap(True)
-        description.setStyleSheet("color: palette(mid);")
-        layout.addWidget(description)
 
         model_row = QHBoxLayout()
         model_label = QLabel("ASR Model")
